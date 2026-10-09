@@ -3,11 +3,12 @@
  */
 
 export class PillWidget {
-  constructor({ onRecordStart, onRecordStop, onToneChange, onProviderChange }) {
+  constructor({ onRecordStart, onRecordStop, onToneChange, onProviderChange, onHandsFreeToggle }) {
     this.onRecordStart = onRecordStart;
     this.onRecordStop = onRecordStop;
     this.onToneChange = onToneChange;
     this.onProviderChange = onProviderChange;
+    this.onHandsFreeToggle = onHandsFreeToggle;
 
     this.container = document.getElementById('floatingPill');
     this.pill = document.getElementById('flowPill');
@@ -53,12 +54,19 @@ export class PillWidget {
     // Hands-Free Mode Toggle
     if (this.handsFreeBtn) {
       this.handsFreeBtn.addEventListener('click', () => {
-        this.isHandsFree = !this.isHandsFree;
-        this.handsFreeBtn.classList.toggle('is-active', this.isHandsFree);
-        this.handsFreeBtn.setAttribute('aria-pressed', this.isHandsFree ? 'true' : 'false');
-        this.updateStatusText();
+        this.setHandsFree(!this.isHandsFree);
+        if (this.onHandsFreeToggle) this.onHandsFreeToggle(this.isHandsFree);
       });
     }
+  }
+
+  setHandsFree(enabled) {
+    this.isHandsFree = Boolean(enabled);
+    if (this.handsFreeBtn) {
+      this.handsFreeBtn.classList.toggle('is-active', this.isHandsFree);
+      this.handsFreeBtn.setAttribute('aria-pressed', this.isHandsFree ? 'true' : 'false');
+    }
+    this.updateStatusText();
   }
 
   setState(state, customMessage) {
@@ -68,12 +76,13 @@ export class PillWidget {
     switch (state) {
       case 'listening':
         this.pill.classList.add('is-listening');
-        this.statusText.textContent = customMessage || 'Listening';
+        const sttType = this.providerSelect?.value === 'local-whisper' ? 'Local' : 'Cloud';
+        this.statusText.textContent = customMessage || (this.isHandsFree ? `Listening · ${sttType} (Hands-free)` : `Listening · ${sttType}`);
         break;
 
       case 'processing':
         this.pill.classList.add('is-processing');
-        this.statusText.textContent = customMessage || 'Cleaning up';
+        this.statusText.textContent = customMessage || 'Processing';
         break;
 
       case 'copied':
@@ -95,7 +104,12 @@ export class PillWidget {
   }
 
   updateStatusText() {
-    this.statusText.textContent = this.isHandsFree ? 'Hands-free' : 'Hold Space';
+    const sttType = this.providerSelect?.value === 'local-whisper' ? 'Local' : 'Cloud';
+    if (this.state === 'listening') {
+      this.statusText.textContent = this.isHandsFree ? `Listening · ${sttType} (Hands-free)` : `Listening · ${sttType}`;
+    } else if (this.state === 'idle') {
+      this.statusText.textContent = this.isHandsFree ? `Hands-free on · ${sttType}` : 'Hold Space / F8';
+    }
   }
 
   drawWaveform(frequencyData, volume) {

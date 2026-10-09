@@ -2,6 +2,16 @@
  * WhisperFlow API Client & Web Speech Fallback Driver
  */
 
+function getFilenameForMime(mimeType) {
+  if (!mimeType) return 'recording.webm';
+  const lower = mimeType.toLowerCase();
+  if (lower.includes('mp4') || lower.includes('m4a') || lower.includes('aac')) return 'recording.m4a';
+  if (lower.includes('wav')) return 'recording.wav';
+  if (lower.includes('ogg') || lower.includes('opus')) return 'recording.ogg';
+  if (lower.includes('mp3') || lower.includes('mpeg')) return 'recording.mp3';
+  return 'recording.webm';
+}
+
 export class ZeroEditClient {
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
@@ -11,26 +21,67 @@ export class ZeroEditClient {
    * Send audio blob to /api/dictate
    */
   async sendAudioDictation(audioBlob, mimeType, options = {}) {
+    const filename = getFilenameForMime(mimeType || audioBlob.type);
+    const clientSentAt = Date.now();
+
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
+    formData.append('audio', audioBlob, filename);
     formData.append('sttProvider', options.sttProvider || 'groq');
+    if (options.sttModel) formData.append('sttModel', options.sttModel);
     formData.append('llmProvider', options.llmProvider || 'groq');
+    if (options.llmModel) formData.append('llmModel', options.llmModel);
     formData.append('tone', options.tone || 'casual');
     formData.append('appName', options.appName || 'General');
     formData.append('language', options.language || 'auto');
+    formData.append('clientSentAt', clientSentAt.toString());
 
     if (options.apiKeyGroq) formData.append('apiKeyGroq', options.apiKeyGroq);
     if (options.apiKeyGemini) formData.append('apiKeyGemini', options.apiKeyGemini);
+    if (options.apiKeyOpenai) formData.append('apiKeyOpenai', options.apiKeyOpenai);
 
     const response = await fetch(`${this.baseUrl}/api/dictate`, {
       method: 'POST',
       body: formData
     });
 
+    const clientRoundtripMs = Date.now() - clientSentAt;
     const data = await response.json();
     if (!response.ok) {
       throw new Error(data.error || 'Dictation API failed');
     }
+
+    data.clientRoundtripMs = clientRoundtripMs;
+    return data;
+  }
+
+  /**
+   * Send audio blob to /api/transcribe (raw transcription only)
+   */
+  async transcribeAudio(audioBlob, mimeType, options = {}) {
+    const filename = getFilenameForMime(mimeType || audioBlob.type);
+    const clientSentAt = Date.now();
+
+    const formData = new FormData();
+    formData.append('audio', audioBlob, filename);
+    formData.append('sttProvider', options.sttProvider || 'groq');
+    formData.append('language', options.language || 'auto');
+    formData.append('clientSentAt', clientSentAt.toString());
+
+    if (options.apiKeyGroq) formData.append('apiKeyGroq', options.apiKeyGroq);
+    if (options.apiKeyGemini) formData.append('apiKeyGemini', options.apiKeyGemini);
+
+    const response = await fetch(`${this.baseUrl}/api/transcribe`, {
+      method: 'POST',
+      body: formData
+    });
+
+    const clientRoundtripMs = Date.now() - clientSentAt;
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.error || 'Transcription API failed');
+    }
+
+    data.clientRoundtripMs = clientRoundtripMs;
     return data;
   }
 

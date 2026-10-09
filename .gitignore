@@ -9,6 +9,8 @@ node_modules/
 # Local data. The app creates data/whisperflow_store.json on first run.
 # That file can contain API keys typed into Settings, plus personal history.
 data/*.json
+data/*.sqlite*
+data/*.db*
 
 # Uploaded audio
 uploads/*

@@ -35,14 +35,36 @@ The companion needs the web app's server running. It uses the keys and dictionar
 
 Windows does not let a normal program see key presses inside apps that run as administrator. That is why F8 can work in Notepad but not in an app started as administrator. A PowerShell started as administrator avoids that. You can try a normal PowerShell first.
 
-## macOS
+## macOS (Native Desktop App)
+
+Murmur Flow includes a native macOS desktop app built with Electron. It provides:
+- **Global Hotkey** (`F8` or custom) anywhere across all apps
+- **Floating HUD Overlay** with real-time waveform visualizer & status
+- **Zero-Impact Text Insertion**: Inserts text directly at cursor in any active app (Chrome, Safari, Slack, VS Code, Cursor, Terminal, WhatsApp, etc.)
+- **Clipboard Preservation & Restoration**: Dictation never overwrites your saved clipboard
+- **System Tray / Menu Bar** integration
+- **Embedded Server Lifecycle**: Automatically connects to or starts the Murmur Flow backend
+
+### Quick Start:
+
+```bash
+cd desktop/electron
+npm install
+npm start
+```
+
+When prompted on first run, grant **Microphone** and **Accessibility** permissions in macOS System Settings so Murmur Flow can record audio and paste text at your active cursor.
+
+---
+
+## Python Companion (Alternative)
+
+If you prefer running a lightweight Python background script:
 
 ```bash
 pip3 install keyboard sounddevice scipy numpy
 sudo python3 desktop/whisperflow_companion.py
 ```
-
-The `keyboard` package needs `sudo` to see key presses. When macOS asks, allow **Terminal** under **System Settings → Privacy & Security → Accessibility** and **Microphone**, then start the companion again.
 
 ## Linux
 

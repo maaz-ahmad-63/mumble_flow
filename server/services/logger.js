@@ -60,6 +60,14 @@ export const logger = {
     writeToFile('ERROR', text);
   },
 
+  debug(msg, ...args) {
+    if (process.env.DEBUG) {
+      const text = [msg, ...args].join(' ');
+      console.log(`[DEBUG] [${timestamp()}] ${sanitize(text)}`);
+      writeToFile('DEBUG', text);
+    }
+  },
+
   api(method, endpoint, statusCode, durationMs, details = '') {
     const color = statusCode >= 400 ? '\x1b[31m' : '\x1b[32m';
     const text = `${method} ${endpoint} ${statusCode} (${durationMs}ms) ${details}`.trim();

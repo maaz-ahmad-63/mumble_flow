@@ -1,308 +1,298 @@
 <div align="center">
 
-![Murmur Flow Banner](docs/images/banner.png)
+![Mumble AI Banner](docs/images/banner.png)
 
-# Murmur Flow
+# 🎙️ Mumble AI
 
-**The 100% Open-Source, Self-Hostable Alternative to Wispr Flow**
+**The Open-Source, Self-Hostable AI Voice Dictation & Intelligence Platform**
 
 *Speak naturally. Get polished, zero-edit writing anywhere on your computer.*
 
-[![Test](https://github.com/ImaduddeenKhan/MURMUR-FLOW/actions/workflows/test.yml/badge.svg)](https://github.com/ImaduddeenKhan/MURMUR-FLOW/actions/workflows/test.yml)
+[![GitHub Repo](https://img.shields.io/badge/GitHub-maaz--ahmad--63%2Fmumble__flow-181717.svg?logo=github)](https://github.com/maaz-ahmad-63/mumble_flow)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B-green.svg)](https://nodejs.org/)
-[![STT: Groq Whisper](https://img.shields.io/badge/STT-Whisper--Large--v3--Turbo-orange.svg)](https://groq.com)
-[![LLM: Gemini / Groq](https://img.shields.io/badge/LLM-Gemini%20%2F%20Groq-blueviolet.svg)](https://aistudio.google.com)
+[![Node.js](https://img.shields.io/badge/Node.js-20%2B%20LTS-green.svg?logo=node.js)](https://nodejs.org/)
+[![Electron](https://img.shields.io/badge/Desktop-Electron%2030%2B-47848F.svg?logo=electron)](https://www.electronjs.org/)
+[![STT: Whisper](https://img.shields.io/badge/STT-Whisper%20Large%20v3-orange.svg)](https://groq.com)
+[![LLM: Groq / Gemini / OpenAI](https://img.shields.io/badge/LLM-Multi--Model-blueviolet.svg)](https://groq.com)
 
-[Architecture](#-architecture--interaction-modalities) •
+[Architecture](#-architecture--modalities) •
 [Visual Tour](#-visual-tour--features) •
-[Quickstart](#-install-on-your-computer) •
-[Self-Hosting](#-host-it-on-a-server) •
-[Desktop Companion](#%EF%B8%8F-desktop-companion-f8-in-any-app) •
-[Security](#-security)
+[Quickstart](#-quickstart-guide) •
+[Desktop Companion](#-desktop-companion-electron--global-hotkeys) •
+[Model Hub & BYOK](#-model-hub--bring-your-own-keys-byok) •
+[Deployment](#-production-deployment) •
+[Security](#-security--encryption)
 
 ---
 
 </div>
 
-Murmur Flow is a voice-first productivity workspace. You speak the way you actually talk—with stutters, pauses, and mid-sentence self-corrections—and Murmur Flow instantly transforms raw audio into polished, structured text ready to send.
+**Mumble AI** is a voice-first productivity platform and the open-source alternative to Wispr Flow. Speak the way you naturally talk—with pauses, "ums", and mid-thought self-corrections—and Mumble AI transforms raw speech into structured, publication-ready text in milliseconds.
 
-The app runs on your computer or a private server you control. Speech-to-text and AI cleanup go through **Groq** (`whisper-large-v3-turbo` + `openai/gpt-oss-20b`) and **Google Gemini** (`gemini-3.6-flash`), both of which offer generous free-tier API keys. **With zero API keys configured**, the built-in offline rule engine still cleans stutters, expands voice snippets, and manages your personal dictionary.
+Works across both a **full-featured Web Studio** and a **system-wide Desktop Companion** that types into Slack, Cursor, VS Code, Gmail, Word, Terminal, and any other application via push-to-talk.
 
 ---
 
-## 🏗️ Architecture & Interaction Modalities
+## 🏗️ Architecture & Modalities
 
-Murmur Flow is architected as two decoupled, high-performance interfaces tailored for distinct productivity workflows:
+Mumble AI is engineered around decoupled, high-performance interfaces:
 
-| Dimension | 🌐 Web Studio & Dashboard | 🖥️ Universal Desktop Daemon (Global Hotkey) |
+```text
+ ┌────────────────────────────────────────────────────────┐
+ │                   MUMBLE AI CLIENTS                    │
+ ├────────────────────────────┬───────────────────────────┤
+ │  🌐 Browser Web Studio     │  🖥️ Native Desktop App    │
+ │  - Real-time waveforms     │  - Electron + OS Hooks    │
+ │  - Split diff transcript   │  - Push-to-Talk (Hold     │
+ │  - Model Hub & BYOK keys   │    Space / F8)            │
+ │  - RBAC Admin Dashboard    │  - App-aware context      │
+ │  - Meeting Notetaker       │  - Native text injection  │
+ └─────────────┬──────────────┴─────────────┬─────────────┘
+               │                            │
+               │ HTTP / Duplex WebSocket    │
+               ▼                            ▼
+ ┌────────────────────────────────────────────────────────┐
+ │               MUMBLE AI CORE BACKEND                   │
+ │   Express Server • Native node:sqlite in WAL Mode      │
+ ├────────────────────────────────────────────────────────┤
+ │ • Multi-User Auth & Session Management (HMAC-SHA256)   │
+ │ • Model Hub Engine (Groq, Gemini, OpenAI, Local)       │
+ │ • BYOK Authenticated Encryption at Rest (AES-256-GCM)  │
+ │ • Zero-Edit Engine & App-Aware Tone Heuristics         │
+ │ • Usage Tracking, Platform Cost Separation & Quotas    │
+ │ • Streaming WebSocket Dictation Pipeline (/ws/dictate) │
+ └────────────────────────────────────────────────────────┘
+```
+
+| Dimension | 🌐 Web Studio & Dashboard | 🖥️ Desktop Companion (Electron) |
 | :--- | :--- | :--- |
-| **System Role** | Full-featured interactive studio for dictation, live split-diff review, meeting synthesis, and configuration | Python script providing system-wide push-to-talk text injection into external apps |
-| **Execution Context** | Modern web browsers (Chrome, Edge, Safari, Firefox) via local or hosted HTTP/HTTPS | Runs in a terminal window on macOS, Windows, and Linux. The window must stay open (it can be minimized) |
-| **Input Capture** | In-browser WebRTC audio pipeline (<kbd>Space</kbd> push-to-talk or Hands-Free mode) | Low-level OS global keyboard hook (<kbd>F8</kbd> push-to-talk) with 16kHz PCM capture |
-| **Output Destination** | Interactive sandbox editor, visual diff breakdown, and system clipboard | Injected directly into active focused window (Slack, Cursor, VS Code, Word, Terminal, etc.) |
-| **Runtime Stack** | Node.js 20+ LTS runtime (`Express`, zero build compilation step) | Python 3.10+ runtime (`sounddevice`, `scipy`, `keyboard`) |
-| **Privileges** | Standard unprivileged browser sandbox | Windows: standard user, but Administrator is needed for F8 to work inside apps running as administrator. macOS: `sudo`, plus Accessibility and Microphone permission for Terminal. Linux: root, X11 only |
-| **Network Topology** | Deployable locally (`localhost`) or remotely (VPS, Docker, Cloud) | Runs on the physical host machine with microphone hardware; connects to local or remote API |
-| **Feature Surface** | 15+ tone presets, real-time waveform, meeting diarization, dictionary, snippets, export to MD/TXT/Webhook | Records while F8 is toggled on, then pastes through the clipboard (your current clipboard contents are replaced). Picks the tone from the app in front (Slack casual, VS Code code, Gmail formal), or a fixed one with `--tone`. Needs a speech API key saved in the web app |
-
-> **Architectural Note**: The desktop companion is not standalone. It sends audio to the web app's server, which applies the API keys, tone, and dictionary saved in Settings. The server must be running.
+| **Primary Role** | Interactive audio sandbox, meeting diarization, Model Hub, Usage Analytics, and Admin Control | System-wide push-to-talk overlay that directly types into active foreground apps |
+| **Execution** | Chrome, Edge, Safari, Firefox via local or remote HTTPS | Native desktop app (macOS, Windows, Linux) living in the system tray |
+| **Input Capture** | WebRTC in-browser recording (<kbd>Hold Space</kbd> or Hands-free) | Global OS keyboard listener (<kbd>Hold Space</kbd> or <kbd>F8</kbd>) + 16kHz audio capture |
+| **Text Output** | Transcript sandbox with live split diffs and clipboard sync | Injected directly into cursor focus (Slack, Cursor, VS Code, Word, Terminal) |
+| **Backend Sync** | Direct local/remote REST API and WebSocket streaming | Communicates over local loopback (`localhost:3050`) or remote backend URL |
 
 ---
 
 ## 📸 Visual Tour & Features
 
-### 1. Zero-Edit Dictation & Real-Time Diff
-Speak freely with verbal hesitations, restarts, and filler words. The zero-edit pipeline strips "um", "uh", "you know", and automatically resolves mid-thought revisions (*"Let's launch Friday... actually Monday"* → *"Let's launch Monday"*). 
-
-- **Split Diff View**: Compare what the mic heard against the final polished output in real time.
-- **Real-Time Metrics**: Live latency counter, speech-to-text speed (~220 WPM), and zero-edit accuracy rate (90%+).
-- **15+ Tone Presets**: Seamlessly toggle between Casual, Formal, Executive, Code, Bullets, Standup, Social, Prompt, Support, or instant multilingual translations (Spanish, French, German, Hindi, Japanese).
-- **Floating Dynamic Island**: A persistent, compact widget displaying live audio waveforms, recording timer, and hands-free toggles.
+### 1. Zero-Edit Dictation Studio & Live Split Diff
+Speak freely with hesitations and false starts. The zero-edit pipeline strips verbal clutter, corrects grammar, and accurately resolves self-corrections (*"Let's schedule for Friday... actually Monday afternoon"* → *"Let's schedule for Monday afternoon."*).
 
 <div align="center">
 
-| Dark Theme (Wispr Aesthetic) | Light Theme |
+| 🌙 Dark Theme | ☀️ Light Theme |
 | :---: | :---: |
-| ![Dictation Dark Mode](docs/images/01-dictation-dark.png) | ![Dictation Light Mode](docs/images/02-dictation-light.png) |
+| ![Mumble AI Dark Studio](docs/images/01-dictation-dark.png) | ![Mumble AI Light Studio](docs/images/02-dictation-light.png) |
 
 </div>
 
----
-
-### 2. Meeting Notetaker & Speaker Attribution
-Record meetings without invasive third-party bots joining your Zoom, Google Meet, or Slack Huddles.
-
-![Meeting Notetaker & Notes](docs/images/03-notetaker-notes.png)
-
-- **Multi-Speaker Diarization**: Attributed conversation timeline with speaker tags (e.g., *Nathalie*, *Stephen*, *Mikel*) and precise timestamps.
-- **Structured Synthesis**: Automatically extracts Executive Overviews, Key Decisions Made, Discussion Highlights by Topic, and Action Items with assignees.
-- **1-Click AI Export**: Copy notes directly as Markdown or generate ready-to-run prompts tailored for Claude and ChatGPT follow-ups.
+- **Instant Diff Breakdown**: Compare raw speech heard against the cleaned, polished text.
+- **Floating Island Widget**: Persistent status pill displaying real-time waveforms, active model, and recording timer.
+- **15+ Tone Presets**: Casual, Formal, Developer, Terminal, Executive, Code, Bullets, Standup, Social, Prompt, Support, or instant multilingual translations (Spanish, French, German, Hindi, Japanese).
 
 ---
 
-### 3. Voice-to-Action Command Mode
-Highlight or paste existing drafts and command the AI to restructure, translate, or refine them using natural language.
+### 2. Multi-Model Hub & Bring Your Own Key (BYOK)
+Choose between high-speed cloud inference or private local models for both Speech-to-Text and LLM enhancement.
 
-![Command Mode](docs/images/04-command-mode.png)
+![Model Hub and BYOK](docs/images/08-model-hub.png)
 
-- Enter custom commands like *"Make this concise and direct"*, *"Fix grammar and polish tone"*, or *"Format as executive bullets"*.
-- Quick one-click preset chips for common workflows.
-
----
-
-### 4. Personal Dictionary & Phonetic Bias
-Ensure rare proper nouns, developer libraries, colleague names, and industry jargon are spelled correctly on the first pass.
-
-![Personal Dictionary](docs/images/05-personal-dictionary.png)
-
-- Custom vocabulary entries are dynamically injected into Whisper's initial decoding prompt and the LLM's system prompt.
-- Supports category tagging (`Name`, `Code`, `Jargon`, `Product`) and optional phonetic pronunciation hints (e.g. `soo-pa-base` for Supabase).
+- **Independent Model Switching**: Pair Groq Whisper STT with Gemini 3.6 Flash, or OpenAI Whisper with GPT-OSS-20B.
+- **BYOK Credential Isolation**: Securely input your own API keys. Keys are encrypted at rest with AES-256-GCM and never leaked in API responses.
+- **Cost Transparency**: Real-time per-unit pricing indicators for every model.
 
 ---
 
-### 5. Voice Snippets Engine
-Define short spoken trigger phrases that expand into long-form templates, calendar booking links, or signatures.
+### 3. Usage Analytics & Cost Control
+Full visibility into transcription time, token volume, and infrastructure spend.
 
-![Voice Snippets](docs/images/06-voice-snippets.png)
+![Usage and Cost Dashboard](docs/images/10-usage-dashboard.png)
 
-- Say *"insert calendly"* → Expands instantly into `https://calendly.com/your-username/30min`.
-- Say *"bug report template"* → Injects standard GitHub issue markdown structure.
-- Say *"standard signature"* → Pastes formatted sign-off credentials.
+- **BYOK vs. Platform Cost Separation**: Automatically distinguishes zero-cost BYOK requests from Mumble-managed platform spend.
+- **Monthly Tier Quotas**: Configurable limits on audio minutes and LLM requests, with BYOK requests cleanly exempt.
+- **Provider Telemetry**: Real-time breakdown across Groq, Gemini, and OpenAI.
 
 ---
 
-### 6. Settings, Accessibility & Privacy Controls
-Configure speech engines, audio chimes, VAD silence auto-cutoff, and outbound webhooks.
+### 4. Enterprise Administration & Access Control
+Comprehensive admin dashboard powered entirely by real database records.
+
+![Admin Dashboard](docs/images/09-admin-dashboard.png)
+
+- **User Access Management**: Review accounts, promote roles, suspend users, and adjust quotas.
+- **Genuine Account Discrimination**: Smart detection isolates synthetic test rows from authentic registered users.
+- **System Health Telemetry**: Live uptime, memory consumption (RSS), and request failure monitoring.
+
+---
+
+### 5. Meeting Notetaker & Speaker Attribution
+Capture meetings and lectures with automated diarization and zero third-party bots.
+
+![Meeting Notetaker](docs/images/03-notetaker-notes.png)
+
+- **Multi-Speaker Diarization**: Attributed conversation timeline with speaker identification and timestamps.
+- **Structured Synthesis**: Automatically extracts Executive Overviews, Key Decisions, Discussion Highlights, and Action Items.
+- **1-Click Export**: Export directly as Markdown, plain text, or ready-to-run prompts for ChatGPT and Claude.
+
+---
+
+### 6. Voice-to-Action Command Mode & Vocabulary
+Highlight drafts and command the AI to restructure, rewrite, or transform them with your voice.
 
 <div align="center">
 
-| Settings Modal | High-Contrast Theme |
+| ⚡ Voice Command Mode | 📖 Personal Dictionary |
 | :---: | :---: |
-| ![Settings Modal](docs/images/07-settings-modal.png) | ![High Contrast Mode](docs/images/08-contrast-mode.png) |
+| ![Command Mode](docs/images/04-command-mode.png) | ![Personal Dictionary](docs/images/05-personal-dictionary.png) |
 
 </div>
 
+- **Command Mode**: Say *"Format as executive bullets"* or *"Translate this to German"* to instantly rewrite text.
+- **Personal Dictionary**: Phonetic bias ensures unusual names, technical libraries, and company jargon are transcribed accurately.
+- **Voice Snippets**: Trigger phrases expand into long templates, Calendly links, or markdown boilerplates.
+
 ---
 
-## 🚀 Install on your computer
+## 🚀 Quickstart Guide
 
-You need **[Node.js 20 LTS](https://nodejs.org/)** or newer.
+### Prerequisites
+- **[Node.js 20 LTS](https://nodejs.org/)** or newer (22 LTS recommended).
+
+### 1. Clone & Start
+```bash
+git clone https://github.com/maaz-ahmad-63/mumble_flow.git
+cd mumble_flow
+npm install
+npm test
+npm start
+```
+Open **http://localhost:3050** in your browser.
+
+### 2. Automated Setup Scripts
+```bash
+# macOS & Linux
+bash scripts/setup.sh
+
+# Windows (PowerShell)
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+```
+
+### 3. Configure API Keys (Optional)
+Copy `.env.example` to `.env`:
+```bash
+cp .env.example .env
+```
+Provide your keys for cloud models (free keys available at [console.groq.com](https://console.groq.com) and [aistudio.google.com](https://aistudio.google.com)).
+*With zero API keys, local rule-based cleanup and dictionary features still work offline.*
+
+---
+
+## 🖥️ Desktop Companion (Electron & Global Hotkeys)
+
+The Electron desktop companion provides the true Wispr Flow experience across your entire operating system.
 
 ```bash
-git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
-cd MURMUR-FLOW
+cd desktop/electron
 npm install
 npm start
 ```
 
-Open **http://localhost:3050** in Chrome, Edge, or Safari.
+### How to Dictate:
+1. **Hold <kbd>Space</kbd>** (for >300ms) anywhere on your computer to record; release to type. (Normal quick space taps type a space character normally).
+2. **Press <kbd>F8</kbd>** as an alternate global push-to-talk toggle.
+3. **Press <kbd>Esc</kbd>** at any time to immediately cancel recording.
 
-Or run the automated setup script (checks Node.js, installs dependencies, verifies tests, and starts the server):
-
+### Connecting to a Deployed Backend:
+The Electron app can run against a remote production server:
 ```bash
-# Windows (PowerShell)
-powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
-
-# macOS and Linux
-bash scripts/setup.sh
+MUMBLE_SERVER_URL="https://your-mumble-domain.com" MUMBLE_AUTH_TOKEN="<your_jwt_token>" npm start
 ```
-
-Step-by-step setup guides for Windows, Mac, and Linux are in **[docs/setup.md](docs/setup.md)**.
 
 ---
 
-## 🌐 Host it on a server
+## 🔑 Model Hub & Bring Your Own Keys (BYOK)
 
-**[docs/deploy/README.md](docs/deploy/README.md)** explains hosting costs, architecture, and platform configurations. There is a dedicated deployment guide for:
-- Any Linux VPS (Ubuntu / Debian)
-- Docker & Docker Compose
-- Coolify, Render, Railway, Fly.io
-- AWS, Azure, Google Cloud, DigitalOcean, Hetzner, Oracle Cloud (Free Tier)
-- Home Server (Tailscale private network)
+Mumble AI gives you complete control over your AI providers:
 
-On a fresh Ubuntu server, one command sets up the entire application with HTTPS and password protection:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
-```
-
-> **Note**: A shared hosting plan that only runs PHP cannot run this app. Node.js 20+ runtime is required.
+| Provider | Speech-to-Text (STT) | LLM Zero-Edit Cleanup | Free Tier Available? |
+| :--- | :--- | :--- | :---: |
+| **Groq** | `whisper-large-v3-turbo`, `whisper-large-v3` | `openai/gpt-oss-20b`, `llama-3.3-70b` | ✅ Yes ([console.groq.com](https://console.groq.com/keys)) |
+| **Google Gemini** | `gemini-3.6-flash` | `gemini-3.6-flash` | ✅ Yes ([aistudio.google.com](https://aistudio.google.com/apikey)) |
+| **OpenAI** | `whisper-1` | `gpt-4o-mini`, `gpt-4o` | Pay-as-you-go |
+| **Local (Ollama / Whisper)** | Self-hosted Whisper HTTP endpoint | `llama3.2` via Ollama | ✅ 100% Free & Offline |
 
 ---
 
-## 🔑 Add a free key
+## 🌐 Production Deployment
 
-Microphone dictation and command mode use cloud models. Typed cleanup and local heuristics do not require any keys.
+Mumble AI requires a long-running Node.js process with persistent disk storage for `data/mumble_flow.sqlite` and WebSocket support (`/ws/dictate`).
 
-1. Create a free Groq key at https://console.groq.com/keys
-2. Optional: create a free Gemini key at https://aistudio.google.com/app/apikey
-3. In the web app, open **Settings**, paste the key, and click **Save**
+> [!NOTE]
+> **Serverless Compatibility**: Mumble AI is not compatible with Vercel Serverless because persistent bidirectional WebSockets and SQLite WAL mode require a persistent disk.
 
-Or copy `.env.example` to `.env`, set your keys, and restart:
+### Simplest Safe Deployment: Single Docker Container
+Use the included [Dockerfile](Dockerfile) on any platform with persistent volume storage:
 
-```bash
-cp .env.example .env
-```
-
-| Job | Default Model | Speed / Latency |
-| --- | --- | --- |
-| Speech to text | `whisper-large-v3-turbo` | ~180ms |
-| LLM Zero-Edit | `openai/gpt-oss-20b` | ~120ms |
-| Alternative LLM | `gemini-3.6-flash` | ~250ms |
-
----
-
-## 🖥️ Desktop Companion (F8 in any app)
-
-This is the part that works like Wispr Flow: press a key inside Slack, Cursor, or Word, speak, and the text appears where your cursor is.
-
-**Before you start**
-
-1. The web app is running (`npm start`), and http://localhost:3050 opens.
-2. A speech key is saved in the web app's **Settings**. Without it, every F8 recording fails.
-3. Python 3 is installed. On Windows, get it from [python.org](https://www.python.org/downloads/) and tick **Add python.exe to PATH** in the installer.
-
-### Windows
-
-1. Click **Start**, type `PowerShell`, right-click **Windows PowerShell**, and choose **Run as administrator**. Click **Yes**.
-2. Go to the project folder and install the packages:
-
-   ```powershell
-   cd C:\path\to\MURMUR-FLOW
-   pip install keyboard sounddevice scipy numpy
-   ```
-
-3. Start the companion:
-
-   ```powershell
-   python desktop/whisperflow_companion.py
-   ```
-
-4. Leave that window open. Minimize it if you like.
-5. Click into Slack, Word, or any text box. Press **F8**, speak, press **F8** again.
-
-> **Why administrator?** Windows does not let a normal program see key presses inside apps that run as administrator. So F8 can work in Notepad but do nothing in an app that was started as administrator. Starting PowerShell as administrator avoids that. You can try a normal PowerShell first, and switch if F8 does nothing in some apps.
-
-### macOS
-
-1. Open **Terminal**, go to the project folder, and install the packages:
-
+1. **Render / Fly.io / Railway:**
+   - Deploy as a Docker service.
+   - Mount a persistent volume to `/app/data`.
+   - Set environment secrets:
+     ```bash
+     NODE_ENV=production
+     PORT=3050
+     JWT_SECRET=<32-byte-hex-string>
+     ENCRYPTION_KEY=<32-byte-hex-string>
+     GROQ_API_KEY=gsk_...
+     ```
+2. **Ubuntu VPS with Caddy (1-Command Install):**
    ```bash
-   pip3 install keyboard sounddevice scipy numpy
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
+   Caddy automatically provisions SSL (required for microphone access) and proxies WebSockets.
 
-2. Start it with `sudo`. The `keyboard` package needs it to see key presses on macOS:
+---
 
-   ```bash
-   sudo python3 desktop/whisperflow_companion.py
-   ```
+## 🔒 Security & Encryption
 
-3. When macOS asks, allow **Terminal** in **System Settings → Privacy & Security → Accessibility** and **Microphone**. Then quit and start the companion again.
+- **Authenticated Encryption at Rest**: BYOK keys are encrypted using **AES-256-GCM** with a server-side master key (`ENCRYPTION_KEY`). Decrypted keys are never logged or exposed in client responses.
+- **Cryptographic Password Storage**: Passwords are hashed using `scrypt` with unique cryptographically random salts.
+- **Tenant Isolation**: Multi-tenant architecture ensures strict user isolation across dictionary, snippets, history, usage metrics, and BYOK credentials.
+- **RBAC Guards**: Admin endpoints are strictly guarded with `requireAuth` and `requireAdmin` middleware.
 
-### Linux
+---
 
-The `keyboard` package reads the keyboard device directly, so it needs root. Pasting needs `xclip` and `xdotool`, which only work in an X11 session, not Wayland. Linux is the least tested of the three.
+## 📁 Repository Structure
 
-```bash
-sudo apt-get install -y python3-venv libportaudio2 xclip xdotool
-python3 -m venv .venv
-.venv/bin/pip install keyboard sounddevice scipy numpy
-sudo .venv/bin/python desktop/whisperflow_companion.py
+```text
+client/                  Frontend Web Studio: HTML5, CSS design system, vanilla JS modules
+desktop/electron/        Cross-platform Electron companion with global hotkeys & text injection
+desktop/python/          Optional lightweight Python companion (F8 hotkey daemon)
+server/                  Express REST API & WebSocket streaming server
+server/db/               SQLite schema, WAL connection, and repositories
+server/services/         Auth, BYOK crypto, usage tracking, quotas, transcription, zero-edit
+server/providers/        Extensible provider adapters (Groq, Gemini, OpenAI, Local)
+server/streaming/        Duplex WebSocket audio streaming pipeline (/ws/dictate)
+tests/                   Comprehensive test suites (26 suites covering unit, e2e, security)
+scripts/                 Automated setup and VPS provisioning scripts
+docs/                    Detailed platform guides and deployment documentation
 ```
 
-### Good to know
-
-- The companion pastes through the clipboard. Whatever you had copied is replaced by the dictated text.
-- Run it on the computer with the microphone, never on the server. To use a hosted Murmur Flow, point at it: `python desktop/whisperflow_companion.py --server https://your-domain`. A server behind a password (Caddy basic auth) will refuse it; use a Tailscale address instead.
-- If the four packages are missing, the companion starts in a fallback mode that does not record your voice. Install them first.
-- The tone follows the app you are typing into: Slack and Discord get casual, VS Code, Cursor, and terminals get code, Gmail, Outlook, and Word get formal. The full list and how to change it are in [desktop/README.md](desktop/README.md#automatic-tone).
-- Change the hotkey or force one tone: `--hotkey f9`, `--tone formal`.
-
-All options and fixes are in **[desktop/README.md](desktop/README.md)**.
-
 ---
 
-## 🤖 Give this to a coding agent
+## 🧪 Testing & Validation
 
-Clone the repo, open it in Cursor, Claude Code, GitHub Copilot, Gemini CLI, Windsurf, or Codex, and say **"set this up"**. Those agents read **[AGENTS.md](AGENTS.md)** automatically. It guides them through installation, testing, and deployment without leaking secrets. In Claude Code, `/setup` runs the same steps.
+Run the complete test suite (requires no API keys):
 
-For other agents, copy the prompt in **[docs/agent-prompt.md](docs/agent-prompt.md)**.
+```bash
+npm test
+```
 
----
-
-## 📁 Project layout
-
-| Path | Description |
-| --- | --- |
-| `client/` | Responsive frontend: HTML5, CSS custom design tokens, ES Modules |
-| `server/` | Express REST API, Groq & Gemini providers, rule-based heuristics |
-| `desktop/` | Python companion for global hotkey (`F8`) cross-app typing |
-| `docs/images/` | High-resolution UI screenshots and hero banner |
-| `docs/setup.md` | Local setup walkthrough for Windows, macOS, and Linux |
-| `docs/deploy/` | Hosting manuals for Docker, VPS, Cloud providers, and Homelabs |
-| `scripts/` | Automated setup scripts (`setup.ps1`, `setup.sh`, `install-vps.sh`) |
-| `tests/` | Automated zero-key test suite (`npm test`) |
-| `AGENTS.md` | Standard instructions and behavioral guardrails for coding agents |
-| `data/` | Local persistence for history, snippets, dictionary, and settings |
-
----
-
-## 🔒 Security
-
-- The default web server has no authentication. Keys typed into Settings are stored in `data/whisperflow_store.json`.
-- **Do not expose port 3050 to the public internet without a reverse proxy or auth layer.**
-- Use Caddy basic auth, Cloudflare Access, or Tailscale for remote access.
-- Details and hardening instructions are documented in **[SECURITY.md](SECURITY.md)**.
-
----
-
-## 🤝 Contributing
-
-Contributions are very welcome! Please review **[CONTRIBUTING.md](CONTRIBUTING.md)** before submitting pull requests. All pull requests must pass `npm test`.
+Includes 26 suites verifying SaaS authentication, BYOK encryption, usage calculation, quotas, concurrent request load, and app-aware dictation accuracy.
 
 ---
 
 ## 📄 License
 
-Distributed under the [MIT](LICENSE) License. © 2026 Imad Khan
+Distributed under the [MIT License](LICENSE).  
+Copyright © 2026 Mumble AI Contributors.

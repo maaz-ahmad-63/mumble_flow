@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mumble AI for Business — Voice-First Intelligence for High-Velocity Teams</title>
+  <meta name="description" content="Speak at the speed of thought. Mumble AI turns spoken voice into pristine code, terminal commands, and team documentation with 95%+ zero-edit accuracy." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23ffa946'/%3E%3Cpath d='M12 4a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V7a3 3 0 0 0-3-3z' fill='%23FFFFFF'/%3E%3Cpath d='M6 11a6 6 0 0 0 12 0M12 17v3M9 20h6' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
+  
+  <!-- Typography as specified in DESIGN.md: EB Garamond (headings) & Figtree (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
+  
+  <link rel="stylesheet" href="styles/website.css" />
+</head>
+<body>
+
+  <!-- ========================================================
+       SITE NAVIGATION
+       ======================================================== -->
+  <header class="site-header">
+    <div class="container nav-wrap">
+      <a href="website.html" class="nav-brand" aria-label="Mumble AI Homepage">
+        <div class="brand-symbol">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="currentColor">
+            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
+            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"></path>
+          </svg>
+        </div>
+        <span class="brand-name">Mumble AI</span>
+        <span class="brand-badge">Teams</span>
+      </a>
+
+      <nav aria-label="Main Navigation">
+        <ul class="nav-links" id="navLinks">
+          <li><a href="#features" class="nav-link">Product</a></li>
+          <li><a href="#workflow" class="nav-link">How It Works</a></li>
+          <li><a href="#metrics" class="nav-link">Enterprise</a></li>
+          <li><a href="#pricing" class="nav-link">Pricing</a></li>
+          <li><a href="#faq" class="nav-link">FAQ</a></li>
+        </ul>
+      </nav>
+
+      <div class="nav-cta-cluster">
+        <a href="index.html" class="btn-ghost" title="Open Dictation Sandbox">Web Studio</a>
+        <a href="#pricing" class="btn-primary">Get Started</a>
+        <button type="button" class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Toggle Navigation Menu">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none">
+            <line x1="3" y1="12" x2="21" y2="12"></line>
+            <line x1="3" y1="6" x2="21" y2="6"></line>
+            <line x1="3" y1="18" x2="21" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ========================================================
+         HERO SECTION
+         ======================================================== -->
+    <section class="hero-section">
+      <div class="container hero-content">
+        <div class="eyebrow-badge">
+          <span>⚡ Next-Generation Voice Dictation</span>
+        </div>
+        
+        <h1 class="display-title">
+          The fastest teams don't type. They speak.
+        </h1>
+
+        <p class="subtitle" style="margin-left: auto; margin-right: auto;">
+          Mumble AI turns continuous spoken voice into structured code, documentation, and client communication. 
+          3x faster than keyboard typing with 95%+ zero-edit accuracy.
+        </p>
+
+        <div class="hero-actions">
+          <a href="#pricing" class="btn-primary">
+            Deploy for Your Team
+            <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+              <path fill-rule="evenodd" d="M1 8a.5.5 0 0 1 .5-.5h11.793l-3.147-3.146a.5.5 0 0 1 .708-.708l4 4a.5.5 0 0 1 0 .708l-4 4a.5.5 0 0 1-.708-.708L13.293 8.5H1.5A.5.5 0 0 1 1 8z"/>
+            </svg>
+          </a>
+          <a href="index.html" class="btn-secondary">
+            Open Dictation Studio
+          </a>
+        </div>
+
+        <p class="hero-social-proof-text">
+          Zero software friction · Native desktop push-to-talk · SOC 2 Type II ready
+        </p>
+      </div>
+
+      <!-- Interactive Hero Sandbox Preview -->
+      <div class="container hero-preview-wrapper">
+        <div class="hero-card">
+          <div class="hero-card-header">
+            <div class="hero-card-title-group">
+              <span style="font-family: var(--font-heading); font-size: 1.25rem;">Active Context:</span>
+              <div class="app-pill-tabs" role="tablist">
+                <button type="button" class="app-pill-tab active" data-app="cursor" role="tab">Cursor / VS Code</button>
+                <button type="button" class="app-pill-tab" data-app="slack" role="tab">Slack</button>
+                <button type="button" class="app-pill-tab" data-app="terminal" role="tab">Terminal</button>
+                <button type="button" class="app-pill-tab" data-app="email" role="tab">Gmail</button>
+              </div>
+            </div>
+
+            <div class="hero-audio-wave-bar">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="color: var(--color-primary);">
+                <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
+              </svg>
+              <div class="wave-bars" aria-hidden="true">
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+                <span class="wave-bar"></span>
+              </div>
+              <span style="font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em;">Listening (F8 Active)</span>
+            </div>
+          </div>
+
+          <div class="hero-card-grid">
+            <div class="demo-pane">
+              <div class="pane-label">
+                <span>🎙️ Raw Spoken Voice Stream</span>
+              </div>
+              <div class="raw-stream-content" id="heroRawStream">
+                "hey define a typescript interface for user session with token string expires at number and optional workspace id"
+              </div>
+            </div>
+
+            <div class="demo-pane">
+              <div class="pane-label">
+                <span>✨ Application-Aware Clean Output</span>
+              </div>
+              <pre class="formatted-code-content" id="heroFormattedCode">interface UserSession {
+  token: string;
+  expiresAt: number;
+  workspaceId?: string;
+}</pre>
+            </div>
+          </div>
+
+          <div class="hero-card-footer">
+            <div class="badge-zero-edit">
+              <svg viewBox="0 0 16 16" width="12" height="12" fill="currentColor">
+                <path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/>
+              </svg>
+              <span>96.4% Zero-Edit Accuracy</span>
+            </div>
+            <div>Latency: <strong>480ms</strong> · Provider: <strong>Whisper Large V3 Turbo</strong></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TRUSTED BY / LOGOS SECTION
+         ======================================================== -->
+    <section class="logos-section">
+      <div class="container">
+        <p class="logos-heading">Empowering engineers, founders, and knowledge workers worldwide</p>
+        <div class="logos-grid">
+          <div class="logo-item">⬡ HYPERSCALE</div>
+          <div class="logo-item">◈ VECTORWORKS</div>
+          <div class="logo-item">❖ KINETIC LABS</div>
+          <div class="logo-item">⧫ MERIDIAN AI</div>
+          <div class="logo-item">▲ SYNAPSE CLOUD</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         METRICS SECTION
+         ======================================================== -->
+    <section class="metrics-section" id="metrics">
+      <div class="container">
+        <div class="section-head-center">
+          <h2 class="section-title">Designed for velocity, engineered for precision.</h2>
+          <p class="subtitle" style="margin-left: auto; margin-right: auto;">
+            Traditional voice recognition forces you to spend more time correcting errors than typing. 
+            Mumble AI pairs deterministic syntactic engines with modern foundation models to deliver instant accuracy.
+          </p>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-card">
+            <div class="metric-number">3<span>×</span></div>
+            <div class="metric-label">Input Velocity</div>
+            <p class="metric-desc">180+ words per minute spoken input vs. typical 45–55 WPM on mechanical keyboards.</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-number">95<span>%</span></div>
+            <div class="metric-label">Zero-Edit Rate</div>
+            <p class="metric-desc">Proprietary dictionary matching, snippet expansion, and false-start cleanup eliminate backspacing.</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-number">0<span>$</span></div>
+            <div class="metric-label">Token Waste</div>
+            <p class="metric-desc">Deterministic rules handle common cleanup locally without paying redundant cloud LLM token fees.</p>
+          </div>
+
+          <div class="metric-card">
+            <div class="metric-number">100<span>%</span></div>
+            <div class="metric-label">Data Sovereignty</div>
+            <p class="metric-desc">Run fully private local models with Local Whisper or bring your own enterprise API keys.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         FEATURES BENTO GRID
+         ======================================================== -->
+    <section class="features-section" id="features">
+      <div class="container">
+        <div class="section-head-center">
+          <span class="eyebrow-badge">Product Architecture</span>
+          <h2 class="section-title">Everything you need to dictate with confidence.</h2>
+          <p class="subtitle" style="margin-left: auto; margin-right: auto;">
+            Built from the ground up for modern engineering workflows and cross-platform desktop integration.
+          </p>
+        </div>
+
+        <div class="bento-grid">
+          <!-- Bento Card 1: Application Awareness -->
+          <div class="bento-card bento-span-7">
+            <div>
+              <span class="step-tag">Active App Detection</span>
+              <h3 class="card-title">Automatically understands what you're writing.</h3>
+              <p class="subtitle" style="font-size: 1rem;">
+                Mumble AI detects whether text is destined for Cursor, VS Code, Terminal, Slack, or Gmail. 
+                It formats markdown tables in Notion, types camelCase variables in IDEs, and crafts friendly punctuation in Slack.
+              </p>
+            </div>
+            <div class="bento-visual-box">
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <span class="badge-zero-edit" style="background: var(--color-dawn); color: var(--color-text);">Cursor → Developer Mode</span>
+                <span class="badge-zero-edit" style="background: var(--base-color-system--success-green); color: var(--color-fathom);">Slack → Casual Mode</span>
+                <span class="badge-zero-edit" style="background: #ffe3dc; color: var(--color-flare);">Terminal → Bash Syntax</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento Card 2: Multi-Model Hub -->
+          <div class="bento-card bento-span-5 bento-fathom">
+            <div>
+              <span class="step-tag" style="color: var(--color-primary);">Freedom of Choice</span>
+              <h3 class="card-title" style="color: var(--base-color--lumen);">Multi-Model AI Hub.</h3>
+              <p style="font-size: 1rem; color: rgba(255, 255, 235, 0.85);">
+                Configure your Speech-to-Text provider and AI formatting engines independently. 
+                Seamlessly swap between Groq Whisper Turbo, OpenAI Whisper, Google Gemini, or 100% private offline models.
+              </p>
+            </div>
+            <div class="bento-visual-box">
+              <div style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-primary);">
+                STT: Groq Whisper V3 Turbo (480ms)<br/>
+                LLM: Deterministic Engine ($0.00 / 0 tokens)
+              </div>
+            </div>
+          </div>
+
+          <!-- Bento Card 3: Personal & Team Dictionary -->
+          <div class="bento-card bento-span-4">
+            <div>
+              <span class="step-tag">Team Terminology</span>
+              <h3 class="card-title">Shared Dictionary.</h3>
+              <p class="subtitle" style="font-size: 0.9375rem;">
+                Ensure brand names, internal service architectures, repo paths, and team members' names are spelled with 100% fidelity on the first pass.
+              </p>
+            </div>
+            <div class="bento-visual-box">
+              <span style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-text);">
+                "post grass" → <strong>PostgreSQL</strong><br/>
+                "cubernetes" → <strong>Kubernetes</strong>
+              </span>
+            </div>
+          </div>
+
+          <!-- Bento Card 4: Voice Snippets -->
+          <div class="bento-card bento-span-4">
+            <div>
+              <span class="step-tag">Expansion Engine</span>
+              <h3 class="card-title">Voice Snippets.</h3>
+              <p class="subtitle" style="font-size: 0.9375rem;">
+                Speak short trigger phrases to instantly expand boilerplate PR descriptions, meeting follow-ups, standard disclaimers, or code templates.
+              </p>
+            </div>
+            <div class="bento-visual-box">
+              <span style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-text);">
+                Trigger: <em>"standup update"</em><br/>
+                → Formats yesterday, today, and blockers.
+              </span>
+            </div>
+          </div>
+
+          <!-- Bento Card 5: Push-to-Talk Companion -->
+          <div class="bento-card bento-span-4">
+            <div>
+              <span class="step-tag">System Integration</span>
+              <h3 class="card-title">Global Hotkey (F8).</h3>
+              <p class="subtitle" style="font-size: 0.9375rem;">
+                Works in every desktop program. Hold F8 to speak anywhere—text automatically streams into whatever window is in focus.
+              </p>
+            </div>
+            <div class="bento-visual-box">
+              <span style="font-family: var(--font-mono); font-size: 0.8125rem; color: var(--color-primary);">
+                macOS Accessibility + Windows CGEvent
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         HOW IT WORKS / WORKFLOW
+         ======================================================== -->
+    <section class="workflow-section" id="workflow">
+      <div class="container">
+        <div class="section-head-center">
+          <span class="eyebrow-badge">Seamless Flow</span>
+          <h2 class="section-title">How Mumble AI powers your day.</h2>
+          <p class="subtitle" style="margin-left: auto; margin-right: auto;">
+            Zero context switching. Your hands stay in position while your thoughts flow into the active document.
+          </p>
+        </div>
+
+        <div class="workflow-steps-grid">
+          <div class="step-card">
+            <div class="step-number">01</div>
+            <div class="step-tag">Trigger</div>
+            <h3 class="card-title" style="font-size: 1.5rem;">Hold F8 Anywhere</h3>
+            <p class="subtitle" style="font-size: 0.9375rem;">
+              Press and hold the global hotkey (or tap Space in the browser). 
+              A sleek floating indicator confirms audio streaming without stealing window focus.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">02</div>
+            <div class="step-tag">Speak</div>
+            <h3 class="card-title" style="font-size: 1.5rem;">Speak Naturally</h3>
+            <p class="subtitle" style="font-size: 0.9375rem;">
+              Pause, self-correct ("actually let's make that a boolean"), or use technical jargon. 
+              Mumble AI strips filler words and aligns punctuation deterministically.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">03</div>
+            <div class="step-tag">Insert</div>
+            <h3 class="card-title" style="font-size: 1.5rem;">Direct Native Insertion</h3>
+            <p class="subtitle" style="font-size: 0.9375rem;">
+              Release the key. Your cleaned text lands precisely at your cursor with clipboard preservation and zero latency delay.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         PRICING SECTION
+         ======================================================== -->
+    <section class="pricing-section" id="pricing">
+      <div class="container">
+        <div class="section-head-center">
+          <span class="eyebrow-badge">Predictable Investment</span>
+          <h2 class="section-title">Simple, transparent pricing for any team size.</h2>
+          <p class="subtitle" style="margin-left: auto; margin-right: auto;">
+            Start free on your local machine, or unlock collaborative dictionaries and enterprise sovereignty.
+          </p>
+        </div>
+
+        <div class="pricing-toggle-wrap">
+          <div class="pricing-toggle" role="radiogroup" aria-label="Billing frequency">
+            <button type="button" class="toggle-btn" id="pricingMonthlyBtn">Monthly</button>
+            <button type="button" class="toggle-btn active" id="pricingAnnualBtn">Annual</button>
+          </div>
+          <span class="discount-badge">Save 20%</span>
+        </div>
+
+        <div class="pricing-cards-grid">
+          <!-- Tier 1: Community / Starter -->
+          <div class="pricing-card">
+            <div>
+              <h3 class="plan-name">Community</h3>
+              <p class="plan-desc">For individual developers and open-source contributors.</p>
+              
+              <div class="price-row">
+                <span class="price-currency">$</span>
+                <span class="price-amount">0</span>
+                <span class="price-period">/ forever</span>
+              </div>
+
+              <ul class="features-list">
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Unlimited local dictation</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Bring your own free Groq/Gemini key</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Global F8 hotkey & desktop tray</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Personal dictionary & snippets</span>
+                </li>
+              </ul>
+            </div>
+
+            <a href="index.html" class="btn-secondary" style="width: 100%;">Open Free Studio</a>
+          </div>
+
+          <!-- Tier 2: Professional (Featured) -->
+          <div class="pricing-card featured">
+            <span class="plan-badge">Most Popular</span>
+            <div>
+              <h3 class="plan-name">Pro Team</h3>
+              <p class="plan-desc">For fast-growing engineering and product teams.</p>
+              
+              <div class="price-row">
+                <span class="price-currency">$</span>
+                <span class="price-amount" id="proPriceAmount">12</span>
+                <span class="price-period" id="proPricePeriod">/ user / mo billed annually</span>
+              </div>
+
+              <ul class="features-list">
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>All Community features included</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Shared workspace dictionary & snippets</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Managed high-speed Whisper cloud pipeline</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Team analytics & cost intelligence dashboard</span>
+                </li>
+              </ul>
+            </div>
+
+            <a href="index.html" class="btn-primary" style="width: 100%;">Start 14-Day Free Trial</a>
+          </div>
+
+          <!-- Tier 3: Enterprise -->
+          <div class="pricing-card">
+            <div>
+              <h3 class="plan-name">Enterprise</h3>
+              <p class="plan-desc">For organizations requiring strict compliance and sovereignty.</p>
+              
+              <div class="price-row">
+                <span class="price-amount" style="font-size: 2.5rem;">Custom</span>
+              </div>
+
+              <ul class="features-list">
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>SAML / Okta / Azure AD Single Sign-On</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Zero data retention agreements</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Dedicated VPC or on-prem deployment</span>
+                </li>
+                <li class="feature-item">
+                  <svg viewBox="0 0 16 16" width="14" height="14" fill="currentColor"><path d="M13.854 3.646a.5.5 0 0 1 0 .708l-7 7a.5.5 0 0 1-.708 0l-3.5-3.5a.5.5 0 1 1 .708-.708L6.5 10.293l6.646-6.647a.5.5 0 0 1 .708 0z"/></svg>
+                  <span>Custom fine-tuned terminology adapters</span>
+                </li>
+              </ul>
+            </div>
+
+            <a href="mailto:enterprise@mumble.ai" class="btn-secondary" style="width: 100%;">Contact Sales</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         TESTIMONIALS SECTION
+         ======================================================== -->
+    <section class="testimonials-section">
+      <div class="container">
+        <div class="section-head-center">
+          <span class="eyebrow-badge">Customer Stories</span>
+          <h2 class="section-title">Loved by developers who build at full tilt.</h2>
+        </div>
+
+        <div class="testimonials-grid">
+          <div class="quote-card">
+            <p class="quote-text">
+              “Mumble AI completely changed how I write code in Cursor and review pull requests. The developer terminology engine never gets confused by function names or bash flags.”
+            </p>
+            <div class="quote-author">
+              <div class="author-avatar">EL</div>
+              <div>
+                <div class="author-name">Elena Rostova</div>
+                <div class="author-role">Staff Engineer at Meridian</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-card">
+            <p class="quote-text">
+              “We deployed Mumble AI across our 60-person engineering team. We saved over 14 hours per engineer each month on technical documentation and PR reviews alone.”
+            </p>
+            <div class="quote-author">
+              <div class="author-avatar">DK</div>
+              <div>
+                <div class="author-name">David Kim</div>
+                <div class="author-role">VP of Engineering at Kinetic</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="quote-card">
+            <p class="quote-text">
+              “The fact that deterministic cleanup runs with zero LLM tokens means our cloud AI bills stay near zero. It’s the smartest architectural design I’ve seen in voice AI.”
+            </p>
+            <div class="quote-author">
+              <div class="author-avatar">ST</div>
+              <div>
+                <div class="author-name">Siddharth Thapar</div>
+                <div class="author-role">Founder at Synapse Cloud</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         FAQ SECTION
+         ======================================================== -->
+    <section class="faq-section" id="faq">
+      <div class="container container-narrow">
+        <div class="section-head-center">
+          <span class="eyebrow-badge">Got Questions?</span>
+          <h2 class="section-title">Frequently Asked Questions</h2>
+        </div>
+
+        <div class="faq-list">
+          <div class="faq-item open">
+            <button type="button" class="faq-trigger">
+              <span>How does Mumble AI differ from standard OS speech recognition?</span>
+              <svg class="faq-arrow" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            <div class="faq-body">
+              Standard OS dictation transcribes literally without understanding programming context, markdown conventions, or conversational self-corrections. Mumble AI detects the application you are currently typing into (VS Code, Slack, Terminal) and applies deterministic code formatting, custom dictionaries, and snippet expansion with sub-500ms latency.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-trigger">
+              <span>Is my voice recording stored or trained on?</span>
+              <svg class="faq-arrow" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            <div class="faq-body">
+              No. Audio recordings are held in memory only for the duration of transcription and are purged immediately. When using local Whisper mode, no audio leaves your physical machine. In cloud mode, requests are processed under zero-data-retention agreements.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-trigger">
+              <span>Does the global F8 hotkey work in any desktop application?</span>
+              <svg class="faq-arrow" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            <div class="faq-body">
+              Yes. The Mumble AI desktop companion operates across macOS and Windows. When you hold F8, it listens, polishes your speech, and inserts text directly at your current cursor position without altering your system clipboard.
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button type="button" class="faq-trigger">
+              <span>Can I use my own API keys?</span>
+              <svg class="faq-arrow" viewBox="0 0 16 16" width="14" height="14" fill="currentColor">
+                <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+              </svg>
+            </button>
+            <div class="faq-body">
+              Yes. Mumble AI includes a built-in Multi-Model AI Hub allowing you to plug in your own free or enterprise keys for Groq, OpenAI, or Google Gemini.
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         PRE-FOOTER CTA BANNER
+         ======================================================== -->
+    <section class="cta-banner-section">
+      <div class="container">
+        <div class="cta-banner-card">
+          <h2>Ready to multiply your team's velocity?</h2>
+          <p>
+            Start dictating with 95%+ zero-edit accuracy today. Available for macOS and Windows.
+          </p>
+          <div class="cta-banner-actions">
+            <a href="index.html" class="btn-primary" style="background: var(--color-primary); color: #ffffff; border-color: var(--color-primary);">
+              Launch Dictation Studio
+            </a>
+            <a href="#pricing" class="btn-secondary" style="background: rgba(255, 255, 235, 0.15); color: #ffffeb; border-color: rgba(255, 255, 235, 0.3);">
+              View Team Pricing
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================================
+       FOOTER
+       ======================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand-info">
+          <div class="footer-brand-title">Mumble AI</div>
+          <p style="font-size: 0.9375rem; color: rgba(255, 255, 235, 0.7); line-height: 1.6;">
+            Voice-first intelligence for high-velocity software engineering and business teams.
+          </p>
+          <div style="margin-top: 8px;">
+            <span class="footer-status-indicator">
+              <span class="pulse-green"></span>
+              All Systems Operational
+            </span>
+          </div>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Product</div>
+          <ul class="footer-links">
+            <li><a href="#features" class="footer-link">Application Awareness</a></li>
+            <li><a href="#features" class="footer-link">Multi-Model Hub</a></li>
+            <li><a href="#features" class="footer-link">Team Dictionary</a></li>
+            <li><a href="index.html" class="footer-link">Web Sandbox</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Platform</div>
+          <ul class="footer-links">
+            <li><a href="index.html" class="footer-link">macOS App</a></li>
+            <li><a href="index.html" class="footer-link">Windows App</a></li>
+            <li><a href="#pricing" class="footer-link">Enterprise SSO</a></li>
+            <li><a href="#faq" class="footer-link">Security & Privacy</a></li>
+          </ul>
+        </div>
+
+        <div>
+          <div class="footer-col-title">Company</div>
+          <ul class="footer-links">
+            <li><a href="#metrics" class="footer-link">About Us</a></li>
+            <li><a href="#pricing" class="footer-link">Pricing</a></li>
+            <li><a href="mailto:support@mumble.ai" class="footer-link">Contact</a></li>
+            <li><a href="https://github.com" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>&copy; 2026 Mumble AI Inc. All rights reserved.</div>
+        <div style="display: flex; gap: 18px;">
+          <a href="#" class="footer-link">Privacy Policy</a>
+          <a href="#" class="footer-link">Terms of Service</a>
+          <a href="#" class="footer-link">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/website.js"></script>
+</body>
+</html>

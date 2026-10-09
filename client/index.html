@@ -1,24 +1,20 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Murmur Flow — Open-Source AI Voice Dictation & Meeting Intelligence</title>
-  <meta name="description" content="100% self-hosted, open-source alternative to Wispr Flow. Push-to-talk voice dictation with 90%+ zero-edit accuracy, meeting diarization, and cross-app typing." />
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect x='6' y='1.5' width='4' height='8' rx='2' fill='none' stroke='%23161616' stroke-width='1.5'/%3E%3Cpath d='M4 7.5a4 4 0 0 0 8 0M8 11.5V14M5.5 14h5' fill='none' stroke='%23161616' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E" />
+  <title>Mumble AI — Your voice, anywhere</title>
+  <meta name="description" content="Commercial-grade desktop voice dictation and text intelligence. Push-to-talk with 95%+ zero-edit accuracy, developer syntax preservation, and multi-model flexibility." />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23ffa946'/%3E%3Cpath d='M12 4a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V7a3 3 0 0 0-3-3z' fill='%23FFFFFF'/%3E%3Cpath d='M6 11a6 6 0 0 0 12 0M12 17v3M9 20h6' stroke='%23FFFFFF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=Instrument+Serif&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@400;500;600&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" />
   <script>
     (function () {
-      var key = 'whisperflow-theme';
+      var key = 'mumble-theme';
       var saved = null;
-      try { saved = localStorage.getItem(key); } catch (e) {}
-      var theme = saved;
-      if (theme !== 'light' && theme !== 'dark' && theme !== 'contrast') {
-        theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-        try { localStorage.setItem(key, theme); } catch (e) {}
-      }
+      try { saved = localStorage.getItem(key) || localStorage.getItem('whisperflow-theme'); } catch (e) {}
+      var theme = saved || 'light';
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
@@ -31,43 +27,122 @@
   <a class="skip-link" href="#sandboxTextarea">Skip to transcript</a>
 
   <header class="app-header">
-    <button type="button" class="wordmark" id="wordmarkBtn">Murmur Flow</button>
+    <div class="brand-cluster">
+      <button type="button" class="wordmark" id="wordmarkBtn">
+        <span class="brand-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="9" y="2" width="6" height="12" rx="3" fill="currentColor" fill-opacity="0.15"></rect>
+            <path d="M5 10a7 7 0 0 0 14 0"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+            <line x1="8" y1="22" x2="16" y2="22"></line>
+          </svg>
+        </span>
+        <span class="brand-text">Mumble AI</span>
+        <span class="brand-version">v2.0</span>
+      </button>
+      <span class="brand-tagline">Your voice, anywhere.</span>
+    </div>
 
-    <nav class="nav-tabs" aria-label="Sections">
+    <nav class="nav-tabs" aria-label="Navigation">
       <button type="button" class="nav-tab active" data-view="viewDictation" aria-pressed="true">Dictate</button>
-      <button type="button" class="nav-tab" data-view="viewNotetaker" aria-pressed="false">Notes</button>
-      <button type="button" class="nav-tab" data-view="viewCommand" aria-pressed="false">Command</button>
+      <button type="button" class="nav-tab" data-view="viewHistory" aria-pressed="false">History</button>
       <button type="button" class="nav-tab" data-view="viewDictionary" aria-pressed="false">Dictionary</button>
       <button type="button" class="nav-tab" data-view="viewSnippets" aria-pressed="false">Snippets</button>
+      <button type="button" class="nav-tab" data-view="viewModels" aria-pressed="false">AI Models</button>
+      <button type="button" class="nav-tab" data-view="viewUsage" aria-pressed="false">Usage</button>
+      <button type="button" class="nav-tab" data-view="viewNotetaker" aria-pressed="false">Notes</button>
+      <button type="button" class="nav-tab" data-view="viewCommand" aria-pressed="false">Command</button>
+      <button type="button" class="nav-tab admin-tab" id="navTabAdmin" data-view="viewAdmin" aria-pressed="false" style="display: none;">Admin</button>
     </nav>
 
     <div class="header-actions">
       <div class="theme-switch" role="radiogroup" aria-label="Theme">
-        <button type="button" role="radio" data-theme-choice="light" aria-checked="false">Light</button>
-        <button type="button" role="radio" data-theme-choice="dark" aria-checked="false">Dark</button>
-        <button type="button" role="radio" data-theme-choice="contrast" aria-checked="false">Contrast</button>
+        <button type="button" role="radio" data-theme-choice="dark" aria-checked="false" title="Dark theme">Dark</button>
+        <button type="button" role="radio" data-theme-choice="light" aria-checked="true" title="Light theme">Light</button>
       </div>
-      <button type="button" id="settingsBtn" class="btn-quiet" aria-haspopup="dialog">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
-          <path d="M2 4.5h12M2 11.5h12" />
-          <circle cx="5.5" cy="4.5" r="1.75" />
-          <circle cx="10.5" cy="11.5" r="1.75" />
+
+      <a href="website.html" class="btn-quiet" title="View Mumble for Business Website">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="6.5"></circle>
+          <path d="M1.5 8h13M8 1.5c2 2.5 2 10.5 0 13M8 1.5c-2 2.5-2 10.5 0 13"></path>
+        </svg>
+        Website
+      </a>
+
+      <button type="button" id="settingsBtn" class="btn-quiet" aria-haspopup="dialog" title="Preferences & Account">
+        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+          <circle cx="8" cy="8" r="2.5"></circle>
+          <path d="M8 1.5v1.2M8 13.3v1.2M1.5 8h1.2M13.3 8h1.2M3.4 3.4l.8.8M11.8 11.8l.8.8M3.4 12.6l.8-.8M11.8 4.2l.8-.8"></path>
         </svg>
         Settings
       </button>
+
+      <!-- Unauthenticated State: Sign In Button -->
+      <button type="button" id="headerSignInBtn" class="btn-primary" style="padding: 5px 14px; font-size: 13px; font-weight: 600; display: inline-flex; align-items: center; gap: 6px; border-radius: var(--radius-sm);" title="Sign In to Mumble AI">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M6 2H3a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M10 11l3-3-3-3M13 8H5"/>
+        </svg>
+        <span>Sign In</span>
+      </button>
+
+      <!-- Authenticated State: User Badge & Direct Sign Out -->
+      <div id="headerUserGroup" style="display: none; align-items: center; gap: 8px;">
+        <button type="button" class="user-badge" id="userBadge" title="Account & Identity" aria-haspopup="dialog" style="background: var(--bg-elevated); border: 1px solid var(--border-subtle); padding: 3px 10px 3px 3px; border-radius: 99px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <span class="user-avatar" id="userAvatarText" style="width: 24px; height: 24px; font-size: 11px;">M</span>
+          <span id="headerUserName" style="font-size: 12px; font-weight: 600; color: var(--text-main); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Admin</span>
+          <span id="headerUserRoleBadge" class="badge" style="font-size: 10px; padding: 1px 6px; border-radius: 99px; background: rgba(255,169,70,0.15); color: var(--accent);">admin</span>
+        </button>
+
+        <button type="button" id="headerSignOutBtn" class="btn-quiet" title="Sign Out of Account" style="color: var(--danger, #f87171); border: 1px solid var(--border-subtle); padding: 4px 8px; font-size: 12px; border-radius: var(--radius-sm); display: inline-flex; align-items: center; gap: 4px;">
+          <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 2h4a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H9M6 11l-3-3 3-3M3 8h8"/>
+          </svg>
+          <span>Sign Out</span>
+        </button>
+      </div>
     </div>
   </header>
 
   <main class="main-content" id="main">
 
+    <!-- 1. DICTATION VIEW -->
     <div id="viewDictation" class="view-panel active">
       <div class="workspace">
         <div class="workspace-main">
+
+          <!-- Model Live Status Indicator Bar -->
+          <div class="model-indicator-bar" id="dictateModelBar">
+            <div class="indicator-left">
+              <span class="app-symbol">🎙️ Mumble AI</span>
+              <div class="model-tag stt-tag" id="dictateSttBadge" title="Speech-to-Text Engine">
+                <span class="tag-label">STT:</span>
+                <span class="tag-val" id="sttModelName">Groq · Whisper Large V3 Turbo</span>
+              </div>
+              <div class="model-tag llm-tag" id="dictateAiBadge" title="AI Formatting Engine">
+                <span class="tag-label">AI:</span>
+                <span class="tag-val" id="llmModelName">Groq · GPT-OSS-20B</span>
+              </div>
+              <div class="model-tag mode-tag" id="dictateAiModeBadge">
+                <span class="tag-label">Mode:</span>
+                <span class="tag-val" id="aiModeName">Auto</span>
+              </div>
+            </div>
+            <div class="indicator-right">
+              <div class="status-pill-indicator" id="dictateStageBadge">
+                <span class="status-dot"></span>
+                <span id="dictateStageText">Ready</span>
+              </div>
+              <button type="button" class="btn-subtle" id="openModelHubQuickBtn" title="Switch models">Switch Models</button>
+            </div>
+          </div>
+
           <div class="tone-row">
-            <span class="eyebrow" id="toneLabel">Tone</span>
+            <span class="eyebrow" id="toneLabel">Tone / Style</span>
             <div class="tone-chips-bar" role="toolbar" aria-labelledby="toneLabel">
               <button type="button" class="tone-chip active" data-tone="casual">Casual</button>
               <button type="button" class="tone-chip" data-tone="formal">Formal</button>
+              <button type="button" class="tone-chip" data-tone="developer">Developer</button>
+              <button type="button" class="tone-chip" data-tone="terminal">Terminal</button>
               <button type="button" class="tone-chip" data-tone="executive">Executive</button>
               <button type="button" class="tone-chip" data-tone="code">Code</button>
               <button type="button" class="tone-chip" data-tone="bullet">Bullets</button>
@@ -86,12 +161,12 @@
 
           <section class="sheet" aria-label="Transcript">
             <div class="sheet-bar">
-              <p class="eyebrow">Transcript</p>
+              <p class="eyebrow">Transcript Sandbox</p>
               <div class="editor-actions">
                 <button type="button" id="copyEditorBtn" class="btn-quiet" title="Copy text to clipboard">Copy</button>
                 <button type="button" id="exportMdBtn" class="btn-quiet" title="Download as Markdown">MD</button>
                 <button type="button" id="exportTxtBtn" class="btn-quiet" title="Download as text">TXT</button>
-                <button type="button" id="webhookBtn" class="btn-quiet" title="Send to the webhook in Settings">Send</button>
+                <button type="button" id="webhookBtn" class="btn-quiet" title="Send to webhook">Webhook</button>
                 <button type="button" id="clearEditorBtn" class="btn-quiet" title="Clear text">Clear</button>
               </div>
             </div>
@@ -100,51 +175,63 @@
               <textarea
                 id="sandboxTextarea"
                 class="editor-textarea"
-                placeholder="Hold Space and speak. The cleaned line lands here."
+                placeholder="Hold Space or press F8 to dictate. Your cleaned text lands here at your cursor."
               ></textarea>
             </div>
 
             <div class="result-split">
               <div class="result-pane">
-                <p class="eyebrow">Heard</p>
+                <p class="eyebrow">Raw Transcript</p>
                 <div id="diffRawText" class="result-body is-idle">—</div>
               </div>
               <div class="result-pane">
-                <p class="eyebrow">Result</p>
+                <p class="eyebrow">Polished Output</p>
                 <div id="diffPolishedText" class="result-body is-idle">—</div>
               </div>
             </div>
 
             <div class="sheet-foot">
-              <p class="hint">Hold Space outside a field. Esc cancels.</p>
+              <p class="hint">Hold Space or F8 to speak. Double-tap Space for Hands-free. Esc cancels.</p>
               <div class="metrics-row">
-                <div class="metric-pill">
+                <div class="metric-pill" title="Total roundtrip latency">
                   <div class="metric-pill-title">Latency</div>
                   <div id="metricLatency" class="metric-pill-value">—</div>
                 </div>
-                <div class="metric-pill">
+                <div class="metric-pill" title="Words Per Minute">
                   <div class="metric-pill-title">Speed</div>
                   <div id="metricSpeed" class="metric-pill-value">—</div>
                 </div>
-                <div class="metric-pill">
+                <div class="metric-pill" title="Speech preservation score">
                   <div class="metric-pill-title">Zero-edit</div>
                   <div id="metricZeroEdit" class="metric-pill-value">—</div>
+                </div>
+                <div class="metric-pill" title="Audio recording duration">
+                  <div class="metric-pill-title">Duration</div>
+                  <div id="metricDuration" class="metric-pill-value">—</div>
+                </div>
+                <div class="metric-pill" title="ASR model latency">
+                  <div class="metric-pill-title">ASR</div>
+                  <div id="metricAsr" class="metric-pill-value">—</div>
+                </div>
+                <div class="metric-pill cost-metric" title="Estimated cost for this dictation">
+                  <div class="metric-pill-title">Est. Cost</div>
+                  <div id="metricCost" class="metric-pill-value">$0.0000</div>
                 </div>
               </div>
             </div>
           </section>
 
           <div class="samples">
-            <span class="eyebrow">Samples</span>
+            <span class="eyebrow">Quick Samples</span>
             <button type="button" class="chip" data-sample-clip="meeting">Launch note</button>
             <button type="button" class="chip" data-sample-clip="code">Bug report</button>
-            <button type="button" class="chip" data-sample-clip="email">Follow-up</button>
+            <button type="button" class="chip" data-sample-clip="email">Client Follow-up</button>
           </div>
         </div>
 
-        <aside class="history-rail" aria-label="History">
+        <aside class="history-rail" aria-label="Recent History">
           <div class="rail-head">
-            <p class="eyebrow">History</p>
+            <p class="eyebrow">Recent Dictations</p>
             <button type="button" id="historyClearBtn" class="btn-text" disabled>Clear</button>
           </div>
           <div id="historyList"></div>
@@ -152,11 +239,388 @@
       </div>
     </div>
 
+    <!-- 2. HISTORY VIEW -->
+    <div id="viewHistory" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">History</p>
+          <p class="view-lead">Search and review past transcriptions, latencies, and estimated costs.</p>
+        </div>
+        <div class="view-actions">
+          <input type="text" id="historySearchInput" class="form-input search-box" placeholder="Search dictation history..." />
+          <button type="button" id="historyExportAllBtn" class="btn-quiet">Export All (JSON)</button>
+        </div>
+      </div>
+      <div class="history-full-container">
+        <div id="historyFullList" class="history-cards-grid"></div>
+      </div>
+    </div>
+
+    <!-- 3. AI MODELS / MODEL HUB VIEW -->
+    <div id="viewModels" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Multi-Model AI Hub</p>
+          <p class="view-lead">Configure Speech-to-Text and AI Enhancement independently with transparent per-unit pricing.</p>
+        </div>
+      </div>
+
+      <div class="model-hub-grid">
+        <!-- STT Catalog Column -->
+        <section class="hub-column">
+          <div class="column-header">
+            <div>
+              <h3 class="column-title">Speech-to-Text (STT)</h3>
+              <p class="column-subtitle">Transcribes microphone voice streams into raw text</p>
+            </div>
+            <span class="badge-count" id="sttModelCount">0 models</span>
+          </div>
+
+          <div id="sttModelCardsGrid" class="cards-stack">
+            <!-- Dynamic STT cards rendered via app.js -->
+          </div>
+        </section>
+
+        <!-- LLM Catalog Column -->
+        <section class="hub-column">
+          <div class="column-header">
+            <div>
+              <h3 class="column-title">AI Enhancement (LLM)</h3>
+              <p class="column-subtitle">Polishes grammar, cleans syntax, and formats output</p>
+            </div>
+            <span class="badge-count" id="llmModelCount">0 models</span>
+          </div>
+
+          <div id="llmModelCardsGrid" class="cards-stack">
+            <!-- Dynamic LLM cards rendered via app.js -->
+          </div>
+        </section>
+      </div>
+
+      <!-- Live Cost Estimator Panel -->
+      <section class="estimator-panel">
+        <div class="estimator-header">
+          <div>
+            <h3 class="estimator-title">Live Cost Estimator</h3>
+            <p class="estimator-subtitle">Simulate real-time infrastructure costs for your chosen model pair.</p>
+          </div>
+          <div class="active-pair-summary">
+            <span id="estActivePairText">Selected: Groq Whisper + Groq GPT-OSS-20B</span>
+          </div>
+        </div>
+
+        <div class="estimator-body">
+          <div class="estimator-inputs">
+            <div class="input-block">
+              <label for="estAudioMinutes">Spoken Audio: <span id="estMinutesDisplay">5</span> min</label>
+              <input type="range" id="estAudioMinutes" min="1" max="60" value="5" class="slider" />
+            </div>
+
+            <div class="input-block">
+              <label for="estInputTokens">Prompt Tokens: <span id="estInputTokensDisplay">1,000</span></label>
+              <input type="range" id="estInputTokens" min="100" max="10000" step="100" value="1000" class="slider" />
+            </div>
+
+            <div class="input-block">
+              <label for="estOutputTokens">Output Tokens: <span id="estOutputTokensDisplay">300</span></label>
+              <input type="range" id="estOutputTokens" min="50" max="4000" step="50" value="300" class="slider" />
+            </div>
+          </div>
+
+          <div class="estimator-results">
+            <div class="cost-stat-card">
+              <div class="cost-stat-label">Estimated STT Cost</div>
+              <div class="cost-stat-value" id="estSttCostValue">$0.000154</div>
+            </div>
+            <div class="cost-stat-card">
+              <div class="cost-stat-label">Estimated LLM Cost</div>
+              <div class="cost-stat-value" id="estLlmCostValue">$0.000330</div>
+            </div>
+            <div class="cost-stat-card highlight-card">
+              <div class="cost-stat-label">Total Estimated Cost</div>
+              <div class="cost-stat-value" id="estTotalCostValue">$0.000484</div>
+            </div>
+          </div>
+        </div>
+        <p class="disclaimer-text">Estimated cost based on published provider rates. Actual charges depend on usage volume and provider billing tiers.</p>
+      </section>
+    </div>
+
+    <!-- 4. USAGE & COST DASHBOARD VIEW -->
+    <div id="viewUsage" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Usage & Cost Analytics</p>
+          <p class="view-lead">Track your audio minutes, token usage, monthly quotas, and separated BYOK vs Platform infrastructure costs.</p>
+        </div>
+        <button type="button" id="refreshUsageBtn" class="btn-quiet">Refresh</button>
+      </div>
+
+      <!-- Quota & Allowance Banner -->
+      <div class="quota-banner">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="font-weight: 600; font-size: 14px;">Monthly Quota Tier:</span>
+            <span id="dashQuotaTierBadge" class="badge" style="background: var(--accent-subtle, rgba(255,169,70,0.15)); color: var(--accent); padding: 2px 10px; border-radius: 99px; font-weight: 600;">Free</span>
+          </div>
+          <div style="font-size: 12px; color: var(--text-dim);" id="dashByokNotice">
+            <span class="badge-byok">BYOK Active</span> User API keys are 100% exempt from platform quotas
+          </div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+          <div class="quota-progress-container">
+            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+              <span>Mumble Audio Minutes</span>
+              <span id="dashQuotaAudioText">0.0 / 60.0 min (0%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="dashQuotaAudioBar" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+
+          <div class="quota-progress-container">
+            <div style="display: flex; justify-content: space-between; font-size: 12px;">
+              <span>Mumble AI Requests</span>
+              <span id="dashQuotaLlmText">0 / 500 reqs (0%)</span>
+            </div>
+            <div class="progress-bar-bg">
+              <div id="dashQuotaLlmBar" class="progress-bar-fill" style="width: 0%;"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overview Cards -->
+      <div class="dashboard-stats-grid">
+        <div class="stat-box">
+          <div class="stat-period">TODAY</div>
+          <div class="stat-metric" id="dashTodayAudio">0.0 min</div>
+          <div class="stat-sub">Audio Spoken</div>
+          <div class="stat-footer">
+            <span id="dashTodayRequests">0 dictations</span> · <span id="dashTodayCost">$0.0000</span> <span class="badge-est">Est.</span>
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-period">THIS MONTH (TOTAL)</div>
+          <div class="stat-metric" id="dashMonthAudio">0.0 min</div>
+          <div class="stat-sub">Monthly Spoken</div>
+          <div class="stat-footer">
+            <span id="dashMonthRequests">0 dictations</span> · <span id="dashMonthCost">$0.0000</span> <span class="badge-est">Est.</span>
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-period">PLATFORM COST</div>
+          <div class="stat-metric" id="dashPlatformCost" style="color: var(--success);">$0.0000</div>
+          <div class="stat-sub">Mumble-Managed Infrastructure</div>
+          <div class="stat-footer">
+            System Audio: <span id="dashSystemAudioMins">0.0 min</span>
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-period">BYOK VOLUME</div>
+          <div class="stat-metric" id="dashByokCost" style="color: #818cf8;">$0.0000</div>
+          <div class="stat-sub">Direct User Key Spend</div>
+          <div class="stat-footer">
+            BYOK Audio: <span id="dashByokAudioMins">0.0 min</span> (<span id="dashByokRequests">0</span> reqs)
+          </div>
+        </div>
+      </div>
+
+      <!-- Breakdown Tables -->
+      <div class="dashboard-breakdown-grid mb-6">
+        <div class="breakdown-card">
+          <h4 class="card-title">Breakdown by Provider</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Requests</th>
+                <th>Audio</th>
+                <th>Platform Cost</th>
+                <th>BYOK Cost</th>
+              </tr>
+            </thead>
+            <tbody id="dashProviderTableBody">
+              <tr><td colspan="5" class="empty-cell">No usage recorded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="breakdown-card">
+          <h4 class="card-title">Breakdown by Model</h4>
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Type</th>
+                <th>Requests</th>
+                <th>Usage</th>
+                <th>Est. Cost</th>
+              </tr>
+            </thead>
+            <tbody id="dashModelTableBody">
+              <tr><td colspan="5" class="empty-cell">No usage recorded yet.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Recent Usage Audit Log -->
+      <div class="breakdown-card" style="margin-top: 1.5rem;">
+        <h4 class="card-title">Recent Usage & Audit History</h4>
+        <p class="hint" style="margin-bottom: 0.75rem;">Honest telemetry log with labeled cost estimates, BYOK attribution, and failure diagnostics.</p>
+        <div class="table-wrap" style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Type</th>
+                <th>Provider / Model</th>
+                <th>Audio / Tokens</th>
+                <th>Latency</th>
+                <th>Key Source</th>
+                <th>Cost</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="dashRecentHistoryBody">
+              <tr><td colspan="8" class="empty-cell">No events recorded.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. PERSONAL DICTIONARY VIEW -->
+    <div id="viewDictionary" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Personal Dictionary</p>
+          <p class="view-lead">Names, technical terms, and spoken phrase mappings that should be spelled accurately every time.</p>
+        </div>
+      </div>
+
+      <div class="split-tool">
+        <div class="tool-form">
+          <input type="hidden" id="dictEditId" value="" />
+          <div class="form-group">
+            <label class="form-label" for="dictWordInput">Preferred Output Word</label>
+            <input id="dictWordInput" class="form-input" placeholder="e.g. Mumble AI, Next.js, PostgreSQL" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="dictSpokenInput">Spoken Phrase / Trigger</label>
+            <input id="dictSpokenInput" class="form-input" placeholder="e.g. mumble AI, next JS, post grass" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="dictCategorySelect">Category</label>
+            <select id="dictCategorySelect" class="form-select">
+              <option value="code">Code & Technology</option>
+              <option value="product">Product & Brand</option>
+              <option value="name">Person / Name</option>
+              <option value="jargon">Industry Jargon</option>
+              <option value="general">General</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="dictHintInput">Pronunciation Hint (Optional)</label>
+            <input id="dictHintInput" class="form-input" placeholder="e.g. soo-pa-base, postgres" />
+          </div>
+          <div class="form-group check-inline">
+            <input type="checkbox" id="dictEnabledCheck" checked />
+            <label for="dictEnabledCheck" class="form-label-inline">Enable this dictionary entry</label>
+          </div>
+          <div class="btn-group">
+            <button type="button" id="dictAddBtn" class="btn-primary">Add to Dictionary</button>
+            <button type="button" id="dictCancelEditBtn" class="btn-quiet" style="display: none;">Cancel</button>
+          </div>
+        </div>
+        <div class="tool-list">
+          <div class="tool-list-head">
+            <p class="eyebrow">Saved Entries</p>
+            <input id="dictSearchInput" class="form-input search-box" placeholder="Search dictionary..." />
+          </div>
+          <div id="dictionaryList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. SNIPPETS VIEW -->
+    <div id="viewSnippets" class="view-panel">
+      <div class="view-head">
+        <div>
+          <p class="eyebrow">Voice & Text Snippets</p>
+          <p class="view-lead">Say or type a trigger phrase to instantly expand templates, links, or code snippets.</p>
+        </div>
+      </div>
+
+      <div class="split-tool">
+        <div class="tool-form">
+          <input type="hidden" id="snipEditId" value="" />
+          <div class="form-group">
+            <label class="form-label" for="snipTriggerInput">Trigger Phrase</label>
+            <input id="snipTriggerInput" class="form-input" placeholder="e.g. client introduction, my github, bug report" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="snipNameInput">Snippet Name / Description</label>
+            <input id="snipNameInput" class="form-input" placeholder="e.g. Client Onboarding Greeting" />
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="snipContentInput">Expansion Text</label>
+            <textarea id="snipContentInput" class="editor-textarea snippet-textarea" placeholder="The expanded content to insert..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="snipAppSelect">Target Application</label>
+            <select id="snipAppSelect" class="form-select">
+              <option value="all">All Applications</option>
+              <option value="Cursor">Cursor / VS Code</option>
+              <option value="Terminal">Terminal / iTerm</option>
+              <option value="ChatGPT">ChatGPT</option>
+              <option value="Claude">Claude</option>
+              <option value="Slack">Slack</option>
+              <option value="WhatsApp">WhatsApp</option>
+              <option value="Gmail">Gmail</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="snipModeSelect">Target Mode</label>
+            <select id="snipModeSelect" class="form-select">
+              <option value="all">All Modes</option>
+              <option value="developer">Developer / Code</option>
+              <option value="terminal">Terminal</option>
+              <option value="casual">Casual</option>
+              <option value="professional">Professional</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+          <div class="form-group check-inline">
+            <input type="checkbox" id="snipEnabledCheck" checked />
+            <label for="snipEnabledCheck" class="form-label-inline">Enable this snippet</label>
+          </div>
+          <div class="btn-group">
+            <button type="button" id="snipAddBtn" class="btn-primary">Save snippet</button>
+            <button type="button" id="snipCancelEditBtn" class="btn-quiet" style="display: none;">Cancel</button>
+          </div>
+        </div>
+        <div class="tool-list">
+          <div class="tool-list-head">
+            <p class="eyebrow">Saved Snippets</p>
+            <input id="snipSearchInput" class="form-input search-box" placeholder="Search snippets..." />
+          </div>
+          <div id="snippetsList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 7. NOTETAKER VIEW -->
     <div id="viewNotetaker" class="view-panel">
       <div class="view-head">
         <div>
-          <p class="eyebrow">Notetaker</p>
-          <p class="view-lead">A transcript with names, then notes you can copy.</p>
+          <p class="eyebrow">Meeting Intelligence</p>
+          <p class="view-lead">Multi-speaker transcription with structured executive notes.</p>
         </div>
         <div class="view-actions">
           <button type="button" id="notetakerSampleBtn" class="btn-quiet">Reload sample</button>
@@ -195,22 +659,23 @@
       </div>
     </div>
 
+    <!-- 8. COMMAND VIEW -->
     <div id="viewCommand" class="view-panel">
       <div class="view-head">
         <div>
-          <p class="eyebrow">Command</p>
+          <p class="eyebrow">Command Mode</p>
           <p class="view-lead">Paste a passage, then say how it should change.</p>
         </div>
       </div>
 
       <div class="command-layout">
         <section class="pane">
-          <p class="eyebrow">Source</p>
+          <p class="eyebrow">Source Text</p>
           <textarea id="cmdSourceText" class="editor-textarea">We were wondering if you would perhaps be interested in having a discussion regarding our recent software deployment sometime later this month if your busy schedule allows it.</textarea>
           <div class="form-group command-instruction">
-            <label class="form-label" for="cmdInstructionInput">Instruction</label>
+            <label class="form-label" for="cmdInstructionInput">Voice or Typed Instruction</label>
             <div class="inline-field">
-              <input id="cmdInstructionInput" class="form-input" placeholder="Make this concise" value="Make this concise and direct" />
+              <input id="cmdInstructionInput" class="form-input" placeholder="Make this concise and direct" value="Make this concise and direct" />
               <button type="button" id="cmdRunBtn" class="btn-primary">Run</button>
             </div>
             <div class="preset-row">
@@ -224,7 +689,7 @@
 
         <section class="pane">
           <div class="card-header">
-            <p class="eyebrow">Result</p>
+            <p class="eyebrow">Refined Result</p>
             <button type="button" id="cmdCopyBtn" class="btn-quiet">Copy</button>
           </div>
           <div id="cmdResultContainer">
@@ -234,83 +699,242 @@
       </div>
     </div>
 
-    <div id="viewDictionary" class="view-panel">
-      <div class="view-head">
-        <div>
-          <p class="eyebrow">Dictionary</p>
-          <p class="view-lead">Names and terms that should be spelled the same way every time.</p>
+    <!-- 8. ADMIN PANEL VIEW (Phase 1 SaaS) -->
+    <div id="viewAdmin" class="view-panel">
+      <!-- Admin Authorization Notice (displayed when unauthenticated or non-admin) -->
+      <div id="adminAuthNotice" class="breakdown-card" style="display: none; text-align: center; padding: 3rem 1.5rem; margin-bottom: 2rem;">
+        <div style="font-size: 2.5rem; margin-bottom: 1rem;">🔒</div>
+        <h3 style="font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--text-main);">Administrator Access Required</h3>
+        <p style="color: var(--text-muted); max-width: 480px; margin: 0 auto 1.5rem auto; font-size: 14px;">
+          You need an authenticated administrator account to inspect tenant usage, review system telemetry, and manage platform accounts.
+        </p>
+        <button type="button" id="adminLoginPromptBtn" class="btn-primary" style="display: inline-flex; align-items: center; gap: 0.5rem;">
+          Sign In as Administrator
+        </button>
+      </div>
+
+      <!-- Main Admin Dashboard Content (displayed when authorized) -->
+      <div id="adminMainContent">
+        <div class="view-head">
+          <div>
+            <p class="eyebrow">Platform Administration</p>
+            <p class="view-lead">Manage user accounts, review tenant usage, and inspect system telemetry.</p>
+          </div>
+          <div class="header-action-group">
+            <button type="button" id="adminRefreshBtn" class="btn-quiet">
+              <span id="adminRefreshSpinner" style="display: none; margin-right: 4px;">↻</span> Refresh Telemetry
+            </button>
+          </div>
+        </div>
+
+      <!-- Top Summary Metrics Grid -->
+      <div class="dashboard-stats-grid mb-6">
+        <div class="stat-box">
+          <div class="stat-period">TOTAL USERS</div>
+          <div class="stat-metric" id="adminTotalUsers">0</div>
+          <div class="stat-sub">Registered Accounts</div>
+          <div class="stat-footer">
+            <span id="adminActiveUsers">0 active</span> · <span id="adminSuspendedUsers">0 suspended</span>
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-period">DICTATION VOLUME</div>
+          <div class="stat-metric" id="adminTotalDictations">0</div>
+          <div class="stat-sub">Total Dictations Completed</div>
+          <div class="stat-footer">
+            <span id="adminAudioMinutes">0.0 min</span> audio processed
+          </div>
+        </div>
+
+        <div class="stat-box">
+          <div class="stat-period">TOKEN WORKLOAD</div>
+          <div class="stat-metric" id="adminTotalTokens">0</div>
+          <div class="stat-sub">Total AI Tokens</div>
+          <div class="stat-footer">
+            Est. Cost: <span id="adminTotalCost">$0.0000</span>
+          </div>
+        </div>
+
+        <div class="stat-box highlight-stat">
+          <div class="stat-period">SYSTEM HEALTH</div>
+          <div class="stat-metric" id="adminSystemHealth" style="color: var(--success, #34d399);">Healthy</div>
+          <div class="stat-sub" id="adminUptime">Uptime: 0h 0m</div>
+          <div class="stat-footer" id="adminMemory">Memory: 0 MB</div>
         </div>
       </div>
 
-      <div class="split-tool">
-        <div class="tool-form">
-          <div class="form-group">
-            <label class="form-label" for="dictWordInput">Word</label>
-            <input id="dictWordInput" class="form-input" placeholder="Adithya, Supabase, LangChain" />
+      <!-- User Management Table -->
+      <div class="breakdown-card mb-6" style="margin-bottom: 2rem;">
+        <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+          <div>
+            <h4 class="card-title">User Accounts & Access Control</h4>
+            <p class="hint">Active accounts can authenticate and submit voice dictation.</p>
           </div>
-          <div class="form-group">
-            <label class="form-label" for="dictCategorySelect">Category</label>
-            <select id="dictCategorySelect" class="form-select">
-              <option value="name">Name</option>
-              <option value="code">Code</option>
-              <option value="jargon">Jargon</option>
-              <option value="product">Product</option>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <select id="adminUserFilter" class="form-input" style="max-width: 170px; padding: 0.4rem 0.6rem; font-size: 0.85rem;">
+              <option value="genuine">Genuine Users</option>
+              <option value="all">All Accounts</option>
+              <option value="test">Test Records Only</option>
             </select>
+            <input type="text" id="adminUserSearch" class="form-input" placeholder="Search users by name or email..." style="max-width: 240px;" />
           </div>
-          <div class="form-group">
-            <label class="form-label" for="dictHintInput">Pronunciation</label>
-            <input id="dictHintInput" class="form-input" placeholder="Optional, such as soo-pa-base" />
-          </div>
-          <button type="button" id="dictAddBtn" class="btn-primary">Add word</button>
         </div>
-        <div class="tool-list">
-          <p class="eyebrow">Saved</p>
-          <div id="dictionaryList"></div>
+        <div class="table-wrap" style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>User / Email</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Registered</th>
+                <th>Usage Summary</th>
+                <th style="text-align: right;">Account Actions</th>
+              </tr>
+            </thead>
+            <tbody id="adminUsersTableBody">
+              <tr><td colspan="6" class="table-empty" style="text-align: center; padding: 2rem;">Loading accounts...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Platform Provider Costs (Phase 3) -->
+      <div class="breakdown-card mb-6" style="margin-bottom: 2rem;">
+        <div class="card-header" style="margin-bottom: 1rem;">
+          <h4 class="card-title">Provider Infrastructure & Cost Separation</h4>
+          <p class="hint">Month-to-date breakdown separating Mumble platform expenses from user BYOK spend.</p>
+        </div>
+        <div class="table-wrap" style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Total Requests</th>
+                <th>Audio Minutes</th>
+                <th>Total Tokens</th>
+                <th>Platform Cost</th>
+                <th>BYOK Volume</th>
+                <th>Failures</th>
+              </tr>
+            </thead>
+            <tbody id="adminProviderCostsTableBody">
+              <tr><td colspan="7" class="table-empty" style="text-align: center; padding: 1.5rem;">Loading provider telemetry...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Platform Configuration & System Diagnostics -->
+      <div class="dashboard-breakdown-grid mb-6" style="margin-bottom: 2rem;">
+        <div class="breakdown-card">
+          <h4 class="card-title">Active AI Configuration</h4>
+          <p class="hint">Server-wide defaults and provider API key availability.</p>
+          <table class="data-table" style="margin-top: 1rem;">
+            <tbody>
+              <tr><td><strong>Default STT Provider</strong></td><td id="adminConfStt">-</td></tr>
+              <tr><td><strong>Default STT Model</strong></td><td id="adminConfSttModel">-</td></tr>
+              <tr><td><strong>Default LLM Provider</strong></td><td id="adminConfLlm">-</td></tr>
+              <tr><td><strong>Default LLM Model</strong></td><td id="adminConfLlmModel">-</td></tr>
+              <tr><td><strong>Default Tone</strong></td><td id="adminConfTone">-</td></tr>
+              <tr><td><strong>Groq Key Configured</strong></td><td id="adminKeyGroq">-</td></tr>
+              <tr><td><strong>Gemini Key Configured</strong></td><td id="adminKeyGemini">-</td></tr>
+              <tr><td><strong>OpenAI Key Configured</strong></td><td id="adminKeyOpenai">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="breakdown-card">
+          <h4 class="card-title">Host Telemetry & Infrastructure</h4>
+          <p class="hint">Runtime environment details and database status.</p>
+          <table class="data-table" style="margin-top: 1rem;">
+            <tbody>
+              <tr><td><strong>Node.js Runtime</strong></td><td id="adminDiagNode">-</td></tr>
+              <tr><td><strong>Operating System</strong></td><td id="adminDiagPlatform">-</td></tr>
+              <tr><td><strong>Process Memory (RSS)</strong></td><td id="adminDiagMemory">-</td></tr>
+              <tr><td><strong>Database Storage</strong></td><td>SQLite (WAL Mode enabled)</td></tr>
+              <tr><td><strong>Environment Mode</strong></td><td id="adminDiagEnv">-</td></tr>
+              <tr><td><strong>Catalog STT Models</strong></td><td id="adminSttCatalogCount">-</td></tr>
+              <tr><td><strong>Catalog LLM Models</strong></td><td id="adminLlmCatalogCount">-</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- System Failures Log (Phase 3) -->
+      <div class="breakdown-card mb-6" style="margin-bottom: 2rem;">
+        <div class="card-header" style="margin-bottom: 1rem;">
+          <h4 class="card-title">System Failure & Reliability Log</h4>
+          <p class="hint">Recent provider or processing errors with timestamps and root-cause error messages.</p>
+        </div>
+        <div class="table-wrap" style="overflow-x: auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>User</th>
+                <th>Operation</th>
+                <th>Provider / Model</th>
+                <th>Latency</th>
+                <th>Credential Source</th>
+                <th>Error Diagnostic</th>
+              </tr>
+            </thead>
+            <tbody id="adminFailuresTableBody">
+              <tr><td colspan="7" class="table-empty" style="text-align: center; padding: 1.5rem;">No recent system failures recorded.</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
+  </div>
 
-    <div id="viewSnippets" class="view-panel">
-      <div class="view-head">
-        <div>
-          <p class="eyebrow">Snippets</p>
-          <p class="view-lead">Say a short trigger and paste the longer text.</p>
-        </div>
+  <!-- Edit Quota Modal (Phase 3) -->
+  <div id="adminQuotaModal" class="auth-modal-overlay" style="display: none;">
+    <div class="auth-modal-card" style="max-width: 440px;">
+      <div class="auth-modal-header">
+        <h3 class="auth-modal-title">Configure User Quota</h3>
+        <p class="auth-modal-subtitle" id="quotaModalUserEmail">user@example.com</p>
       </div>
-
-      <div class="split-tool">
-        <div class="tool-form">
-          <div class="form-group">
-            <label class="form-label" for="snipTriggerInput">Trigger</label>
-            <input id="snipTriggerInput" class="form-input" placeholder="insert calendly" />
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="snipContentInput">Expansion</label>
-            <textarea id="snipContentInput" class="editor-textarea" placeholder="The text to paste"></textarea>
-          </div>
-          <div class="form-group">
-            <label class="form-label" for="snipDescInput">Note</label>
-            <input id="snipDescInput" class="form-input" placeholder="Optional" />
-          </div>
-          <button type="button" id="snipAddBtn" class="btn-primary">Save snippet</button>
+      <form id="adminQuotaForm">
+        <input type="hidden" id="quotaModalUserId" />
+        <div class="form-group">
+          <label class="form-label" for="quotaTierSelect">Quota Tier</label>
+          <select id="quotaTierSelect" class="form-select">
+            <option value="free">Free (60 min audio, 500 AI reqs)</option>
+            <option value="pro">Pro (1,000 min audio, 10,000 AI reqs)</option>
+            <option value="business">Business (5,000 min audio, 50,000 AI reqs)</option>
+          </select>
         </div>
-        <div class="tool-list">
-          <p class="eyebrow">Saved</p>
-          <div id="snippetsList"></div>
+        <div class="form-group">
+          <label class="form-label" for="quotaAudioLimit">Custom Monthly Audio Minutes</label>
+          <input type="number" id="quotaAudioLimit" class="form-input" min="0" step="1" />
         </div>
-      </div>
+        <div class="form-group">
+          <label class="form-label" for="quotaLlmLimit">Custom Monthly AI Requests</label>
+          <input type="number" id="quotaLlmLimit" class="form-input" min="0" step="1" />
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="quotaBudgetLimit">Monthly Platform Budget ($ USD, 0 for none)</label>
+          <input type="number" id="quotaBudgetLimit" class="form-input" min="0" step="0.5" />
+        </div>
+        <div style="display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1.5rem;">
+          <button type="button" id="quotaModalCancelBtn" class="btn-quiet">Cancel</button>
+          <button type="submit" class="btn-primary">Save Quota</button>
+        </div>
+      </form>
     </div>
+  </div>
 
   </main>
 
+  <!-- Modern Floating Control Bar -->
   <div id="floatingPill" class="floating-pill-container">
     <div id="flowPill" class="flow-pill">
       <button type="button" id="pillMicBtn" class="pill-mic-btn" title="Hold Space or click to dictate" aria-label="Dictate">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-          <rect x="6" y="1.5" width="4" height="7.5" rx="2" />
-          <path d="M3.75 7.25a4.25 4.25 0 0 0 8.5 0" />
-          <path d="M8 11.5V14" />
-          <path d="M5.5 14h5" />
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+          <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"></path>
+          <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"></path>
         </svg>
       </button>
 
@@ -322,9 +946,11 @@
 
       <div class="pill-controls">
         <label class="visually-hidden" for="pillToneSelect">Tone</label>
-        <select id="pillToneSelect" class="pill-select" title="Tone">
+        <select id="pillToneSelect" class="pill-select" title="Tone Style">
           <option value="casual">Casual</option>
           <option value="formal">Formal</option>
+          <option value="developer">Developer</option>
+          <option value="terminal">Terminal</option>
           <option value="executive">Executive</option>
           <option value="code">Code</option>
           <option value="bullet">Bullets</option>
@@ -340,90 +966,308 @@
           <option value="raw">Raw</option>
         </select>
 
-        <label class="visually-hidden" for="pillProviderSelect">Engine</label>
-        <select id="pillProviderSelect" class="pill-select" title="Speech and writing engine">
-          <option value="groq" selected>Groq</option>
-          <option value="gemini">Gemini</option>
-          <option value="webspeech">Web Speech</option>
-        </select>
+        <button type="button" id="pillModelQuickBtn" class="pill-model-badge" title="Active Engine Selection">
+          <span id="pillSttName">Groq Whisper</span>
+        </button>
 
-        <button type="button" id="pillHandsFreeBtn" class="pill-mode-toggle" aria-pressed="false" title="Keep listening until you click again">Hands-free</button>
+        <button type="button" id="pillHandsFreeBtn" class="pill-mode-toggle" aria-pressed="false" title="Hands-free toggle (double-tap Space)">Hands-free</button>
       </div>
     </div>
   </div>
 
+  <!-- REDESIGNED SAAS SETTINGS MODAL -->
   <div id="settingsModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
     <div class="modal-dialog">
       <div class="modal-header">
-        <h2 id="settingsTitle" class="modal-title">Settings</h2>
+        <div>
+          <h2 id="settingsTitle" class="modal-title">Settings & Preferences</h2>
+          <p class="modal-subtitle">Configure your Mumble AI environment</p>
+        </div>
         <button type="button" id="settingsCloseBtn" class="icon-btn" aria-label="Close settings">
-          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
             <path d="M4 4l8 8M12 4l-8 8" />
           </svg>
         </button>
       </div>
 
-      <div class="form-group">
-        <div class="form-label">
-          <label for="settingGroqKey">Groq key</label>
-          <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer">Get a key</a>
-        </div>
-        <input id="settingGroqKey" type="password" class="form-input" placeholder="gsk_…" autocomplete="off" />
-        <p class="hint">Used for transcription and the rewrite.</p>
-      </div>
+      <div class="settings-sections">
+        <!-- 1. GENERAL -->
+        <fieldset class="settings-section">
+          <legend class="section-legend">General</legend>
+          <div class="check-grid">
+            <label class="check-row">
+              <input type="checkbox" id="settingSoundEffects" checked />
+              <span>
+                <span class="check-name">Sound Effects</span>
+                <span class="hint">Auditory chime when dictation starts and stops.</span>
+              </span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" id="settingAutoCopy" checked />
+              <span>
+                <span class="check-name">Auto-Copy to Clipboard</span>
+                <span class="hint">Automatically copy dictations to system clipboard.</span>
+              </span>
+            </label>
+            <label class="check-row">
+              <input type="checkbox" id="settingAutoAppMode" checked />
+              <span>
+                <span class="check-name">Application Awareness</span>
+                <span class="hint">Automatically adapt style to active foreground app (Cursor → Developer, Slack → Casual, Gmail → Pro).</span>
+              </span>
+            </label>
+          </div>
+        </fieldset>
 
-      <div class="form-group">
-        <div class="form-label">
-          <label for="settingGeminiKey">Gemini key</label>
-          <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer">Get a key</a>
-        </div>
-        <input id="settingGeminiKey" type="password" class="form-input" placeholder="AIza…" autocomplete="off" />
-        <p class="hint">Used when Gemini is selected on the pill.</p>
-      </div>
+        <!-- 2. TRANSCRIPTION -->
+        <fieldset class="settings-section">
+          <legend class="section-legend">Transcription (STT)</legend>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="settingSttProvider">STT Provider</label>
+              <select id="settingSttProvider" class="form-select">
+                <option value="groq">Groq (Ultra-Fast Cloud)</option>
+                <option value="openai">OpenAI (Whisper)</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="local">Local Whisper (Private Offline)</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label" for="settingSttModel">STT Model</label>
+              <select id="settingSttModel" class="form-select">
+                <option value="whisper-large-v3-turbo">Whisper Large V3 Turbo</option>
+                <option value="whisper-large-v3">Whisper Large V3</option>
+                <option value="whisper-1">OpenAI Whisper-1</option>
+                <option value="gemini-3.6-flash">Gemini 2.5 Flash Audio</option>
+                <option value="local-whisper">Local Whisper</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="settingTranscriptionMode">Transcription Mode</label>
+            <select id="settingTranscriptionMode" class="form-select">
+              <option value="auto" selected>Auto (Local when available, otherwise Cloud)</option>
+              <option value="local">Local Only (Private, zero cloud cost)</option>
+              <option value="cloud">Cloud Only (High accuracy cloud providers)</option>
+            </select>
+          </div>
+        </fieldset>
 
-      <div class="check-grid">
-        <label class="check-row">
-          <input type="checkbox" id="settingSoundEffects" checked />
-          <span>
-            <span class="check-name">Sound</span>
-            <span class="hint">A short chime when dictation starts and ends.</span>
-          </span>
-        </label>
-        <label class="check-row">
-          <input type="checkbox" id="settingVadEnabled" checked />
-          <span>
-            <span class="check-name">Silence</span>
-            <span class="hint">Stop after a quiet pause of about two seconds.</span>
-          </span>
-        </label>
-      </div>
+        <!-- 3. AI ENHANCEMENT -->
+        <fieldset class="settings-section">
+          <legend class="section-legend">AI Enhancement (LLM)</legend>
+          <div class="form-group">
+            <label class="form-label" for="settingAiEnhancement">AI Enhancement Strategy</label>
+            <select id="settingAiEnhancement" class="form-select">
+              <option value="auto" selected>Auto (Cost-optimized: Deterministic first, AI only when needed)</option>
+              <option value="always">Always (Run LLM rewrite on all dictation)</option>
+              <option value="never">Never (Zero LLM tokens, 100% deterministic local rules)</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group flex-1">
+              <label class="form-label" for="settingLlmProvider">LLM Provider</label>
+              <select id="settingLlmProvider" class="form-select">
+                <option value="groq">Groq</option>
+                <option value="openai">OpenAI</option>
+                <option value="gemini">Google Gemini</option>
+                <option value="local">Local LLM</option>
+              </select>
+            </div>
+            <div class="form-group flex-1">
+              <label class="form-label" for="settingLlmModel">LLM Model</label>
+              <select id="settingLlmModel" class="form-select">
+                <option value="openai/gpt-oss-20b">GPT-OSS-20B</option>
+                <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+                <option value="gpt-4o-mini">GPT-4o Mini</option>
+                <option value="gpt-4o">GPT-4o</option>
+                <option value="gemini-3.6-flash">Gemini 2.5 Flash</option>
+              </select>
+            </div>
+          </div>
+        </fieldset>
 
-      <div class="form-group">
-        <label class="form-label" for="settingWebhookUrl">Webhook</label>
-        <input id="settingWebhookUrl" class="form-input" placeholder="https://hooks.example.com/…" autocomplete="off" />
-        <p class="hint">Optional. Finished lines can be posted here.</p>
-      </div>
+        <!-- 4. API KEYS (BYOK & SYSTEM CREDENTIALS) -->
+        <fieldset class="settings-section">
+          <legend class="section-legend">API Keys & BYOK Hub</legend>
+          <p class="hint section-hint">Add your own provider keys (BYOK) for private quota, or use system-managed keys. Keys are authenticated and encrypted at rest with AES-256-GCM.</p>
 
-      <p class="hint">Without a key, choose Web Speech on the pill, or run a sample.</p>
+          <!-- Groq -->
+          <div class="form-group byok-provider-group" data-provider="groq">
+            <div class="form-label-row">
+              <label for="settingGroqKey"><strong>Groq API Key</strong> <span id="groqKeyBadge" class="status-indicator">Checking...</span></label>
+              <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" class="link-external">Get free key ↗</a>
+            </div>
+            <div class="byok-input-row">
+              <input id="settingGroqKey" type="password" class="form-input" placeholder="gsk_…" autocomplete="off" />
+              <button type="button" id="btnValidateGroq" class="btn-subtle key-action-btn" title="Validate Groq key">Validate</button>
+              <button type="button" id="btnRemoveGroq" class="btn-subtle key-action-btn btn-danger-subtle" title="Remove custom key" style="display: none;">Remove</button>
+            </div>
+            <span id="groqFeedback" class="key-feedback"></span>
+          </div>
+
+          <!-- OpenAI -->
+          <div class="form-group byok-provider-group" data-provider="openai">
+            <div class="form-label-row">
+              <label for="settingOpenaiKey"><strong>OpenAI API Key</strong> <span id="openaiKeyBadge" class="status-indicator">Checking...</span></label>
+              <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" class="link-external">Get key ↗</a>
+            </div>
+            <div class="byok-input-row">
+              <input id="settingOpenaiKey" type="password" class="form-input" placeholder="sk-proj-…" autocomplete="off" />
+              <button type="button" id="btnValidateOpenai" class="btn-subtle key-action-btn" title="Validate OpenAI key">Validate</button>
+              <button type="button" id="btnRemoveOpenai" class="btn-subtle key-action-btn btn-danger-subtle" title="Remove custom key" style="display: none;">Remove</button>
+            </div>
+            <span id="openaiFeedback" class="key-feedback"></span>
+          </div>
+
+          <!-- Gemini -->
+          <div class="form-group byok-provider-group" data-provider="gemini">
+            <div class="form-label-row">
+              <label for="settingGeminiKey"><strong>Google Gemini API Key</strong> <span id="geminiKeyBadge" class="status-indicator">Checking...</span></label>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" class="link-external">Get free key ↗</a>
+            </div>
+            <div class="byok-input-row">
+              <input id="settingGeminiKey" type="password" class="form-input" placeholder="AIza…" autocomplete="off" />
+              <button type="button" id="btnValidateGemini" class="btn-subtle key-action-btn" title="Validate Gemini key">Validate</button>
+              <button type="button" id="btnRemoveGemini" class="btn-subtle key-action-btn btn-danger-subtle" title="Remove custom key" style="display: none;">Remove</button>
+            </div>
+            <span id="geminiFeedback" class="key-feedback"></span>
+          </div>
+        </fieldset>
+
+        <!-- 5. WEBHOOK & INTEGRATIONS -->
+        <fieldset class="settings-section">
+          <legend class="section-legend">Integrations</legend>
+          <div class="form-group">
+            <label class="form-label" for="settingWebhookUrl">Webhook URL</label>
+            <input id="settingWebhookUrl" class="form-input" placeholder="https://hooks.example.com/…" autocomplete="off" />
+            <p class="hint">Optional. Finished dictation outputs will be dispatched to this endpoint.</p>
+          </div>
+        </fieldset>
+
+        <!-- 6. PRIVACY & DATA PURGE -->
+        <fieldset class="settings-section danger-section">
+          <legend class="section-legend">Privacy & Data Retention</legend>
+          <div class="purge-row">
+            <div>
+              <div class="check-name">Purge All Account Data</div>
+              <p class="hint">Permanently delete all dictation history, personal dictionary, and snippet items.</p>
+            </div>
+            <button type="button" id="purgeDataBtn" class="btn-danger">Purge Data</button>
+          </div>
+        </fieldset>
+      </div>
 
       <div class="modal-actions">
-        <button type="button" id="saveSettingsBtn" class="btn-primary">Save</button>
+        <button type="button" id="cancelSettingsBtn" class="btn-quiet">Cancel</button>
+        <button type="button" id="saveSettingsBtn" class="btn-primary">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AUTH & IDENTITY MODAL (Phase 1 SaaS) -->
+  <div id="authModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+    <div class="modal-dialog auth-dialog" style="max-width: 460px;">
+      <div class="modal-header">
+        <div>
+          <h2 id="authTitle" class="modal-title">Account & Access</h2>
+          <p class="modal-subtitle" id="authSubtitle">Manage your user profile and workspace credentials</p>
+        </div>
+        <button type="button" id="authCloseBtn" class="icon-btn" aria-label="Close dialog">
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M4 4l8 8M12 4l-8 8" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- State A: Signed In Profile -->
+      <div id="authProfileSection" class="auth-section">
+        <div class="auth-user-card" style="display: flex; gap: 1rem; align-items: center; padding: 1rem; background: var(--bg-elevated, #f5f4f0); border-radius: var(--radius-md, 12px); margin-bottom: 1.25rem;">
+          <div class="user-avatar" id="authProfileAvatar" style="width: 44px; height: 44px; font-size: 18px;">M</div>
+          <div style="flex: 1;">
+            <div style="font-weight: 700; font-size: 16px;" id="authProfileName">Local User</div>
+            <div class="hint" id="authProfileEmail" style="font-size: 13px; margin-bottom: 4px;">local@mumbleflow.internal</div>
+            <div style="display: flex; gap: 0.5rem; align-items: center;">
+              <span class="badge" id="authProfileRole" style="background: var(--accent-subtle, rgba(255,169,70,0.15)); color: var(--accent-hover, #e8952e); font-size: 11px; padding: 2px 8px; border-radius: 99px;">Admin</span>
+              <span class="badge" id="authProfileStatus" style="background: var(--success-bg, rgba(52,211,153,0.15)); color: var(--success, #34d399); font-size: 11px; padding: 2px 8px; border-radius: 99px;">Active</span>
+            </div>
+          </div>
+        </div>
+
+        <fieldset class="settings-section" style="margin-bottom: 1.25rem;">
+          <legend class="section-legend">Change Password</legend>
+          <form id="changePasswordForm">
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <label class="form-label" for="authCurrentPass">Current Password</label>
+              <input type="password" id="authCurrentPass" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+            </div>
+            <div class="form-group" style="margin-bottom: 0.75rem;">
+              <label class="form-label" for="authNewPass">New Password</label>
+              <input type="password" id="authNewPass" class="form-input" placeholder="At least 8 characters" minlength="8" required autocomplete="new-password" />
+            </div>
+            <button type="submit" id="changePasswordBtn" class="btn-quiet" style="width: 100%;">Update Password</button>
+          </form>
+        </fieldset>
+
+        <div class="modal-actions" style="display: flex; justify-content: space-between;">
+          <button type="button" id="authSwitchBtn" class="btn-quiet">Switch Account</button>
+          <button type="button" id="authLogoutBtn" class="btn-danger">Sign Out</button>
+        </div>
+      </div>
+
+      <!-- State B: Login & Registration Forms -->
+      <div id="authFormSection" class="auth-section" style="display: none;">
+        <div class="auth-tabs" style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid var(--border-subtle, #e4e4d0); padding-bottom: 0.5rem;">
+          <button type="button" class="btn-quiet active" id="authTabLogin" style="font-weight: 700;">Sign In</button>
+          <button type="button" class="btn-quiet" id="authTabRegister" style="font-weight: 500;">Create Account</button>
+        </div>
+
+        <!-- Demo Accounts Quick Fill -->
+        <div style="background: var(--bg-elevated, #2a2825); border: 1px solid var(--border-subtle, #423d38); border-radius: 8px; padding: 10px 12px; margin-bottom: 1.25rem; font-size: 12px;">
+          <div style="font-weight: 600; margin-bottom: 6px; color: var(--text-main);">⚡ Demo Accounts (One-Click Fill):</div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <button type="button" id="quickFillAdminBtn" class="btn-quiet" style="font-size: 11px; padding: 4px 8px; border: 1px solid var(--border-subtle); background: var(--bg-surface); cursor: pointer;">
+              👑 Admin (admin@mumble.ai)
+            </button>
+            <button type="button" id="quickFillUserBtn" class="btn-quiet" style="font-size: 11px; padding: 4px 8px; border: 1px solid var(--border-subtle); background: var(--bg-surface); cursor: pointer;">
+              👤 User (user@mumble.ai)
+            </button>
+          </div>
+        </div>
+
+        <form id="authLoginForm">
+          <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label" for="loginEmail">Email Address</label>
+            <input type="email" id="loginEmail" class="form-input" placeholder="user@company.com" required autocomplete="email" />
+          </div>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="loginPassword">Password</label>
+            <input type="password" id="loginPassword" class="form-input" placeholder="••••••••" required autocomplete="current-password" />
+          </div>
+          <button type="submit" id="submitLoginBtn" class="btn-primary" style="width: 100%;">Sign In</button>
+        </form>
+
+        <form id="authRegisterForm" style="display: none;">
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" for="regName">Full Name</label>
+            <input type="text" id="regName" class="form-input" placeholder="Alex Rivera" required autocomplete="name" />
+          </div>
+          <div class="form-group" style="margin-bottom: 0.75rem;">
+            <label class="form-label" for="regEmail">Work Email</label>
+            <input type="email" id="regEmail" class="form-input" placeholder="alex@company.com" required autocomplete="email" />
+          </div>
+          <div class="form-group" style="margin-bottom: 1.5rem;">
+            <label class="form-label" for="regPassword">Password (min 8 chars)</label>
+            <input type="password" id="regPassword" class="form-input" placeholder="••••••••" minlength="8" required autocomplete="new-password" />
+          </div>
+          <button type="submit" id="submitRegisterBtn" class="btn-primary" style="width: 100%;">Create Account</button>
+        </form>
       </div>
     </div>
   </div>
 
   <div id="toastContainer" class="toast-container" aria-live="polite"></div>
 
-  <script>
-    (function () {
-      var theme = document.documentElement.getAttribute('data-theme') || 'light';
-      document.querySelectorAll('[data-theme-choice]').forEach(function (btn) {
-        var on = btn.getAttribute('data-theme-choice') === theme;
-        btn.classList.toggle('is-selected', on);
-        btn.setAttribute('aria-checked', on ? 'true' : 'false');
-      });
-    })();
-  </script>
   <script type="module" src="js/app.js"></script>
 </body>
 </html>

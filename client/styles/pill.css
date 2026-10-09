@@ -1,97 +1,71 @@
+/**
+ * Mumble AI — Floating Pill Control Bar
+ * Sleek, centered dynamic island for voice dictation.
+ */
+
 .floating-pill-container {
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 18px;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 100;
+  pointer-events: none;
   display: flex;
   justify-content: center;
-  padding: 0 12px;
-  pointer-events: none;
+  align-items: center;
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  margin: 0 auto;
 }
 
 .flow-pill {
   pointer-events: auto;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  max-width: 100%;
-  min-height: 40px;
-  padding: 4px 10px 4px 4px;
+  gap: 8px;
+  padding: 6px 14px 6px 8px;
   border-radius: 999px;
-  background: #161616;
-  color: #f4f1ec;
-  border: 1px solid #161616;
-  box-shadow: var(--shadow);
-  transition: background-color 160ms ease-out, color 160ms ease-out, border-color 160ms ease-out;
+  background: var(--color-vast, #1a1a1a);
+  color: var(--color-lumen, #ffffeb);
+  border: 1px solid rgba(255, 255, 238, 0.15);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  min-height: 44px;
+  box-sizing: border-box;
+  transition: all 160ms cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-[data-theme="light"] .flow-pill { color-scheme: dark; }
 
 [data-theme="dark"] .flow-pill {
-  background: #f3f1ec;
-  color: #101010;
-  border-color: #f3f1ec;
-  box-shadow: none;
-  color-scheme: light;
+  background: #1c1c18;
+  color: #ffffeb;
+  border-color: rgba(255, 255, 238, 0.18);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.65);
 }
 
-[data-theme="contrast"] .flow-pill {
-  background: #000;
-  color: #fff;
-  border: 2px solid #fff;
-  box-shadow: none;
-  color-scheme: dark;
-}
-
-[data-theme="light"] .flow-pill.is-listening {
-  background: #1f3a5f;
-  border-color: #1f3a5f;
-  color: #f4f1ec;
-}
-
-[data-theme="dark"] .flow-pill.is-listening {
-  background: #101010;
-  border-color: #101010;
-  color: #f3f1ec;
-  color-scheme: dark;
-}
-
-[data-theme="contrast"] .flow-pill.is-listening {
-  border-color: #ffff00;
+.flow-pill.is-listening {
+  border-color: var(--accent, #ffa946);
+  box-shadow: 0 0 16px rgba(255, 169, 70, 0.35), 0 8px 30px rgba(0, 0, 0, 0.45);
 }
 
 .pill-mic-btn {
   width: 32px;
   height: 32px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: inherit;
+  border-radius: 50%;
+  background: var(--accent, #ffa946);
+  color: #ffffff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  border: none;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
 }
-
-.pill-mic-btn:hover { background: rgba(255, 255, 255, 0.08); }
-.pill-mic-btn:active { background: rgba(255, 255, 255, 0.14); }
-
-[data-theme="dark"] .flow-pill:not(.is-listening) .pill-mic-btn:hover {
-  background: rgba(16, 16, 16, 0.06);
+.pill-mic-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 12px rgba(255, 169, 70, 0.5);
 }
-
-[data-theme="contrast"] .pill-mic-btn {
-  border: 2px solid #fff;
-  background: #000;
-  opacity: 1;
-}
-
-[data-theme="contrast"] .pill-mic-btn:hover,
-[data-theme="contrast"] .pill-mic-btn:active {
-  background: #fff;
-  color: #000;
+.pill-mic-btn:active {
+  transform: scale(0.96);
 }
 
 .pill-center {
@@ -106,128 +80,111 @@
   font-weight: 500;
   line-height: 1;
   white-space: nowrap;
+  color: inherit;
 }
 
 .pill-waveform-canvas {
   width: 72px;
   height: 18px;
   display: none;
-  color: #f4f1ec;
+  color: var(--accent, #ffa946);
 }
-
-[data-theme="dark"] .pill-waveform-canvas { color: #8eb4e8; }
-[data-theme="contrast"] .pill-waveform-canvas { color: #fff; }
-
-.flow-pill.is-listening .pill-waveform-canvas { display: block; }
+.flow-pill.is-listening .pill-waveform-canvas {
+  display: block;
+}
 
 .pill-spinner {
   width: 14px;
   height: 14px;
-  border: 1.5px solid currentColor;
-  border-right-color: transparent;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-top-color: var(--accent, #ffa946);
   border-radius: 50%;
   display: none;
   flex-shrink: 0;
   animation: pill-spin 800ms linear infinite;
 }
-
-.flow-pill.is-processing .pill-spinner { display: block; }
-
-[data-theme="contrast"] .pill-spinner {
-  border: 2px solid #fff;
-  border-right-color: #000;
+.flow-pill.is-processing .pill-spinner {
+  display: block;
 }
-
-@keyframes pill-spin { to { transform: rotate(360deg); } }
+@keyframes pill-spin {
+  to { transform: rotate(360deg); }
+}
 
 .pill-controls {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 6px;
   margin-left: 4px;
   padding-left: 10px;
-  border-left: 1px solid rgba(244, 241, 236, 0.18);
+  border-left: 1px solid rgba(255, 255, 238, 0.18);
 }
 
-[data-theme="dark"] .flow-pill:not(.is-listening) .pill-controls {
-  border-left-color: rgba(16, 16, 16, 0.12);
-}
-
-[data-theme="dark"] .flow-pill.is-listening .pill-controls,
-[data-theme="light"] .flow-pill.is-listening .pill-controls {
-  border-left-color: rgba(243, 241, 236, 0.2);
-}
-
-[data-theme="contrast"] .pill-controls {
-  border-left: 2px solid #fff;
-}
-
-.pill-select, .pill-mode-toggle {
-  background: transparent;
-  color: inherit;
-  border: none;
-  border-radius: 999px;
-  font-size: 13px;
+.pill-select {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 238, 0.85);
+  background: rgba(255, 255, 238, 0.08);
+  border: 1px solid rgba(255, 255, 238, 0.15);
+  border-radius: 6px;
   padding: 4px 8px;
-  max-width: 7.5rem;
+  cursor: pointer;
+  outline: none;
+}
+.pill-select option {
+  background: #1a1a1a;
+  color: #ffffeb;
 }
 
-.pill-select { cursor: pointer; }
+.pill-model-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--accent, #ffa946);
+  background: rgba(255, 169, 70, 0.12);
+  border: 1px solid rgba(255, 169, 70, 0.25);
+  border-radius: 999px;
+  padding: 4px 10px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.pill-model-badge:hover {
+  background: rgba(255, 169, 70, 0.22);
+}
 
 .pill-mode-toggle {
-  display: inline-flex;
-  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 238, 0.7);
+  background: rgba(255, 255, 238, 0.06);
+  border: 1px solid rgba(255, 255, 238, 0.15);
+  border-radius: 999px;
+  padding: 4px 10px;
+  cursor: pointer;
   white-space: nowrap;
+  transition: all 150ms ease;
 }
-
-.pill-select:hover, .pill-mode-toggle:hover { background: rgba(255, 255, 255, 0.08); }
-
-[data-theme="dark"] .flow-pill:not(.is-listening) .pill-select:hover,
-[data-theme="dark"] .flow-pill:not(.is-listening) .pill-mode-toggle:hover {
-  background: rgba(16, 16, 16, 0.06);
+.pill-mode-toggle:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 238, 0.14);
 }
-
-.pill-mode-toggle.is-active { text-decoration: underline; text-underline-offset: 3px; }
-
-[data-theme="contrast"] .pill-select,
-[data-theme="contrast"] .pill-mode-toggle {
-  border: 2px solid #fff;
-  opacity: 1;
-}
-
-[data-theme="contrast"] .pill-select:hover,
-[data-theme="contrast"] .pill-mode-toggle:hover,
-[data-theme="contrast"] .pill-mode-toggle.is-active {
-  background: #fff;
-  color: #000;
-}
-
-[data-theme="light"] .flow-pill :focus-visible { outline-color: #f4f1ec; }
-
-[data-theme="dark"] .flow-pill :focus-visible {
-  outline: 2px solid #8eb4e8;
-  outline-offset: 3px;
+.pill-mode-toggle[aria-pressed="true"],
+.pill-mode-toggle.is-active {
+  color: #1a1a1a;
+  background: var(--accent, #ffa946);
+  border-color: var(--accent, #ffa946);
+  font-weight: 700;
 }
 
 @media (max-width: 640px) {
+  .floating-pill-container {
+    bottom: 12px;
+    max-width: calc(100vw - 16px);
+  }
+  .flow-pill {
+    padding: 4px 10px 4px 6px;
+    gap: 6px;
+  }
   .pill-controls {
-    width: 100%;
-    margin-left: 0;
-    padding: 4px 6px 4px;
-    border-left: none;
-    border-top: 1px solid rgba(244, 241, 236, 0.18);
-    justify-content: flex-start;
+    padding-left: 6px;
+    gap: 4px;
   }
-
-  [data-theme="dark"] .flow-pill:not(.is-listening) .pill-controls {
-    border-top-color: rgba(16, 16, 16, 0.12);
-    border-left: none;
-  }
-
-  [data-theme="contrast"] .pill-controls {
-    border-left: none;
-    border-top: 2px solid #fff;
-  }
-
-  .flow-pill { border-radius: 999px; padding-bottom: 6px; }
 }
