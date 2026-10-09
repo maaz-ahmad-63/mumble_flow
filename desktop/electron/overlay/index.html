@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mumble AI Overlay</title>
+  <link rel="stylesheet" href="overlay.css">
+</head>
+<body class="state-idle">
+  <div class="hud-container" id="hud">
+    <!-- Pulsing state indicator / Mic icon -->
+    <div class="icon-wrap" id="iconWrap">
+      <svg class="mic-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+        <line x1="12" y1="19" x2="12" y2="23"></line>
+        <line x1="8" y1="23" x2="16" y2="23"></line>
+      </svg>
+      <div class="spinner" id="spinner"></div>
+    </div>
+
+    <!-- Live Audio Waveform Bars -->
+    <div class="waveform" id="waveform">
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+      <span class="bar"></span>
+    </div>
+
+    <!-- State & Live Transcript / Target App Label -->
+    <div class="text-content">
+      <div class="header-line">
+        <span class="state-label" id="stateLabel">Ready (Press F8)</span>
+        <span class="target-app" id="targetApp"></span>
+      </div>
+      <div class="live-transcript" id="liveTranscript" style="display: none;"></div>
+    </div>
+
+    <!-- Action Hotkey Badge -->
+    <div class="hotkey-badge" id="hotkeyBadge">F8</div>
+  </div>
+
+  <script src="overlay.js"></script>
+</body>
+</html>

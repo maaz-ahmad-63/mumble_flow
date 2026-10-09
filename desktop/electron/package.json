@@ -1,0 +1,70 @@
+{
+  "name": "mumble-ai-desktop",
+  "version": "1.0.0",
+  "description": "Mumble AI — Native macOS voice dictation app. Press F8, speak, text appears at your cursor.",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "pack": "electron-builder --mac --dir",
+    "dist": "electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.mumbleai.desktop",
+    "productName": "Mumble AI",
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "assets/icon.icns",
+      "hardenedRuntime": true,
+      "entitlements": "entitlements.mac.plist",
+      "entitlementsInherit": "entitlements.mac.plist",
+      "extendInfo": {
+        "NSMicrophoneUsageDescription": "Mumble AI needs microphone access to transcribe your speech.",
+        "NSAppleEventsUsageDescription": "Mumble AI uses Accessibility to type dictated text into your active application."
+      }
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "modules/**/*",
+      "assets/**/*",
+      "overlay/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../server",
+        "to": "server",
+        "filter": [
+          "**/*",
+          "!node_modules"
+        ]
+      },
+      {
+        "from": "../client",
+        "to": "client"
+      },
+      {
+        "from": "../data",
+        "to": "data"
+      },
+      {
+        "from": "../package.json",
+        "to": "package.json"
+      },
+      {
+        "from": "../node_modules",
+        "to": "node_modules"
+      }
+    ]
+  },
+  "dependencies": {
+    "auto-launch": "^5.0.6",
+    "electron-store": "^10.0.0",
+    "uiohook-napi": "^1.5.5"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  }
+}
