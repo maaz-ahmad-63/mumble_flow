@@ -1,4 +1,4 @@
-# Murmur Flow on Google Cloud
+# Mumble AI on Google Cloud
 
 There are two ways. Pick one.
 
@@ -31,7 +31,7 @@ Google Cloud needs a billing account with a card, even for free-tier use. Set a 
 ### Option A: e2-micro VM
 
 1. In the console, open **Compute Engine**, **VM instances**. Click **Create instance**. Enable the Compute Engine API if asked.
-2. **Name**: `murmur-flow`. **Region**: `us-central1`, `us-west1`, or `us-east1`.
+2. **Name**: `mumble-ai`. **Region**: `us-central1`, `us-west1`, or `us-east1`.
 3. **Machine type**: **E2**, then **e2-micro**.
 4. **OS and storage**: click **Change**. Operating system **Ubuntu**, version **Ubuntu 24.04 LTS** (x86/64). Boot disk type **Standard persistent disk**. Size **30** GB. Click **Select**. The default disk type is not free; change it.
 5. **Networking**: under **Firewall**, check **Allow HTTP traffic** and **Allow HTTPS traffic**.
@@ -41,7 +41,7 @@ Google Cloud needs a billing account with a card, even for free-tier use. Set a 
 9. Paste the install command and answer the questions. Details are in [linux-vps.md, Steps](linux-vps.md#steps).
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
 
 The external IP can change if you stop and start the VM. To keep it, open **VPC network**, **IP addresses**, and reserve it as static. Check the price there first.
@@ -53,8 +53,8 @@ Run these in Cloud Shell or a terminal with the Google Cloud CLI. Use your own p
 1. Get the code:
 
    ```bash
-   git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
-   cd MURMUR-FLOW
+   git clone https://github.com/maaz-ahmad-63/mumble_flow.git
+   cd mumble_flow
    ```
 
 2. Pick the project and turn on the services:
@@ -80,7 +80,7 @@ Run these in Cloud Shell or a terminal with the Google Cloud CLI. Use your own p
 5. Build and deploy. This keeps the service private (`--no-allow-unauthenticated`) and runs at most one copy so two copies never write the data file at once:
 
    ```bash
-   gcloud run deploy murmur-flow --source . --region us-central1 --port 3050 --no-allow-unauthenticated --max-instances 1 --execution-environment gen2 --add-volume name=data,type=cloud-storage,bucket=YOUR_BUCKET_NAME,mount-options="uid=1000;gid=1000" --add-volume-mount volume=data,mount-path=/app/data
+   gcloud run deploy mumble-ai --source . --region us-central1 --port 3050 --no-allow-unauthenticated --max-instances 1 --execution-environment gen2 --add-volume name=data,type=cloud-storage,bucket=YOUR_BUCKET_NAME,mount-options="uid=1000;gid=1000" --add-volume-mount volume=data,mount-path=/app/data
    ```
 
    Answer `Y` if it asks to create an Artifact Registry repository.
@@ -88,7 +88,7 @@ Run these in Cloud Shell or a terminal with the Google Cloud CLI. Use your own p
 6. Open it on your computer:
 
    ```bash
-   gcloud run services proxy murmur-flow --region us-central1 --port 3050
+   gcloud run services proxy mumble-ai --region us-central1 --port 3050
    ```
 
    Open http://localhost:3050. Keep that terminal open while you use the app. Because the address is `localhost`, the microphone works.
@@ -96,7 +96,7 @@ Run these in Cloud Shell or a terminal with the Google Cloud CLI. Use your own p
 ## Add your API keys
 
 - Option A: the script asks for them. To change them later, see [linux-vps.md, Add your API keys](linux-vps.md#add-your-api-keys).
-- Option B: in the console, open **Cloud Run**, click `murmur-flow`, then **Edit & deploy new revision**. Open **Variables & Secrets**, add `GROQ_API_KEY` and `GEMINI_API_KEY`, and click **Deploy**. For stronger protection, store them in Secret Manager and reference them there instead.
+- Option B: in the console, open **Cloud Run**, click `mumble-ai`, then **Edit & deploy new revision**. Open **Variables & Secrets**, add `GROQ_API_KEY` and `GEMINI_API_KEY`, and click **Deploy**. For stronger protection, store them in Secret Manager and reference them there instead.
 
 ## Put a password in front
 
@@ -116,16 +116,16 @@ Run these in Cloud Shell or a terminal with the Google Cloud CLI. Use your own p
 ## Update
 
 - Option A: run the install command again. See [linux-vps.md, Update](linux-vps.md#update).
-- Option B: in the `MURMUR-FLOW` folder, run `git pull`, then the same `gcloud run deploy` command from step 5.
+- Option B: in the `mumble-flow` folder, run `git pull`, then the same `gcloud run deploy` command from step 5.
 
 ## Back up
 
 - Option A: in the browser SSH window, pack the data into your home folder:
 
   ```bash
-  sudo tar -czf ~/murmur-flow-backup.tar.gz -C /opt/murmur-flow data .env
-  sudo chown "$USER" ~/murmur-flow-backup.tar.gz
-  echo ~/murmur-flow-backup.tar.gz
+  sudo tar -czf ~/mumble-flow-backup.tar.gz -C /opt/mumble-flow data .env
+  sudo chown "$USER" ~/mumble-flow-backup.tar.gz
+  echo ~/mumble-flow-backup.tar.gz
   ```
 
   Then click **Download file** at the top of the SSH window and paste the path that the last line printed. The file contains your API keys. Keep it safe. Restore steps are in [linux-vps.md, Back up](linux-vps.md#back-up).
@@ -141,7 +141,7 @@ Run these in Cloud Shell or a terminal with the Google Cloud CLI. Use your own p
 - Option B:
 
   ```bash
-  gcloud run services delete murmur-flow --region us-central1
+  gcloud run services delete mumble-ai --region us-central1
   gcloud storage rm --recursive gs://YOUR_BUCKET_NAME
   gcloud artifacts repositories delete cloud-run-source-deploy --location us-central1
   ```

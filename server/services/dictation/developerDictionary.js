@@ -1,5 +1,5 @@
 /**
- * Murmur Flow / Mumble AI — Developer Vocabulary Layer
+ * Mumble AI — Developer Vocabulary Layer
  *
  * Provides an extensible developer dictionary covering frameworks, APIs, databases,
  * tools, protocols, and custom developer products (e.g., SIZHVarta, VART-AI, Mumble AI, WABA, etc.).

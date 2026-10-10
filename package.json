@@ -1,10 +1,10 @@
 {
-  "name": "murmur-flow",
+  "name": "mumble-flow",
   "version": "1.0.0",
-  "description": "Self-hosted voice dictation. Speak naturally, get cleaned text, on your computer or your own server.",
+  "description": "Mumble AI — Self-hosted voice dictation. Speak naturally, get cleaned text, on your computer or your own server.",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ImaduddeenKhan/MURMUR-FLOW.git"
+    "url": "https://github.com/maaz-ahmad-63/mumble_flow.git"
   },
   "main": "server/index.js",
   "type": "module",

@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Overlay UI & Audio Controller
+ * Mumble AI Overlay UI & Audio Controller
  */
 
 const stateLabel = document.getElementById('stateLabel');

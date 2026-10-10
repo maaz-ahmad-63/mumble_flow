@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Personal Dictionary Controller
+ * Mumble AI — Personal Dictionary Controller
  * Phase 7: Personalization (Search, Spoken Mapping, Enable/Disable, Edit)
  */
 

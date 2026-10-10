@@ -1,6 +1,6 @@
-# Murmur Flow on a home computer or home server
+# Mumble AI on a home computer or home server
 
-Run Murmur Flow on a computer at home that stays on, then use it from your phone or laptop anywhere. There are two ways to reach it:
+Run Mumble AI on a computer at home that stays on, then use it from your phone or laptop anywhere. There are two ways to reach it:
 
 - **Tailscale (recommended).** A private network between your own devices. Nothing is exposed to the internet. Free for personal use.
 - **Cloudflare Tunnel.** A public address on your own domain, with Cloudflare's login screen in front. Needs a domain managed by Cloudflare.
@@ -17,7 +17,7 @@ $0, plus electricity. Tailscale's free plan covers personal use. Cloudflare Tunn
 
 ## Before you start
 
-1. Install Murmur Flow on the home computer with [../setup.md](../setup.md). Check that http://localhost:3050 works there.
+1. Install Mumble AI on the home computer with [../setup.md](../setup.md). Check that http://localhost:3050 works there.
 2. Make sure the computer does not go to sleep. Windows: **Settings**, **System**, **Power**, set **Sleep** to **Never** when plugged in. macOS: **System Settings**, **Energy**, turn on **Prevent automatic sleeping**.
 
 ## Steps
@@ -27,17 +27,17 @@ $0, plus electricity. Tailscale's free plan covers personal use. Cloudflare Tunn
 The app must be running for you to use it. Pick one:
 
 - Leave the terminal with `npm start` open.
-- Linux: run it as a service. Replace `YOUR_USER` with your Linux username and `/home/YOUR_USER/MURMUR-FLOW` with the project folder:
+- Linux: run it as a service. Replace `YOUR_USER` with your Linux username and `/home/YOUR_USER/mumble-flow` with the project folder:
 
   ```bash
-  sudo tee /etc/systemd/system/murmur-flow.service >/dev/null <<'EOF'
+  sudo tee /etc/systemd/system/mumble-ai.service >/dev/null <<'EOF'
   [Unit]
-  Description=Murmur Flow
+  Description=Mumble AI
   After=network-online.target
 
   [Service]
   User=YOUR_USER
-  WorkingDirectory=/home/YOUR_USER/MURMUR-FLOW
+  WorkingDirectory=/home/YOUR_USER/mumble-flow
   ExecStart=/usr/bin/node server/index.js
   Restart=on-failure
 
@@ -45,7 +45,7 @@ The app must be running for you to use it. Pick one:
   WantedBy=multi-user.target
   EOF
   sudo systemctl daemon-reload
-  sudo systemctl enable --now murmur-flow
+  sudo systemctl enable --now mumble-ai
   ```
 
   If `which node` prints a path other than `/usr/bin/node`, put that path in `ExecStart`.
@@ -55,7 +55,7 @@ The app must be running for you to use it. Pick one:
   ```powershell
   $action = New-ScheduledTaskAction -Execute (Get-Command node).Source -Argument "server/index.js" -WorkingDirectory (Get-Location).Path
   $trigger = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
-  Register-ScheduledTask -TaskName "Murmur Flow" -Action $action -Trigger $trigger
+  Register-ScheduledTask -TaskName "Mumble AI" -Action $action -Trigger $trigger
   ```
 
   If it says "Access is denied", open PowerShell with **Run as administrator**, go to the project folder with `cd`, and run the three lines again.
@@ -83,7 +83,7 @@ Your domain must use Cloudflare's nameservers. Create the login screen first, so
    1. Add the public hostname you will use, for example `dictate.YOUR_DOMAIN`.
    2. Add a policy: **Action** **Allow**, **Include** **Emails**, and type your email address.
    3. Save. Cloudflare will send a one-time code to that email at sign-in.
-3. Go to **Networking**, **Tunnels**, **Create Tunnel**. Pick **Cloudflared**, name it `murmur-flow`.
+3. Go to **Networking**, **Tunnels**, **Create Tunnel**. Pick **Cloudflared**, name it `mumble-ai`.
 4. Cloudflare shows install commands for your operating system. Run them on the home computer. On Linux they end with:
 
    ```bash
@@ -120,7 +120,7 @@ git pull
 npm install
 ```
 
-Start the app again (or `sudo systemctl restart murmur-flow` on Linux).
+Start the app again (or `sudo systemctl restart mumble-ai` on Linux).
 
 ## Back up
 
@@ -130,7 +130,7 @@ Copy the `data` folder and `.env` from the project folder to a USB drive or clou
 
 1. Tailscale: `tailscale serve reset` stops sharing the app.
 2. Cloudflare: delete the tunnel under **Networking**, **Tunnels**, and the application under **Access controls**. On Linux, `sudo cloudflared service uninstall`.
-3. Stop the app. Linux: `sudo systemctl disable --now murmur-flow`. Windows: `Unregister-ScheduledTask -TaskName "Murmur Flow"`.
+3. Stop the app. Linux: `sudo systemctl disable --now mumble-ai`. Windows: `Unregister-ScheduledTask -TaskName "Mumble AI"`.
 
 ## Troubleshooting
 

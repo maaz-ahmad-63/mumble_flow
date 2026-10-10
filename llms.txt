@@ -1,27 +1,25 @@
-# Murmur Flow
+# Mumble AI
 
-> Murmur Flow is a self-hosted, open-source voice dictation app. It runs as one Node.js 20+ Express process (`npm install && npm start`, port 3050 or `PORT`), turns speech or typed text into cleaned-up text using Groq or Gemini, and saves its data in a single JSON file under `data/`.
+> Mumble AI is a self-hosted, open-source voice dictation and intelligence app. It runs as one Node.js 20+ Express process (`npm install && npm start`, port 3050 or `PORT`), turns speech or typed text into cleaned-up text using Groq, Gemini, or OpenAI, and saves its data in SQLite under `data/`.
 
 Important facts for installing or hosting it:
 
-- It needs a long-running Node.js process and a disk that persists `data/whisperflow_store.json`. PHP-only shared hosting, static hosts, and Vercel serverless functions do not work.
-- It has no login. Put a password in front before exposing it (Caddy basic auth, Tailscale, Cloudflare Access, or the host's own sign-in).
+- It needs a long-running Node.js process and persistent disk storage for `data/mumble_flow.sqlite`. Serverless platforms without persistent disks (such as Vercel) are incompatible.
+- Includes built-in multi-user authentication, Model Hub (BYOK), and an Admin dashboard.
 - Browsers allow the microphone only on HTTPS or localhost.
 - API keys are optional. Without them, typed cleanup still works through built-in rules.
-- One-command install on a fresh Ubuntu server: `curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash`
+- One-command install on a fresh Ubuntu server: `curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash`
 
 ## Docs
 
-- [AGENTS.md](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/AGENTS.md): Full instructions for coding agents: setup, verification, environment variables, rules, decision flow, troubleshooting
-- [Local setup](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/setup.md): Install and run on Windows, macOS, or Linux
-- [Deploy chooser](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/deploy/README.md): Which hosting works, rough costs, and one guide per platform
-- [Generic Linux VPS](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/deploy/linux-vps.md): The install script, HTTPS, password, updates, backups
-- [AI providers](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/providers.md): Supported providers and how to switch
-- [Agent prompt](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/agent-prompt.md): Copy-paste prompt that makes a coding agent install the app
+- [AGENTS.md](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/AGENTS.md): Full instructions for coding agents: setup, verification, environment variables, rules, decision flow, troubleshooting
+- [Local setup](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/docs/setup.md): Install and run on Windows, macOS, or Linux
+- [Deploy chooser](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/docs/deploy/README.md): Which hosting works, rough costs, and one guide per platform
+- [Generic Linux VPS](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/docs/deploy/linux-vps.md): The install script, HTTPS, password, updates, backups
+- [Agent prompt](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/docs/agent-prompt.md): Copy-paste prompt that makes a coding agent install the app
 
 ## Optional
 
-- [Architecture](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/architecture.md): How the server, client, and services fit together
-- [Google Drive backup](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/google-shared-drive.md): Back up data to a Google shared drive
-- [Desktop companion](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/desktop/README.md): Hotkey app that types results into other programs
-- [Docker](https://github.com/ImaduddeenKhan/MURMUR-FLOW/blob/main/docs/deploy/docker.md): Run with Docker Compose and a persistent volume
+- [Architecture](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/docs/architecture.md): How the server, client, and services fit together
+- [Desktop companion](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/desktop/README.md): Hotkey app that types results into other programs
+- [Docker](https://github.com/maaz-ahmad-63/mumble_flow/blob/main/docs/deploy/docker.md): Run with Docker Compose and a persistent volume

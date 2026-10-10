@@ -1,9 +1,9 @@
 services:
-  whisperflow:
+  mumble-ai:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: whisperflow
+    container_name: mumble-ai
     restart: unless-stopped
     ports:
       # BIND_ADDRESS=127.0.0.1 keeps the port off the internet. Docker ports skip ufw.
@@ -11,6 +11,8 @@ services:
     environment:
       - PORT=3050
       - NODE_ENV=production
+      - JWT_SECRET=${JWT_SECRET:-}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:-}
       - GROQ_API_KEY=${GROQ_API_KEY:-}
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEFAULT_STT_PROVIDER=${DEFAULT_STT_PROVIDER:-groq}

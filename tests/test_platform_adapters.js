@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Platform Adapter Contract & Cross-Platform Tests
+ * Mumble AI — Platform Adapter Contract & Cross-Platform Tests
  *
  * Verifies that all platform adapters (macOS, Windows, Linux, Web) fulfill
  * the standard IPlatformAdapter interface contracts, and that Core Application

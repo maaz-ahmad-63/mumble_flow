@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — Windows Platform Adapter (Architecture Specification & Provider Implementation)
+ * Mumble AI Desktop — Windows Platform Adapter (Architecture Specification & Provider Implementation)
  *
  * Implements the standard Platform Provider interfaces for Windows (win32).
  * Designed for native Win32 User32/Kernel32 APIs, Windows UI Automation, and SendInput.

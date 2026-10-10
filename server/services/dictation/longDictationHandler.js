@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Long Dictation Handler
+ * Mumble AI — Long Dictation Handler
  *
  * Breaks long voice dictations into cohesive paragraphs/clauses,
  * processes each segment with shared contextual awareness, and recombines smoothly.

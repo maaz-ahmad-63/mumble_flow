@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Sets up Murmur Flow on this Windows computer and starts it.
+Sets up Mumble AI on this Windows computer and starts it.
 
 .DESCRIPTION
 1. Checks that Node.js 20 or newer is installed.
@@ -70,7 +70,7 @@ if (-not $node) {
 $nodeVersion = (& node --version).Trim()
 $nodeMajor = [int]($nodeVersion.TrimStart('v').Split('.')[0])
 if ($nodeMajor -lt 20) {
-    Stop-WithError "Node.js $nodeVersion is too old. Murmur Flow needs version 20 or newer. Download the LTS version from $downloadUrl, install it, open a new PowerShell window, and run this script again."
+    Stop-WithError "Node.js $nodeVersion is too old. Mumble AI needs version 20 or newer. Download the LTS version from $downloadUrl, install it, open a new PowerShell window, and run this script again."
 }
 Write-Host "Found Node.js $nodeVersion"
 if ($nodeMajor -eq 20) {
@@ -124,12 +124,12 @@ if ($portText -match '^\d+$') { $port = [int]$portText }
 
 $runningPort = Find-RunningPort $port
 if ($runningPort) {
-    Write-Step "Murmur Flow is already running"
+    Write-Step "Mumble AI is already running"
     Write-Host "Open http://localhost:$runningPort"
     exit 0
 }
 
-Write-Step "Starting Murmur Flow"
+Write-Step "Starting Mumble AI"
 $server = Start-Process -FilePath $node.Source -ArgumentList "server/index.js" -WorkingDirectory $RepoRoot -NoNewWindow -PassThru
 
 $runningPort = $null
@@ -147,7 +147,7 @@ if (-not $runningPort) {
 } else {
     $url = "http://localhost:$runningPort"
     Write-Host ""
-    Write-Host "Murmur Flow is running." -ForegroundColor Green
+    Write-Host "Mumble AI is running." -ForegroundColor Green
     Write-Host "Open $url in Chrome or Edge."
     Write-Host "Keep this window open while you use it. Press Ctrl+C to stop."
     if (-not $NoBrowser) { Start-Process $url }

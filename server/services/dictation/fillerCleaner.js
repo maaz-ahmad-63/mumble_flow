@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Filler Word & Stutter Cleaner
+ * Mumble AI — Filler Word & Stutter Cleaner
  *
  * Removes verbal clutter, stutters, filler phrases, and false vocal artifacts
  * while preserving natural language semantics and comparisons.

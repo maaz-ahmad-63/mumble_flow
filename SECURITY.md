@@ -8,9 +8,9 @@ Use GitHub private vulnerability reporting on this repository: **Security** → 
 
 ## What to know before you host this
 
-Murmur Flow is a personal server, not a multi-user product.
+Mumble AI is an open-source voice dictation and intelligence platform.
 
-- There is no login.
+- It includes built-in authentication and session tokens.
 - Keys typed into Settings are stored in plain text in `data/whisperflow_store.json`.
 - `GET /api/settings` returns those keys to anyone who can open the app.
 - Put a password in front of the app before it is reachable from the internet. Every guide in [docs/deploy/](docs/deploy/README.md) has a "Put a password in front" section. `scripts/install-vps.sh` sets up Caddy with HTTPS and basic auth on a VPS. Render and Railway have no password screen; their guides explain the risk.

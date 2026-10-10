@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — System Tray / Menu Bar Module
+ * Mumble AI Desktop — System Tray / Menu Bar Module
  */
 
 import { Tray, Menu, nativeImage, shell, app } from 'electron';

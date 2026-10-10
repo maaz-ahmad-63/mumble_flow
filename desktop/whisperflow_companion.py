@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-🎙️ WhisperFlow Desktop Companion (OS-Level Universal Typing Injector)
+🎙️ Mumble AI Desktop Companion (OS-Level Universal Typing Injector)
 Injects zero-edit polished speech into ANY external application (VS Code, Word, Slack, Notion, Chrome, Terminal, etc.)
 Works with local server (http://localhost:3050) or remote cloud deployments (e.g. Render, Railway, VPS).
 
 Usage:
   python whisperflow_companion.py --server http://localhost:3050
-  python whisperflow_companion.py --server https://your-whisperflow.onrender.com --key YOUR_GROQ_KEY
+  python whisperflow_companion.py --server https://your-mumble-domain.com --key YOUR_GROQ_KEY
 """
 
 import sys
@@ -30,13 +30,13 @@ for _stream in (sys.stdout, sys.stderr):
 
 print("""
 ============================================================
-🎙️  WhisperFlow Desktop Companion — Universal Typing Injector
-⚡  Wispr Flow OS-Level Injector for Any Application
+🎙️  Mumble AI Desktop Companion — Universal Typing Injector
+⚡  OS-Level Push-to-Talk Injector for Any Application
 ============================================================
 """)
 
-parser = argparse.ArgumentParser(description="WhisperFlow Desktop Injection Companion")
-parser.add_argument("--server", default="http://localhost:3050", help="WhisperFlow Server URL")
+parser = argparse.ArgumentParser(description="Mumble AI Desktop Injection Companion")
+parser.add_argument("--server", default="http://localhost:3050", help="Mumble AI Server URL")
 parser.add_argument("--hotkey", default="f8", help="Global Hotkey to toggle dictation (default: F8)")
 parser.add_argument("--tone", default="auto", help="auto (pick from the app you are typing into), or a fixed tone: casual, formal, executive, code, bullet, standup, social")
 parser.add_argument("--groq-key", default=os.environ.get("GROQ_API_KEY", ""), help="Groq API Key (optional)")

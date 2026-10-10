@@ -1,8 +1,8 @@
-# Murmur Flow on Railway
+# Mumble AI on Railway
 
 Railway builds the app from GitHub using the `Dockerfile` in this repository and runs it. You add a volume so `data/` survives.
 
-**Read this first.** Railway has no password screen, and Murmur Flow has no login. Anyone who finds your `up.railway.app` address can use the app, read your history, and use your API key. Use Railway for a short test, or only if you accept that risk. For daily use, pick a VPS from [README.md](README.md#choose-a-platform).
+**Read this first.** Railway has no password screen, and Mumble AI has no login. Anyone who finds your `up.railway.app` address can use the app, read your history, and use your API key. Use Railway for a short test, or only if you accept that risk. For daily use, pick a VPS from [README.md](README.md#choose-a-platform).
 
 There is no one-click button. Railway buttons need a published template, and this project does not have one yet.
 
@@ -16,12 +16,12 @@ Hobby is $5 per month and includes $5 of usage. A small app like this usually fi
 
 ## Before you start
 
-1. On GitHub, open https://github.com/ImaduddeenKhan/MURMUR-FLOW and click **Fork**, then **Create fork**. Railway deploys from your fork.
+1. On GitHub, open https://github.com/maaz-ahmad-63/mumble_flow and click **Fork**, then **Create fork**. Railway deploys from your fork.
 2. Create an account at https://railway.com. Sign in with GitHub. Choose the Hobby plan.
 
 ## Steps
 
-1. In Railway, click **New Project**, then **Deploy from GitHub repo**. Allow Railway to see your fork if asked. Pick your `MURMUR-FLOW` fork.
+1. In Railway, click **New Project**, then **Deploy from GitHub repo**. Allow Railway to see your fork if asked. Pick your `mumble-flow` fork.
 2. Railway finds the `Dockerfile` and starts building. Let it finish.
 3. Open the service, then **Variables**. Click **New Variable** and add each of these:
 
@@ -34,7 +34,7 @@ Hobby is $5 per month and includes $5 of usage. A small app like this usually fi
 
    `RAILWAY_RUN_UID=0` is needed because Railway volumes belong to root and the image runs as a normal user.
 
-4. Add the volume: right-click an empty spot on the project canvas (or press `Ctrl+K` / `Cmd+K`) and choose to create a volume. Connect it to the Murmur Flow service. Set the **mount path** to `/app/data`.
+4. Add the volume: right-click an empty spot on the project canvas (or press `Ctrl+K` / `Cmd+K`) and choose to create a volume. Connect it to the Mumble AI service. Set the **mount path** to `/app/data`.
 5. Open the service, then **Settings**. Under **Networking**, click **Generate Domain**. If asked for a port, type `3050`.
 6. Under **Settings**, set the **Healthcheck Path** to `/health`.
 7. Click **Deploy** if Railway shows pending changes. Open the `up.railway.app` address when the deploy is done.
@@ -66,7 +66,7 @@ The volume mounted at `/app/data` keeps the data across deploys and restarts. Wi
 
 ## Update
 
-Railway redeploys when your fork changes. To get new versions of Murmur Flow, open your fork on GitHub and click **Sync fork**, then **Update branch**.
+Railway redeploys when your fork changes. To get new versions of Mumble AI, open your fork on GitHub and click **Sync fork**, then **Update branch**.
 
 ## Back up
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sets up Murmur Flow on macOS or Linux and starts it.
+# Sets up Mumble AI on macOS or Linux and starts it.
 #
 #   bash scripts/setup.sh              set up, run tests, start the app
 #   bash scripts/setup.sh --no-start   set up and run tests only
@@ -56,7 +56,7 @@ fi
 NODE_VERSION=$(node --version)
 NODE_MAJOR=$(node -p 'process.versions.node.split(".")[0]')
 if [ "$NODE_MAJOR" -lt 20 ]; then
-  fail "Node.js $NODE_VERSION is too old. Murmur Flow needs version 20 or newer. Install the LTS version from $DOWNLOAD_URL and run this script again."
+  fail "Node.js $NODE_VERSION is too old. Mumble AI needs version 20 or newer. Install the LTS version from $DOWNLOAD_URL and run this script again."
 fi
 echo "Found Node.js $NODE_VERSION"
 if [ "$NODE_MAJOR" -eq 20 ]; then
@@ -96,12 +96,12 @@ fi
 PORT_VALUE="${PORT_VALUE:-3050}"
 
 if RUNNING_PORT=$(find_running_port "$PORT_VALUE"); then
-  step "Murmur Flow is already running"
+  step "Mumble AI is already running"
   echo "Open http://localhost:$RUNNING_PORT"
   exit 0
 fi
 
-step "Starting Murmur Flow"
+step "Starting Mumble AI"
 node server/index.js &
 SERVER_PID=$!
 trap 'kill "$SERVER_PID" 2>/dev/null || true' INT TERM EXIT
@@ -120,7 +120,7 @@ if [ -z "$RUNNING_PORT" ]; then
   echo "The app did not answer within 30 seconds. Read the messages above for the address it printed."
 else
   echo
-  echo "Murmur Flow is running."
+  echo "Mumble AI is running."
   echo "Open http://localhost:$RUNNING_PORT in Chrome, Edge, or Safari."
   echo "Keep this terminal open while you use it. Press Ctrl+C to stop."
 fi

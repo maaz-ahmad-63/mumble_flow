@@ -1,4 +1,4 @@
-# Murmur Flow on Oracle Cloud (Always Free)
+# Mumble AI on Oracle Cloud (Always Free)
 
 Oracle Cloud's Always Free tier includes Arm servers that cost nothing. It takes more steps than a paid VPS, and free servers are sometimes hard to get.
 
@@ -8,7 +8,7 @@ Replace anything in capital letters that starts with `YOUR_`.
 
 Nothing. Use the Always Free resources:
 
-- Shape **VM.Standard.A1.Flex** (Ampere Arm). The free allowance is 2 OCPUs and 12 GB of memory in total across your A1 instances. 1 OCPU and 6 GB is plenty for Murmur Flow.
+- Shape **VM.Standard.A1.Flex** (Ampere Arm). The free allowance is 2 OCPUs and 12 GB of memory in total across your A1 instances. 1 OCPU and 6 GB is plenty for Mumble AI.
 - Image **Canonical Ubuntu 24.04** (the Arm build that matches the A1 shape).
 - The boot volume. Always Free includes 200 GB of block storage in total.
 
@@ -26,7 +26,7 @@ $0 within the Always Free limits (checked 2026-10). Sign-up needs a credit card 
 ## Steps
 
 1. In the Oracle Cloud console, open the menu, then **Compute**, then **Instances**. Click **Create instance**.
-2. **Name**: type `murmur-flow`.
+2. **Name**: type `mumble-ai`.
 3. **Image and shape**:
    1. Click **Change image**, choose **Ubuntu**, then **Canonical Ubuntu 24.04**. Select the build without "Minimal" in its name.
    2. Click **Change shape**, choose **Ampere**, then **VM.Standard.A1.Flex**. Set **OCPUs** to 1 and **Memory** to 6 GB.
@@ -47,7 +47,7 @@ $0 within the Always Free limits (checked 2026-10). Sign-up needs a credit card 
 10. Paste the install command and answer the questions. Details are in [linux-vps.md, Steps](linux-vps.md#steps).
 
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+    curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
     ```
 
 Oracle's Ubuntu images block ports with iptables rules inside the server. The script detects this and opens 80 and 443 there too, without turning on ufw.
@@ -77,12 +77,12 @@ Run the install command again. See [linux-vps.md, Update](linux-vps.md#update).
 See [linux-vps.md, Back up](linux-vps.md#back-up). Use `ubuntu` as the user and add `-i PATH_TO_YOUR_PRIVATE_KEY` to `scp`. Write the file where `ubuntu` can read it:
 
 ```bash
-sudo tar -czf /home/ubuntu/murmur-flow-backup.tar.gz -C /opt/murmur-flow data .env
-sudo chown ubuntu /home/ubuntu/murmur-flow-backup.tar.gz
+sudo tar -czf /home/ubuntu/mumble-flow-backup.tar.gz -C /opt/mumble-flow data .env
+sudo chown ubuntu /home/ubuntu/mumble-flow-backup.tar.gz
 ```
 
 ```bash
-scp -i PATH_TO_YOUR_PRIVATE_KEY ubuntu@YOUR_SERVER_IP:/home/ubuntu/murmur-flow-backup.tar.gz .
+scp -i PATH_TO_YOUR_PRIVATE_KEY ubuntu@YOUR_SERVER_IP:/home/ubuntu/mumble-flow-backup.tar.gz .
 ```
 
 ## Remove it and stop paying

@@ -4,7 +4,7 @@ The full instructions for this repository are in [AGENTS.md](../AGENTS.md). Read
 
 Short version:
 
-- Murmur Flow is a Node.js 20+ Express app. `npm install && npm start` serves it on port 3050 or `PORT`.
+- Mumble AI is a Node.js 20+ Express app. `npm install && npm start` serves it on port 3050 or `PORT`.
 - Data is saved in `data/whisperflow_store.json`. It must persist and must never be committed.
 - `import 'dotenv/config'` must stay the first import in `server/index.js`.
 - Never commit `.env`, API keys, or `data/*.json`. Never invent or print keys.

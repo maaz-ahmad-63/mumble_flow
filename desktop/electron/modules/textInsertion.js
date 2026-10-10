@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — macOS Text Insertion Engine
+ * Mumble AI Desktop — macOS Text Insertion Engine
  *
  * Inserts text at the cursor position in ANY macOS application by:
  * 1. Saving the user's current clipboard contents

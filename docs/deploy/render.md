@@ -1,8 +1,8 @@
-# Murmur Flow on Render
+# Mumble AI on Render
 
 Render builds the app from GitHub and runs it. `render.yaml` in this repository sets up a web service with a 1 GB disk for `data/`.
 
-**Read this first.** Render has no password screen for web services, and Murmur Flow has no login. Anyone who finds your `onrender.com` address can use the app, read your history, and use your API key. Use Render for a short test, or only if you accept that risk. For daily use, pick a VPS from [README.md](README.md#choose-a-platform).
+**Read this first.** Render has no password screen for web services, and Mumble AI has no login. Anyone who finds your `onrender.com` address can use the app, read your history, and use your API key. Use Render for a short test, or only if you accept that risk. For daily use, pick a VPS from [README.md](README.md#choose-a-platform).
 
 ## What to buy
 
@@ -22,11 +22,11 @@ $7 per month for Starter plus $0.25 per month for the 1 GB disk (checked 2026-10
 
 1. Click this button, or open the link in your browser:
 
-   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/ImaduddeenKhan/MURMUR-FLOW)
+   [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/maaz-ahmad-63/mumble_flow)
 
-   Link: `https://render.com/deploy?repo=https://github.com/ImaduddeenKhan/MURMUR-FLOW`
+   Link: `https://render.com/deploy?repo=https://github.com/maaz-ahmad-63/mumble_flow`
 
-2. Render reads `render.yaml` and shows one web service named `whisperflow` with a disk. Type a **Blueprint Name**, such as `murmur-flow`.
+2. Render reads `render.yaml` and shows one web service named `whisperflow` with a disk. Type a **Blueprint Name**, such as `mumble-ai`.
 3. Paste your key into `GROQ_API_KEY`. Paste a Gemini key into `GEMINI_API_KEY`, or leave it empty.
 4. Click **Deploy Blueprint** (or **Apply**). Wait until the service shows **Live**.
 5. Open the service. Click the `https://whisperflow-....onrender.com` address at the top.
@@ -71,7 +71,7 @@ Render takes a daily snapshot of the disk. To restore one, open the service, the
 ## Remove it and stop paying
 
 1. Open the service, then **Settings**. At the bottom, click **Delete Web Service** and confirm. The disk is deleted with it.
-2. Open **Blueprints** and delete the `murmur-flow` Blueprint.
+2. Open **Blueprints** and delete the `mumble-ai` Blueprint.
 3. Check **Billing** shows no other paid services.
 
 ## Troubleshooting

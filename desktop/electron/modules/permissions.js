@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — macOS Permissions Module
+ * Mumble AI Desktop — macOS Permissions Module
  *
  * Checks and prompts for macOS Accessibility and Microphone permissions.
  */

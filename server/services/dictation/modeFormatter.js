@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Mode Formatter
+ * Mumble AI — Mode Formatter
  *
  * Implements mode-specific structure and styling for:
  * Natural, Casual, Professional, Executive, Email, Social, Support, Code, Bullets, Standup.

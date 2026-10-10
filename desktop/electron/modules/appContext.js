@@ -1,5 +1,5 @@
 /**
- * Murmur Flow / Mumble AI — Application Context & Mode Engine
+ * Mumble AI — Application Context & Mode Engine
  *
  * 1. AppContext schema:
  *    {

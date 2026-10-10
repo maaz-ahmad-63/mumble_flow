@@ -6,16 +6,16 @@ Humans should start at [README.md](README.md). Someone who wants an agent to ins
 
 ## What this is
 
-Murmur Flow is a self-hosted voice dictation app. You speak in the browser, and it returns cleaned-up text. It also cleans typed text, expands snippets, keeps a personal dictionary, and writes meeting notes.
+Mumble AI (formerly Murmur Flow) is an open-source voice dictation and intelligence platform. You speak in the browser or via the Electron desktop companion, and it returns cleaned-up, structured text.
 
 - Node.js 20 or newer (22 or 24 LTS recommended). Express serves `client/` and the API in `server/`.
 - No build step. `npm install && npm start` runs it.
 - Listens on port 3050, or on `PORT` from the environment. If the port is busy, it moves to the next free port and prints the address.
-- Saves history, snippets, dictionary, and Settings to `data/whisperflow_store.json`. That file must survive restarts and redeploys.
-- There is no login. Anyone who can open the URL can use the app, read its history, and spend the API key quota.
-- The browser only allows the microphone on `https://` or `http://localhost`. A plain `http://SERVER_IP:3050` page will load, but dictation will not work.
+- Saves multi-user history, settings, quotas, and BYOK encrypted keys in `data/mumble_flow.sqlite` (with legacy fallback to `data/whisperflow_store.json`). That data must survive restarts and redeploys.
+- Includes JWT Bearer authentication and an Admin dashboard.
+- The browser only allows the microphone on `https://` or `http://localhost`. A plain `http://SERVER_IP:3050` page will load, but dictation will not work without HTTPS.
 
-The public name is Murmur Flow. Some files still say `whisperflow` (for example `whisperflow_store.json` and the Docker service name). Do not rename them unless the task is a rename. Renaming the store file or the Docker volume loses user data.
+The public name is Mumble AI. Some internal legacy files still maintain compatibility with `whisperflow` store data. Do not delete them to avoid losing user data.
 
 ## Repo map
 
@@ -172,7 +172,7 @@ Ask before doing anything that costs money or creates resources in the user's cl
 | Dictation says "API Key is not configured" | Add a key to `.env` and restart, or paste it in Settings and click Save. |
 | The microphone button does nothing on a server | The page is on plain `http://`. Use HTTPS (see the deploy guide) or `http://localhost`. |
 | History disappears after a restart or redeploy | `data/` is not on a persistent disk. Follow "Make data permanent" in the platform's guide. |
-| 502 or "bad gateway" behind Caddy | The app is not running. `sudo systemctl status murmur-flow` and `sudo journalctl -u murmur-flow -n 50`. |
+| 502 or "bad gateway" behind Caddy | The app is not running. `sudo systemctl status mumble-ai` and `sudo journalctl -u mumble-ai -n 50`. |
 | HTTPS certificate fails | The domain does not point at the server yet, or ports 80 and 443 are closed in the cloud firewall. |
 | Desktop companion cannot reach a password-protected server | The companion has no password support. Run it against `http://localhost:3050` or a Tailscale address. |
 

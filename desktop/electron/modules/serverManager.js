@@ -1,7 +1,7 @@
 /**
- * Murmur Flow Desktop — Server Manager
+ * Mumble AI Desktop — Server Manager
  *
- * Ensures the Murmur Flow Express backend is running.
+ * Ensures the Mumble AI Express backend is running.
  * If already running locally (e.g. on port 3050), connects to it.
  * If not running, spawns the Express server in the background.
  */
@@ -79,7 +79,7 @@ export class ServerManager {
   }
 
   /**
-   * Check candidate ports to see if a Murmur Flow server is already active.
+   * Check candidate ports to see if a Mumble AI server is already active.
    * @returns {Promise<string|null>}
    */
   async findActiveServer() {
@@ -118,11 +118,11 @@ export class ServerManager {
     const activeUrl = await this.findActiveServer();
     if (activeUrl) {
       this.baseUrl = activeUrl;
-      console.log(`[ServerManager] Connected to active Murmur Flow server at ${this.baseUrl}`);
+      console.log(`[ServerManager] Connected to active Mumble AI server at ${this.baseUrl}`);
       return this.baseUrl;
     }
 
-    console.log('[ServerManager] Starting embedded Murmur Flow server...');
+    console.log('[ServerManager] Starting embedded Mumble AI server...');
     const projectRoot = path.resolve(__dirname, '../../..');
     const serverPath = path.resolve(projectRoot, 'server/index.js');
     const nodeBinary = findNodeBinary();

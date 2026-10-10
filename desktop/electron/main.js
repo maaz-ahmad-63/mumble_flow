@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — Main Process
+ * Mumble AI Desktop — Main Process
  *
  * macOS Native Voice Dictation Client (Wispr Flow style)
  */
@@ -352,7 +352,7 @@ function initGlobalInputHooks() {
 }
 
 /**
- * Send recorded audio buffer to Murmur Flow backend /api/dictate
+ * Send recorded audio buffer to Mumble AI backend /api/dictate
  */
 async function processAudio(audioBuffer) {
   try {
@@ -479,7 +479,7 @@ async function processAudio(audioBuffer) {
 
 // App Lifecycle
 app.whenReady().then(async () => {
-  // Start or connect to Murmur Flow Server
+  // Start or connect to Mumble AI Server
   serverManager = new ServerManager(3050);
   serverBaseUrl = await serverManager.ensureRunning();
 

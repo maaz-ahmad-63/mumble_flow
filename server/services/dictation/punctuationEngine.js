@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Punctuation & Capitalization Engine
+ * Mumble AI — Punctuation & Capitalization Engine
  *
  * Provides automatic punctuation, sentence casing, question mark detection,
  * acronym capitalization, and voice-command punctuation parsing.

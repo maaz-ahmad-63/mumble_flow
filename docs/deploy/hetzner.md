@@ -1,4 +1,4 @@
-# Murmur Flow on Hetzner Cloud
+# Mumble AI on Hetzner Cloud
 
 You rent a small Ubuntu cloud server and run one install command.
 
@@ -29,7 +29,7 @@ Checked 2026-10, not verified on Hetzner's own page: CX23 about €6 per month w
 4. **Type**: **Shared vCPU**, then the cheapest available type as described in "What to buy".
 5. **Networking**: keep **Public IPv4** and **Public IPv6** on.
 6. **SSH keys**: add yours if you have one. Without one, Hetzner emails you a root password.
-7. **Name**: type `murmur-flow`.
+7. **Name**: type `mumble-ai`.
 8. Click **Create & Buy now**. Copy the IPv4 address. This is `YOUR_SERVER_IP`.
 9. If you have a domain, create an A record that points to `YOUR_SERVER_IP` now.
 10. Connect and install. Follow [linux-vps.md, Steps](linux-vps.md#steps). In short:
@@ -39,7 +39,7 @@ Checked 2026-10, not verified on Hetzner's own page: CX23 about €6 per month w
     ```
 
     ```bash
-    curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+    curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
     ```
 
 New servers have no Hetzner Cloud Firewall attached, so ports 80 and 443 are reachable. If you attach one later, allow inbound TCP 22, 80, and 443.

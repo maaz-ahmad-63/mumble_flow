@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Murmur Flow installer for a fresh Ubuntu 22.04 or 24.04 server.
+# Mumble AI installer for a fresh Ubuntu 22.04 or 24.04 server.
 #
-#   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+#   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
 #
 # What it does:
 #   1. Installs Node.js, git, and Caddy.
-#   2. Downloads Murmur Flow into /opt/murmur-flow and creates .env.
-#   3. Runs the app as a systemd service named murmur-flow.
+#   2. Downloads Mumble AI into /opt/mumble-flow and creates .env.
+#   3. Runs the app as a systemd service named mumble-ai.
 #   4. Puts Caddy in front with HTTPS and a username and password.
 #   5. Opens ports 22 (SSH), 80, and 443 in the firewall. Port 3050 stays closed.
 #
@@ -26,16 +26,16 @@
 
 set -euo pipefail
 
-REPO_URL="${MF_REPO:-https://github.com/ImaduddeenKhan/MURMUR-FLOW.git}"
+REPO_URL="${MF_REPO:-https://github.com/maaz-ahmad-63/mumble_flow.git}"
 BRANCH="${MF_BRANCH:-main}"
-APP_DIR=/opt/murmur-flow
-APP_USER=murmur
-APP_HOME=/var/lib/murmur-flow
-SERVICE=murmur-flow
+APP_DIR=/opt/mumble-flow
+APP_USER=mumble
+APP_HOME=/var/lib/mumble-flow
+SERVICE=mumble-ai
 APP_PORT="${MF_PORT:-3050}"
 NODE_MAJOR="${NODE_MAJOR:-22}"
 CADDYFILE=/etc/caddy/Caddyfile
-MARKER="# Managed by Murmur Flow scripts/install-vps.sh"
+MARKER="# Managed by Mumble AI scripts/install-vps.sh"
 RECONFIGURE="${MF_RECONFIGURE:-0}"
 
 say()  { printf '\n==> %s\n' "$1"; }
@@ -127,13 +127,13 @@ fi
 NODE_BIN=$(command -v node)
 
 # ---------------------------------------------------------------------------
-say "Creating the murmur system user"
+say "Creating the mumble system user"
 if ! id -u "$APP_USER" >/dev/null 2>&1; then
   useradd --system --create-home --home-dir "$APP_HOME" --shell /usr/sbin/nologin "$APP_USER"
 fi
 install -d -o "$APP_USER" -g "$APP_USER" "$APP_HOME"
 
-say "Downloading Murmur Flow into $APP_DIR"
+say "Downloading Mumble AI into $APP_DIR"
 if [ -d "$APP_DIR/.git" ]; then
   chown -R "$APP_USER:$APP_USER" "$APP_DIR"
   as_app git -C "$APP_DIR" fetch origin "$BRANCH"
@@ -141,7 +141,7 @@ if [ -d "$APP_DIR/.git" ]; then
   as_app git -C "$APP_DIR" pull --ff-only origin "$BRANCH" \
     || fail "Could not update $APP_DIR because files there were changed by hand. Run 'sudo -u $APP_USER git -C $APP_DIR status' to see them."
 elif [ -d "$APP_DIR" ] && [ -n "$(ls -A "$APP_DIR")" ]; then
-  fail "$APP_DIR exists but is not a Murmur Flow download. Move it away and run this script again."
+  fail "$APP_DIR exists but is not a Mumble AI download. Move it away and run this script again."
 else
   install -d -o "$APP_USER" -g "$APP_USER" "$APP_DIR"
   as_app git clone --branch "$BRANCH" "$REPO_URL" "$APP_DIR"
@@ -178,10 +178,10 @@ if [ "$NEW_ENV" -eq 1 ] || [ "$RECONFIGURE" = "1" ]; then
 fi
 
 # ---------------------------------------------------------------------------
-say "Setting up the murmur-flow service"
+say "Setting up the mumble-ai service"
 cat >/etc/systemd/system/$SERVICE.service <<EOF
 [Unit]
-Description=Murmur Flow
+Description=Mumble AI
 After=network-online.target
 Wants=network-online.target
 
@@ -254,8 +254,8 @@ if [ "$WRITE_CADDYFILE" -eq 1 ]; then
 
   AUTH_USER="${MF_USERNAME:-}"
   if [ -z "$AUTH_USER" ]; then
-    AUTH_USER=$(ask "Choose a username for the password screen [murmur]: ")
-    AUTH_USER="${AUTH_USER:-murmur}"
+    AUTH_USER=$(ask "Choose a username for the password screen [mumble]: ")
+    AUTH_USER="${AUTH_USER:-mumble}"
   fi
   [[ "$AUTH_USER" =~ ^[A-Za-z0-9._-]+$ ]] || fail "The username can use only letters, numbers, dot, dash, and underscore."
 
@@ -272,13 +272,13 @@ if [ "$WRITE_CADDYFILE" -eq 1 ]; then
     if [ "$AUTH_PASS" != "$AUTH_PASS_AGAIN" ]; then
       echo "The passwords do not match. Try again."
       AUTH_PASS=""
-    fi
+      fi
   done
   AUTH_HASH=$(caddy hash-password --plaintext "$AUTH_PASS")
   unset AUTH_PASS AUTH_PASS_AGAIN
 
   if [ -f "$CADDYFILE" ] && ! grep -qF "$MARKER" "$CADDYFILE"; then
-    BACKUP="$CADDYFILE.before-murmur-flow.$(date +%Y%m%d%H%M%S)"
+    BACKUP="$CADDYFILE.before-mumble-flow.$(date +%Y%m%d%H%M%S)"
     cp "$CADDYFILE" "$BACKUP"
     echo "Saved the old Caddyfile as $BACKUP"
   fi
@@ -340,7 +340,7 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-say "Checking that Murmur Flow answers"
+say "Checking that Mumble AI answers"
 HEALTHY=0
 for _ in $(seq 1 30); do
   if curl -fsS -m 2 "http://127.0.0.1:$APP_PORT/health" >/dev/null 2>&1; then
@@ -350,12 +350,12 @@ for _ in $(seq 1 30); do
   sleep 1
 done
 if [ "$HEALTHY" -ne 1 ]; then
-  fail "Murmur Flow did not answer on port $APP_PORT. See the log with: sudo journalctl -u $SERVICE -n 50 --no-pager"
+  fail "Mumble AI did not answer on port $APP_PORT. See the log with: sudo journalctl -u $SERVICE -n 50 --no-pager"
 fi
 
 cat <<EOF
 
-Murmur Flow is installed and running.
+Mumble AI is installed and running.
 
   Open:      $SITE_URL
   Username:  the one you chose (password is not shown here)
@@ -372,5 +372,5 @@ Useful commands:
   HTTPS log:     sudo journalctl -u caddy -f
   Edit keys:     sudo nano $APP_DIR/.env   then   sudo systemctl restart $SERVICE
   Update:        run the same curl command again
-  Change login:  curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo MF_RECONFIGURE=1 bash
+  Change login:  curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo MF_RECONFIGURE=1 bash
 EOF

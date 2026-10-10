@@ -1,5 +1,5 @@
 # ==========================================
-# 🐳 WhisperFlow Production Dockerfile
+# 🐳 Mumble AI Production Dockerfile
 # Lightweight, secure, multi-stage Alpine build
 # ==========================================
 

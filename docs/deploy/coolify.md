@@ -1,6 +1,6 @@
-# Murmur Flow on Coolify
+# Mumble AI on Coolify
 
-Coolify is a free, self-hosted dashboard that deploys apps from GitHub onto your own server. Use it if you want a web dashboard for this and other apps. If Murmur Flow is the only app, [linux-vps.md](linux-vps.md) is simpler.
+Coolify is a free, self-hosted dashboard that deploys apps from GitHub onto your own server. Use it if you want a web dashboard for this and other apps. If Mumble AI is the only app, [linux-vps.md](linux-vps.md) is simpler.
 
 Replace anything in capital letters that starts with `YOUR_`.
 
@@ -14,7 +14,7 @@ Coolify is free when you host it yourself. You pay for the VPS, from about $9 pe
 
 ## Before you start
 
-1. Create the VPS using your provider's guide in this folder, up to the point where you can `ssh` in. Do not run Murmur Flow's install script on this server; Coolify takes ports 80 and 443.
+1. Create the VPS using your provider's guide in this folder, up to the point where you can `ssh` in. Do not run Mumble AI's install script on this server; Coolify takes ports 80 and 443.
 2. Open TCP ports 22, 80, 443, and 8000 in the provider's firewall.
 3. Optional but recommended: a domain with an A record pointing to the server.
 
@@ -28,7 +28,7 @@ Coolify is free when you host it yourself. You pay for the VPS, from about $9 pe
 
 2. Open `http://YOUR_SERVER_IP:8000` right away and create the admin account. The first person to open this page becomes the admin.
 3. In Coolify, click **Projects**, then create a project, then **Add New Resource**, **Public Repository**.
-4. Repository URL: `https://github.com/ImaduddeenKhan/MURMUR-FLOW`. Branch: `main`.
+4. Repository URL: `https://github.com/maaz-ahmad-63/mumble_flow`. Branch: `main`.
 5. **Build Pack**: **Dockerfile**. **Ports Exposes**: `3050`.
 6. Click **Continue**. On the application page:
    1. **Domains**: type `https://YOUR_DOMAIN`. Without a domain, keep the generated `sslip.io` address.
@@ -70,10 +70,10 @@ Click **Redeploy** on the application page. It pulls the newest code from GitHub
 2. Back up the app data. Find the volume name on the **Persistent Storage** page, then on the server:
 
    ```bash
-   sudo docker run --rm -v YOUR_VOLUME_NAME:/data -v "$PWD":/backup alpine tar -czf /backup/murmur-flow-data.tar.gz -C /data .
+   sudo docker run --rm -v YOUR_VOLUME_NAME:/data -v "$PWD":/backup alpine tar -czf /backup/mumble-ai-data.tar.gz -C /data .
    ```
 
-   Download `murmur-flow-data.tar.gz` with `scp`, as in [linux-vps.md, Back up](linux-vps.md#back-up).
+   Download `mumble-ai-data.tar.gz` with `scp`, as in [linux-vps.md, Back up](linux-vps.md#back-up).
 
 ## Remove it and stop paying
 

@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — Platform Provider Factory
+ * Mumble AI Desktop — Platform Provider Factory
  *
  * Resolves the appropriate platform adapter for the host operating system
  * (macOS, Windows, Linux, Web).

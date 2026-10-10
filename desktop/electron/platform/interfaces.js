@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — Platform Provider Interface Specifications
+ * Mumble AI Desktop — Platform Provider Interface Specifications
  *
  * Defines the contract that every OS adapter (macOS, Windows, Linux, Web)
  * MUST implement to ensure complete separation between Core logic and Native OS APIs.

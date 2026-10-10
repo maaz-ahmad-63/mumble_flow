@@ -1,5 +1,5 @@
 ---
-description: Murmur Flow project rules. The full instructions are in AGENTS.md.
+description: Mumble AI project rules. The full instructions are in AGENTS.md.
 alwaysApply: true
 ---
 
@@ -11,4 +11,4 @@ Key rules:
 - `import 'dotenv/config'` must stay the first import in `server/index.js`.
 - Do not change model IDs or add a login system unless asked.
 - Run `npm test` before finishing. Stop any server you started.
-- To install Murmur Flow for a user, use the `setup` skill (`.claude/skills/setup/SKILL.md`).
+- To install Mumble AI for a user, use the `setup` skill (`.claude/skills/setup/SKILL.md`).

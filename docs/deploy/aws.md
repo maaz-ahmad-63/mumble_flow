@@ -1,4 +1,4 @@
-# Murmur Flow on AWS
+# Mumble AI on AWS
 
 Use **Amazon Lightsail**. It is AWS's simple monthly-price server, and the install script sets everything up on it.
 
@@ -29,7 +29,7 @@ $7 per month for the 1 GB plan with IPv4 (checked 2026-10, [pricing](https://aws
 2. Pick a **Region** close to you.
 3. **Select a platform**: **Linux/Unix**. **Select a blueprint**: **OS Only**, then **Ubuntu 24.04 LTS**.
 4. **Choose your instance plan**: the **$7** plan (1 GB).
-5. **Identify your instance**: type `murmur-flow`. Click **Create instance**.
+5. **Identify your instance**: type `mumble-ai`. Click **Create instance**.
 6. Open the instance, then the **Networking** tab.
    1. Under **IPv4 networking**, click **Attach static IP**, create one, and attach it. Copy this IP. It is `YOUR_SERVER_IP`.
    2. Under **IPv4 Firewall**, click **Add rule**, choose **HTTPS**, and click **Create**. The default rules already allow SSH (22) and HTTP (80).
@@ -38,7 +38,7 @@ $7 per month for the 1 GB plan with IPv4 (checked 2026-10, [pricing](https://aws
 9. Paste the install command and answer the questions. Details are in [linux-vps.md, Steps](linux-vps.md#steps).
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
 
 ## Add your API keys
@@ -66,12 +66,12 @@ Run the install command again. See [linux-vps.md, Update](linux-vps.md#update).
 See [linux-vps.md, Back up](linux-vps.md#back-up). The username in the `scp` command is `ubuntu`, and the file must be readable by it:
 
 ```bash
-sudo tar -czf /home/ubuntu/murmur-flow-backup.tar.gz -C /opt/murmur-flow data .env
-sudo chown ubuntu /home/ubuntu/murmur-flow-backup.tar.gz
+sudo tar -czf /home/ubuntu/mumble-flow-backup.tar.gz -C /opt/mumble-flow data .env
+sudo chown ubuntu /home/ubuntu/mumble-flow-backup.tar.gz
 ```
 
 ```bash
-scp -i PATH_TO_YOUR_KEY ubuntu@YOUR_SERVER_IP:/home/ubuntu/murmur-flow-backup.tar.gz .
+scp -i PATH_TO_YOUR_KEY ubuntu@YOUR_SERVER_IP:/home/ubuntu/mumble-flow-backup.tar.gz .
 ```
 
 Lightsail can also take snapshots (**Snapshots** tab). Snapshots are billed per GB.

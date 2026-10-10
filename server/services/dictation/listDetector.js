@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Spoken List Detector & Formatter
+ * Mumble AI — Spoken List Detector & Formatter
  *
  * Detects spoken sequential items, steps, and points, formatting them into structured lists.
  * Example: "first install Node second install Postgres third run the server"

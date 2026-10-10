@@ -1,4 +1,4 @@
-# Murmur Flow on DigitalOcean
+# Mumble AI on DigitalOcean
 
 You rent a small Ubuntu server (a Droplet) and run one install command. Use a Droplet, not App Platform: App Platform has no persistent disk, so your history would be lost on every deploy.
 
@@ -24,7 +24,7 @@ About $6 per month for the 1 GB Droplet (checked 2026-10, [pricing](https://www.
 3. **Image**: **Ubuntu**, version **24.04 (LTS) x64**.
 4. **Size**: **Basic**, **Regular**, the **1 GB** option.
 5. **Authentication**: choose **SSH Key** if you have one, or **Password** and type a strong root password.
-6. **Hostname**: type `murmur-flow`.
+6. **Hostname**: type `mumble-ai`.
 7. Click **Create Droplet**. Wait until it shows an IP address. Copy it. This is `YOUR_SERVER_IP`.
 8. If you have a domain, create an A record that points to `YOUR_SERVER_IP` now.
 9. Connect and install. Follow [linux-vps.md, Steps](linux-vps.md#steps). In short:
@@ -34,7 +34,7 @@ About $6 per month for the 1 GB Droplet (checked 2026-10, [pricing](https://www.
    ```
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
 
 New Droplets have no cloud firewall, so ports 80 and 443 are already reachable. The script turns on the server's own firewall (ufw). If you later add a DigitalOcean Cloud Firewall, allow inbound TCP 22, 80, and 443.

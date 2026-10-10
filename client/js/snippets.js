@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Voice & Text Snippets Controller
+ * Mumble AI — Voice & Text Snippets Controller
  * Phase 7: Personalization (App/Mode targeting, Search, Edit, Enable/Disable)
  */
 

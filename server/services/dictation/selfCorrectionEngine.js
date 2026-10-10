@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Self-Correction & False-Start Engine
+ * Mumble AI — Self-Correction & False-Start Engine
  *
  * Surgically resolves spoken mid-sentence corrections, mind-changes, and false-starts
  * WITHOUT discarding the surrounding sentence or context.

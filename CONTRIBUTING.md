@@ -1,10 +1,10 @@
 # Contributing
 
-Thanks for wanting to improve Murmur Flow. Small, clear changes are easier to review than a rewrite.
+Thanks for wanting to improve Mumble AI. Small, clear changes are easier to review than a rewrite.
 
 ## Before you start
 
-1. Fork https://github.com/ImaduddeenKhan/MURMUR-FLOW and clone your fork.
+1. Fork https://github.com/maaz-ahmad-63/mumble_flow and clone your fork.
 2. Install Node.js 22 or 24 LTS (20 still works).
 3. Run `npm install`, then `npm test`. Or run `scripts/setup.ps1` (Windows) or `scripts/setup.sh` (macOS, Linux) with `-NoStart` / `--no-start`.
 

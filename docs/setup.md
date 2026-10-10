@@ -1,13 +1,13 @@
-# Set up Murmur Flow on your computer
+# Set up Mumble AI on your computer
 
-This page installs Murmur Flow on your own Windows, macOS, or Linux computer. It takes about five minutes.
+This page installs Mumble AI on your own Windows, macOS, or Linux computer. It takes about five minutes.
 
 - To put it on a server or use it from your phone, see [deploy/README.md](deploy/README.md).
 - To let a coding agent do it, paste [agent-prompt.md](agent-prompt.md) into the agent.
 
 ## 1. Install Node.js and Git
 
-1. Download the **LTS** version of Node.js from https://nodejs.org/en/download and install it. On Windows, keep **Add to PATH** checked. Murmur Flow needs version 20 or newer.
+1. Download the **LTS** version of Node.js from https://nodejs.org/en/download and install it. On Windows, keep **Add to PATH** checked. Mumble AI needs version 20 or newer.
 2. Install Git if you do not have it:
    - Windows: https://git-scm.com/download/win
    - macOS: open Terminal and run `xcode-select --install`
@@ -22,8 +22,8 @@ This page installs Murmur Flow on your own Windows, macOS, or Linux computer. It
 2. Paste these lines one at a time:
 
    ```powershell
-   git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
-   cd MURMUR-FLOW
+   git clone https://github.com/maaz-ahmad-63/mumble_flow.git
+   cd mumble_flow
    powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
    ```
 
@@ -35,14 +35,14 @@ This page installs Murmur Flow on your own Windows, macOS, or Linux computer. It
 2. Paste these lines one at a time:
 
    ```bash
-   git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
-   cd MURMUR-FLOW
+   git clone https://github.com/maaz-ahmad-63/mumble_flow.git
+   cd mumble_flow
    bash scripts/setup.sh
    ```
 
-3. When it says `Murmur Flow is running`, open http://localhost:3050 in Chrome, Edge, or Safari.
+3. When it says `Mumble AI is running`, open http://localhost:3050 in Chrome, Edge, or Safari.
 
-Keep the terminal window open while you use the app. Press `Ctrl+C` in it to stop the app. To start it again later, open a terminal in the `MURMUR-FLOW` folder and run the same setup command, or `npm start`.
+Keep the terminal window open while you use the app. Press `Ctrl+C` in it to stop the app. To start it again later, open a terminal in the `mumble_flow` folder and run the same setup command, or `npm start`.
 
 ### Without the script
 
@@ -60,9 +60,9 @@ Without a key, typed cleanup, snippets, the dictionary, and meeting notes work w
 
 1. Get a free Groq key at https://console.groq.com/keys. Sign in, click **Create API Key**, and copy it.
 2. Optional: get a Gemini key at https://aistudio.google.com/apikey.
-3. In Murmur Flow, click **Settings**, paste the key into **Groq key** (and **Gemini key**), and click **Save**.
+3. In Mumble AI, click **Settings**, paste the key into **Groq key** (and **Gemini key**), and click **Save**.
 
-Or open the `.env` file in the `MURMUR-FLOW` folder, paste the key after `GROQ_API_KEY=`, save, and restart the app.
+Or open the `.env` file in the `mumble_flow` folder, paste the key after `GROQ_API_KEY=`, save, and restart the app.
 
 To use a different AI provider, see [providers.md](providers.md).
 
@@ -73,7 +73,7 @@ The companion types cleaned text into any app on your computer, such as Word, Sl
 It is a separate program from the web app. The web app must be running, and a speech key must be saved in its Settings. The companion runs on the computer with the microphone, not on a server.
 
 1. Install Python 3 from https://www.python.org/downloads/. On Windows, check **Add python.exe to PATH**.
-2. With Murmur Flow running, open a second terminal in the `MURMUR-FLOW` folder and run:
+2. With Mumble AI running, open a second terminal in the `mumble_flow` folder and run:
 
    ```bash
    pip install keyboard sounddevice scipy numpy

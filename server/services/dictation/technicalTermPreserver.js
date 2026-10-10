@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Technical Term & Syntax Preserver
+ * Mumble AI — Technical Term & Syntax Preserver
  *
  * Protects URLs, API paths, code identifiers, CLI commands, package names,
  * filenames, and custom dictionary words from being mangled during regex/text cleanup.

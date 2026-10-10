@@ -1,6 +1,6 @@
-# Murmur Flow with Docker
+# Mumble AI with Docker
 
-Run Murmur Flow in a container on any computer or server that has Docker. `docker-compose.yml` in this repository builds the image and keeps `data/` in a named volume.
+Run Mumble AI in a container on any computer or server that has Docker. `docker-compose.yml` in this repository builds the image and keeps `data/` in a named volume.
 
 Replace anything in capital letters that starts with `YOUR_`.
 
@@ -31,8 +31,8 @@ $0 on your own computer. On a server, the server's price.
 3. Get the code:
 
    ```bash
-   git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
-   cd MURMUR-FLOW
+   git clone https://github.com/maaz-ahmad-63/mumble_flow.git
+   cd mumble_flow
    ```
 
 ## Steps
@@ -144,16 +144,16 @@ docker compose up -d --build
 
 ## Back up
 
-Copy the data out of the running container into a folder named `murmur-flow-backup`:
+Copy the data out of the running container into a folder named `mumble-flow-backup`:
 
 ```bash
-docker compose cp whisperflow:/app/data ./murmur-flow-backup
+docker compose cp whisperflow:/app/data ./mumble-flow-backup
 ```
 
 To restore into a running container:
 
 ```bash
-docker compose cp ./murmur-flow-backup/. whisperflow:/app/data
+docker compose cp ./mumble-flow-backup/. whisperflow:/app/data
 docker compose exec -u root whisperflow chown -R node:node /app/data
 docker compose restart
 ```

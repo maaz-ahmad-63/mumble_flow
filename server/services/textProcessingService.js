@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Intelligent Dictation & Text Processing Service (Wispr Flow style)
+ * Mumble AI — Intelligent Dictation & Text Processing Service
  *
  * Phase 10 Cost-Optimized Architecture:
  * RAW TRANSCRIPT

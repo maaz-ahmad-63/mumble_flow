@@ -1,9 +1,9 @@
 ---
 name: setup
-description: Install and start Murmur Flow for the user, on this computer or on a server. Use when the user asks to install, set up, run, host, or deploy Murmur Flow.
+description: Install and start Mumble AI for the user, on this computer or on a server. Use when the user asks to install, set up, run, host, or deploy Mumble AI.
 ---
 
-# Set up Murmur Flow
+# Set up Mumble AI
 
 Read [AGENTS.md](../../../AGENTS.md) first. It has the rules, the environment variables, and the decision flow. This skill is the step-by-step version.
 
@@ -48,7 +48,7 @@ Follow `docs/deploy/home-server.md`. Prefer the Tailscale option: nothing is exp
 3. For any Ubuntu server, the user (or you, if you have SSH access they gave you) runs:
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
 
    The script asks for a domain (optional), a username, and a password, and optionally the API keys. The user should type the password and keys into the script themselves.

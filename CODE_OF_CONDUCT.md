@@ -2,7 +2,7 @@
 
 ## Pledge
 
-People who take part in Murmur Flow should be able to do that without harassment. This applies to issues, pull requests, and any other project space.
+People who take part in Mumble AI should be able to do that without harassment. This applies to issues, pull requests, and any other project space.
 
 ## Expected
 

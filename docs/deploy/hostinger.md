@@ -1,8 +1,8 @@
-# Murmur Flow on Hostinger
+# Mumble AI on Hostinger
 
 Use a **Hostinger VPS**. Normal Hostinger web hosting runs PHP websites and cannot run this app as a server.
 
-Hostinger also has "Node.js Web Apps" on some web hosting plans. That option is not recommended for Murmur Flow; see the end of this page.
+Hostinger also has "Node.js Web Apps" on some web hosting plans. That option is not recommended for Mumble AI; see the end of this page.
 
 Replace anything in capital letters that starts with `YOUR_`.
 
@@ -34,7 +34,7 @@ KVM 1 is $6.49 per month for the first term and renews at $11.99 per month (chec
 6. Paste the install command and answer the questions. Details are in [linux-vps.md, Steps](linux-vps.md#steps).
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
 
 7. If you turned on the hPanel VPS firewall, add rules that accept TCP 80 and 443.
@@ -80,7 +80,7 @@ See [linux-vps.md, Troubleshooting](linux-vps.md#troubleshooting).
 
 ## Hostinger Node.js Web Apps (not recommended)
 
-Some Hostinger web hosting plans can run a Node.js app imported from GitHub (hPanel: **Websites**, **Add Website**, **Node.js web app**, **Import Git repository**). Murmur Flow starts there, but:
+Some Hostinger web hosting plans can run a Node.js app imported from GitHub (hPanel: **Websites**, **Add Website**, **Node.js web app**, **Import Git repository**). Mumble AI starts there, but:
 
 1. Each redeploy builds into a new folder, so `data/` starts empty and your history is lost.
 2. There is no password screen in front of the app.

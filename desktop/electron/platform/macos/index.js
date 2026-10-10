@@ -1,5 +1,5 @@
 /**
- * Murmur Flow Desktop — macOS Platform Adapter Implementation
+ * Mumble AI Desktop — macOS Platform Adapter Implementation
  *
  * Implements the standard Platform Provider interfaces using native macOS
  * AppleScript, NSWorkspace, System Events, and Electron macOS APIs.

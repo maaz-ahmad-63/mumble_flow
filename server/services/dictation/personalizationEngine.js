@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Personalization & Dictionary Priority Engine
+ * Mumble AI — Personalization & Dictionary Priority Engine
  *
  * Architecture:
  * 1. User Dictionary (Highest Priority)

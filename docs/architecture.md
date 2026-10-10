@@ -1,4 +1,4 @@
-# How Murmur Flow is put together
+# How Mumble AI is put together
 
 This page is for someone reading the code. Install steps are in [setup.md](setup.md).
 

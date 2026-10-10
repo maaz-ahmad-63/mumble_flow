@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — AI Escalation Engine
+ * Mumble AI — AI Escalation Engine
  *
  * Cost Optimization Principle:
  * Normal dictation uses deterministic local processing (zero LLM calls).

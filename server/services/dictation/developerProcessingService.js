@@ -1,5 +1,5 @@
 /**
- * Murmur Flow / Mumble AI — Developer & Code Processing Service (Phase 6)
+ * Mumble AI — Developer & Code Processing Service (Phase 6)
  *
  * Dedicated processing layer for developer mode:
  * - Spoken programming terms -> camelCase, PascalCase, snake_case, SCREAMING_SNAKE_CASE

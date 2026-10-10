@@ -3,7 +3,7 @@
 Copy everything inside the box below. Paste it into Cursor, Claude Code, GitHub Copilot, Gemini CLI, Windsurf, Codex, or another coding agent. The agent will ask you a few questions and do the rest.
 
 ```text
-Install Murmur Flow for me: https://github.com/ImaduddeenKhan/MURMUR-FLOW
+Install Mumble AI for me: https://github.com/maaz-ahmad-63/mumble_flow
 
 1. If this folder is not the project yet, clone it and open the folder.
 2. Read AGENTS.md and follow it. If you support skills, use the setup skill in .claude/skills/setup/SKILL.md.

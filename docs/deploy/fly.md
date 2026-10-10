@@ -1,10 +1,10 @@
-# Murmur Flow on Fly.io
+# Mumble AI on Fly.io
 
 Fly.io runs the Docker image from this repository on a small virtual machine, with a volume for `data/`. `fly.toml` in this repository already has the volume mount.
 
 This guide keeps the app **private**: it gets no public address, and you open it on your computer through `fly proxy`. Fly has no password screen, so a public Fly address would let anyone use the app and your API key.
 
-Replace anything in capital letters that starts with `YOUR_`. `YOUR_APP_NAME` must be unique across Fly, for example `murmur-flow-yourname`.
+Replace anything in capital letters that starts with `YOUR_`. `YOUR_APP_NAME` must be unique across Fly, for example `mumble-ai-yourname`.
 
 ## What to buy
 
@@ -42,8 +42,8 @@ Volume: $0.15 per GB per month. Machine: a few dollars per month for the smalles
 3. Get the code:
 
    ```bash
-   git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git
-   cd MURMUR-FLOW
+   git clone https://github.com/maaz-ahmad-63/mumble_flow.git
+   cd mumble_flow
    ```
 
 ## Steps

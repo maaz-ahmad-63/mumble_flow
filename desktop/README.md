@@ -6,7 +6,7 @@ It is a separate program from the web app.
 
 | | Web app | Desktop companion |
 | --- | --- | --- |
-| Where you speak | The Murmur Flow browser tab | Any app on your computer |
+| Where you speak | The Mumble AI browser tab | Any app on your computer |
 | Start talking | Hold **Space** in the tab | Press **F8** anywhere |
 | Text goes to | The page and your clipboard | Your cursor, in the app you were using |
 | Install | `npm start` | Python 3 and four packages |
@@ -26,7 +26,7 @@ The companion needs the web app's server running. It uses the keys and dictionar
 2. Run:
 
    ```powershell
-   cd C:\path\to\MURMUR-FLOW
+   cd C:\path\to\mumble_flow
    pip install keyboard sounddevice scipy numpy
    python desktop/whisperflow_companion.py
    ```
@@ -37,13 +37,13 @@ Windows does not let a normal program see key presses inside apps that run as ad
 
 ## macOS (Native Desktop App)
 
-Murmur Flow includes a native macOS desktop app built with Electron. It provides:
+Mumble AI includes a native macOS desktop app built with Electron. It provides:
 - **Global Hotkey** (`F8` or custom) anywhere across all apps
 - **Floating HUD Overlay** with real-time waveform visualizer & status
 - **Zero-Impact Text Insertion**: Inserts text directly at cursor in any active app (Chrome, Safari, Slack, VS Code, Cursor, Terminal, WhatsApp, etc.)
 - **Clipboard Preservation & Restoration**: Dictation never overwrites your saved clipboard
 - **System Tray / Menu Bar** integration
-- **Embedded Server Lifecycle**: Automatically connects to or starts the Murmur Flow backend
+- **Embedded Server Lifecycle**: Automatically connects to or starts the Mumble AI backend
 
 ### Quick Start:
 
@@ -53,7 +53,7 @@ npm install
 npm start
 ```
 
-When prompted on first run, grant **Microphone** and **Accessibility** permissions in macOS System Settings so Murmur Flow can record audio and paste text at your active cursor.
+When prompted on first run, grant **Microphone** and **Accessibility** permissions in macOS System Settings so Mumble AI can record audio and paste text at your active cursor.
 
 ---
 
@@ -81,7 +81,7 @@ sudo .venv/bin/python desktop/whisperflow_companion.py
 
 | Argument | Default | Meaning |
 | --- | --- | --- |
-| `--server` | `http://localhost:3050` | Murmur Flow server |
+| `--server` | `http://localhost:3050` | Mumble AI server |
 | `--hotkey` | `f8` | Start and stop recording |
 | `--tone` | `auto` | `auto` picks the tone from the app you are typing into. Or force one: casual, formal, executive, code, bullet, standup, social |
 | `--groq-key` | empty | Key for this run only, instead of the one in Settings |
@@ -115,7 +115,7 @@ The built-in list is in `server/services/appToneService.js`.
 
 On macOS, reading the front window needs the same Accessibility permission as pasting. On Linux, it needs `xdotool` and an X11 session.
 
-## Use a hosted Murmur Flow
+## Use a hosted Mumble AI
 
 ```bash
 python desktop/whisperflow_companion.py --server https://your-domain

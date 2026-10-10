@@ -1,5 +1,5 @@
 /**
- * Murmur Flow — Application Context & Mode Resolution Service (Phase 8)
+ * Mumble AI — Application Context & Mode Resolution Service (Phase 8)
  *
  * Provides normalized macOS application detection, configurable application profiles,
  * and predictable precedence-based mode resolution.

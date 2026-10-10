@@ -1,10 +1,10 @@
-# Host Murmur Flow
+# Host Mumble AI
 
-Use this page to choose where to run Murmur Flow, then follow the one guide for that place.
+Use this page to choose where to run Mumble AI, then follow the one guide for that place.
 
 If you only want it on your own computer, you do not need hosting. Follow [../setup.md](../setup.md).
 
-## What Murmur Flow needs from a host
+## What Mumble AI needs from a host
 
 1. **A Node.js process that keeps running.** Node.js 20 or newer. The app is a normal web server, not a set of short functions.
 2. **A disk that keeps files.** History, snippets, dictionary, and Settings are saved in `data/whisperflow_store.json`. If the disk is wiped on restart or redeploy, that data is lost.
@@ -52,7 +52,7 @@ Prices are rough monthly costs in US dollars or euros, checked 2026-10. They cha
 3. **You want it free:** [oracle-cloud.md](oracle-cloud.md) or the e2-micro path in [gcp.md](gcp.md). Expect more steps.
 4. **You already use Azure, Google Cloud, or Fly.io:** use those guides. They keep the app private with the platform's own sign-in.
 
-Avoid Render and Railway for daily use until Murmur Flow has its own login. Their guides explain why.
+Avoid Render and Railway for daily use until Mumble AI has its own login. Their guides explain why.
 
 ## Every guide has the same sections
 

@@ -1,4 +1,4 @@
-# Murmur Flow on Microsoft Azure
+# Mumble AI on Microsoft Azure
 
 There are two ways. Pick one.
 
@@ -31,8 +31,8 @@ Checked 2026-10, not verified on Azure's own pricing page:
 1. Get a fresh copy of the code. Use a new folder so no local `.env` or `data/` is uploaded:
 
    ```bash
-   git clone https://github.com/ImaduddeenKhan/MURMUR-FLOW.git murmur-flow-azure
-   cd murmur-flow-azure
+   git clone https://github.com/maaz-ahmad-63/mumble_flow.git mumble-flow-azure
+   cd mumble-flow-azure
    ```
 
 2. Check the exact Node.js runtime name Azure offers today:
@@ -67,7 +67,7 @@ Checked 2026-10, not verified on Azure's own pricing page:
    ```
 
    ```bash
-   curl -fsSL https://raw.githubusercontent.com/ImaduddeenKhan/MURMUR-FLOW/main/scripts/install-vps.sh | sudo bash
+   curl -fsSL https://raw.githubusercontent.com/maaz-ahmad-63/mumble_flow/main/scripts/install-vps.sh | sudo bash
    ```
 
 ## Add your API keys
@@ -97,7 +97,7 @@ Checked 2026-10, not verified on Azure's own pricing page:
 
 ## Update
 
-- Option A: in the `murmur-flow-azure` folder, run `git pull`, then the same `az webapp up` command from step 3.
+- Option A: in the `mumble-flow-azure` folder, run `git pull`, then the same `az webapp up` command from step 3.
 - Option B: run the install command again. See [linux-vps.md, Update](linux-vps.md#update).
 
 ## Back up
