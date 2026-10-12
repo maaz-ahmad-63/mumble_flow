@@ -70,7 +70,9 @@ To switch from the local SQLite disk to a managed Supabase PostgreSQL database:
 
 1. Follow the step-by-step guide in [../database-migration.md](../database-migration.md).
 2. Run data migration: `DATABASE_URL="postgres://..." npm run migrate:pg`.
-3. In Render Dashboard &rarr; **Environment**, add `DATABASE_URL` with your Supabase pooler URI.
+3. In Render Dashboard &rarr; **Environment**, add `DATABASE_URL` with your Supabase **Session Pooler** URI (format: `postgres://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres`).
+   > [!IMPORTANT]
+   > Do **not** use the direct database connection URI (`db.[PROJECT-REF].supabase.co:5432`). Direct Supabase hostnames resolve only to IPv6, which Render cannot reach (causing `ENETUNREACH`). Always use the Supabase Session Pooler (`:5432`) or Transaction Pooler (`:6543`), which provide IPv4 routing.
 4. Render redeploys and automatically routes all traffic to PostgreSQL. Existing SQLite data on disk remains untouched as a safe fallback.
 5. **Rollback limitation:** If you remove `DATABASE_URL` to roll back to SQLite, any new records or changes written to PostgreSQL while active are **not automatically synchronized back to SQLite**. See [../database-migration.md](../database-migration.md#7-rollback-plan--important-limitations) for details.
 
@@ -92,3 +94,5 @@ Render takes a daily snapshot of the disk. To restore one, open the service, the
 | History disappears after a deploy | The disk is missing. Open the service, **Disks**, and add one mounted at `/opt/render/project/src/data`. |
 | "API Key is not configured" | Set `GROQ_API_KEY` under **Environment** and save. |
 | Service shows "Deploy failed" | Open **Logs**. Most often `npm install` failed on a network error. Click **Manual Deploy** again. |
+| PostgreSQL initialization fails with `ENETUNREACH` | Render does not support IPv6 outbound network egress. Switch `DATABASE_URL` from the direct `db.[ref].supabase.co` host to the **Supabase Session Pooler** (`aws-0-[region].pooler.supabase.com:5432`) or Transaction Pooler (`:6543`), which resolve to IPv4 addresses. |
+| Port scan timeout / No open ports detected | The server now explicitly binds to `0.0.0.0` and listens on `PORT` provided by Render. Verify `PORT` is not manually overridden to a mismatched value in Render settings. |

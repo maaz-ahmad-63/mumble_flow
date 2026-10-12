@@ -111,6 +111,7 @@ export class PostgresAdapter extends IDatabaseAdapter {
       if (!connStr) {
         throw new Error('PostgresAdapter requires a valid DATABASE_URL');
       }
+      this.connectionString = connStr;
 
       const isLocal = connStr.includes('localhost') ||
                       connStr.includes('127.0.0.1') ||
@@ -171,7 +172,11 @@ export class PostgresAdapter extends IDatabaseAdapter {
 
         return this;
       } catch (err) {
-        const safeErr = new Error(`PostgreSQL initialization failed: ${sanitizeErrorMessage(err.message)}`);
+        let msg = sanitizeErrorMessage(err.message);
+        if (err.code === 'ENETUNREACH' || (msg && msg.includes('ENETUNREACH'))) {
+          msg += ' (Hint: If connecting to Supabase from an IPv4-only environment like Render, use the Supabase Session Pooler or Transaction Pooler URI at *.pooler.supabase.com:5432 or :6543 instead of the direct db.*.supabase.co host)';
+        }
+        const safeErr = new Error(`PostgreSQL initialization failed: ${msg}`);
         safeErr.code = err.code;
         throw safeErr;
       }

@@ -13,8 +13,8 @@ const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 
 class StorageService {
   constructor() {
-    // Initialize database adapter on startup (SQLite or PostgreSQL)
-    db.initialize();
+    // Database adapter initialization is managed during server bootstrap
+    db.initialize().catch(() => {});
   }
 
   // --- Settings (Sensitive Keys Stripped by default) ---

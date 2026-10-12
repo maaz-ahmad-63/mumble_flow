@@ -24,11 +24,17 @@ Mumble AI supports a dynamic dual-database architecture:
 
 1. A **Supabase** account and project (free or pro): [https://supabase.com](https://supabase.com)
 2. Obtain your **Supabase Connection Pooler URI**:
-   - Go to your Supabase project &rarr; **Project Settings** &rarr; **Database** &rarr; **Connection String** &rarr; **Transaction / Session Pooler**.
-   - URI format:
+   - Go to your Supabase project &rarr; **Project Settings** &rarr; **Database** &rarr; **Connection String** &rarr; **Session / Transaction Pooler**.
+   - **Session Pooler (Recommended for Express persistent connections, port 5432):**
+     ```text
+     postgres://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:5432/postgres
+     ```
+   - **Transaction Pooler (Port 6543):**
      ```text
      postgres://postgres.[PROJECT-REF]:[YOUR-PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres
      ```
+   > [!IMPORTANT]
+   > Cloud hosting providers like Render do not have IPv6 outbound routing. Do not connect via the direct `db.[PROJECT-REF].supabase.co:5432` host as it resolves only to IPv6 (`ENETUNREACH`). The Pooler hostnames (`*.pooler.supabase.com`) resolve to IPv4 addresses.
 
 ---
 

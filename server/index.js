@@ -1,5 +1,12 @@
 // Load .env before service imports. storageService reads provider defaults at import time.
 import 'dotenv/config';
+import dns from 'node:dns';
+
+// Ensure IPv4 is preferred over IPv6 for dual-stack hosts (prevents ENETUNREACH on IPv4-only cloud hosts like Render)
+if (dns && typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 import express from 'express';
 import multer from 'multer';
 import path from 'path';
@@ -8,6 +15,7 @@ import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 
 import { config } from './config.js';
+import { initializeDatabase, isPostgres } from './db/index.js';
 import { transcriptionService } from './services/transcriptionService.js';
 import { textProcessingService } from './services/textProcessingService.js';
 import { providerRegistry } from './providers/ProviderRegistry.js';
@@ -66,7 +74,8 @@ const upload = multer({
 });
 
 const app = express();
-const DEFAULT_PORT = config.port || 3050;
+const HOST = process.env.HOST || '0.0.0.0';
+const DEFAULT_PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : (config.port || 3050);
 
 // Security & API middlewares
 app.use(requestSecurityHeaders);
@@ -1559,23 +1568,34 @@ export function attachStreamingServer(server) {
   return new StreamingDictationServer(server);
 }
 
-function startServer(port = DEFAULT_PORT) {
-  const server = app.listen(port, () => {
+async function startServer(port = DEFAULT_PORT, host = HOST) {
+  try {
+    await initializeDatabase();
+  } catch (err) {
+    console.error(`\n❌ [Database Fatal] Failed to initialize database: ${err.message}`);
+    if (isPostgres()) {
+      console.error(`[Database Fatal] Halting server startup. In production with DATABASE_URL, PostgreSQL is required.\n`);
+    }
+    throw err;
+  }
+
+  const server = app.listen(port, host, () => {
     serverInstance = server;
     // Attach WebSocket streaming handler for real-time dictation
     attachStreamingServer(server);
 
+    const displayHost = host === '0.0.0.0' ? 'localhost' : host;
     console.log(`\n======================================================`);
-    console.log(`🎙️  Mumble AI Server running at: http://localhost:${port}`);
+    console.log(`🎙️  Mumble AI Server running at: http://${displayHost}:${port} (listening on ${host}:${port})`);
     console.log(`🔒  Security & Multi-User Isolation Active`);
-    console.log(`🌊  WebSocket Streaming Dictation ready at: ws://localhost:${port}${config.streaming.path}`);
+    console.log(`🌊  WebSocket Streaming Dictation ready at: ws://${displayHost}:${port}${config.streaming.path}`);
     console.log(`======================================================\n`);
   });
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
       console.log(`⚠️ Port ${port} in use, trying port ${port + 1}...`);
-      startServer(port + 1);
+      startServer(port + 1, host);
     } else {
       console.error('Server error:', err);
     }
@@ -1586,7 +1606,9 @@ function startServer(port = DEFAULT_PORT) {
 
 const isDirectRun = process.argv[1] && path.resolve(process.argv[1]) === path.resolve(__filename);
 if (isDirectRun) {
-  startServer(DEFAULT_PORT);
+  startServer(DEFAULT_PORT, HOST).catch(() => {
+    process.exit(1);
+  });
 }
 
 export { app, startServer };
