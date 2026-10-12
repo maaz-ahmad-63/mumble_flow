@@ -59,7 +59,7 @@ $0 on your own computer. On a server, the server's price.
    docker compose ps
    ```
 
-   The `whisperflow` container shows `healthy` after about 30 seconds.
+   The `mumble-ai` container shows `healthy` after about 30 seconds.
 
 6. On your own computer, open http://localhost:3050. On a server, continue with "Put a password in front".
 
@@ -147,14 +147,14 @@ docker compose up -d --build
 Copy the data out of the running container into a folder named `mumble-flow-backup`:
 
 ```bash
-docker compose cp whisperflow:/app/data ./mumble-flow-backup
+docker compose cp mumble-ai:/app/data ./mumble-flow-backup
 ```
 
 To restore into a running container:
 
 ```bash
-docker compose cp ./mumble-flow-backup/. whisperflow:/app/data
-docker compose exec -u root whisperflow chown -R node:node /app/data
+docker compose cp ./mumble-flow-backup/. mumble-ai:/app/data
+docker compose exec -u root mumble-ai chown -R node:node /app/data
 docker compose restart
 ```
 

@@ -6,6 +6,10 @@ npm-debug.log
 .env.*
 !.env.example
 data/*.json
+data/*.sqlite*
+data/*.db*
+data/*-wal
+data/*-shm
 uploads/*
 !uploads/.gitkeep
 tests
