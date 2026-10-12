@@ -43,6 +43,11 @@ export function optionalAuth(req, res, next) {
     const user = authService.validateToken(token);
     if (user) {
       req.user = user;
+    } else {
+      return res.status(401).json({
+        error: 'Invalid or expired session token.',
+        code: 'INVALID_TOKEN'
+      });
     }
   }
 

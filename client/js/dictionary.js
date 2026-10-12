@@ -41,15 +41,27 @@ export class DictionaryManager {
   async load() {
     try {
       const res = await fetch('/api/dictionary');
-      this.items = await res.json();
+      if (!res.ok) {
+        console.warn('Could not load dictionary, server status:', res.status);
+        this.items = [];
+        this.render();
+        return;
+      }
+      const data = await res.json();
+      this.items = Array.isArray(data) ? data : (Array.isArray(data?.dictionary) ? data.dictionary : []);
       this.render();
     } catch (err) {
       console.warn('Could not load dictionary:', err.message);
+      this.items = [];
+      this.render();
     }
   }
 
   render() {
     if (!this.listContainer) return;
+    if (!Array.isArray(this.items)) {
+      this.items = [];
+    }
     const query = (this.searchInput?.value || '').toLowerCase().trim();
 
     const filtered = this.items.filter(item => {
@@ -169,9 +181,12 @@ export class DictionaryManager {
       }
 
       const data = await res.json();
-      if (data.dictionary) {
+      if (Array.isArray(data.dictionary)) {
         this.items = data.dictionary;
         this.render();
+        this.resetForm();
+      } else {
+        await this.load();
         this.resetForm();
       }
     } catch (err) {
@@ -191,9 +206,11 @@ export class DictionaryManager {
         body: JSON.stringify({ enabled: newEnabled })
       });
       const data = await res.json();
-      if (data.dictionary) {
+      if (Array.isArray(data.dictionary)) {
         this.items = data.dictionary;
         this.render();
+      } else {
+        await this.load();
       }
     } catch (err) {
       alert('Failed to toggle entry: ' + err.message);
@@ -205,9 +222,11 @@ export class DictionaryManager {
     try {
       const res = await fetch(`/api/dictionary/${id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.dictionary) {
+      if (Array.isArray(data.dictionary)) {
         this.items = data.dictionary;
         this.render();
+      } else {
+        await this.load();
       }
     } catch (err) {
       alert('Failed to delete entry: ' + err.message);

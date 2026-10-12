@@ -400,7 +400,7 @@ app.get('/api/admin/config', requireAuth, requireAdmin, (req, res) => {
 // ==========================================
 // 1. RAW TRANSCRIPTION: Audio -> Raw Transcript Only
 // ==========================================
-app.post('/api/transcribe', dictateLimiter, requireAuth, upload.single('audio'), async (req, res) => {
+app.post('/api/transcribe', dictateLimiter, optionalAuth, upload.single('audio'), async (req, res) => {
   const startTime = Date.now();
   let tempFilePath = null;
   const userId = req.user.id;
@@ -532,7 +532,7 @@ app.post('/api/transcribe', dictateLimiter, requireAuth, upload.single('audio'),
 // ==========================================
 // 2. DICTATION PIPELINE: Audio -> ASR -> Zero-Edit
 // ==========================================
-app.post('/api/dictate', dictateLimiter, requireAuth, upload.single('audio'), async (req, res) => {
+app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), async (req, res) => {
   const startTime = Date.now();
   let tempFilePath = null;
   const userId = req.user.id;
@@ -858,7 +858,7 @@ app.post('/api/dictate', dictateLimiter, requireAuth, upload.single('audio'), as
 // ==========================================
 // 3. TEXT PROCESSING: Raw Text -> Zero-Edit
 // ==========================================
-app.post('/api/process-text', requireAuth, async (req, res) => {
+app.post('/api/process-text', optionalAuth, async (req, res) => {
   const startTime = Date.now();
   const userId = req.user.id;
   try {
@@ -989,7 +989,7 @@ app.post('/api/process-text', requireAuth, async (req, res) => {
 // ==========================================
 // 4. COMMAND MODE: Voice-to-Action Editing
 // ==========================================
-app.post('/api/command', requireAuth, async (req, res) => {
+app.post('/api/command', optionalAuth, async (req, res) => {
   const startTime = Date.now();
   const userId = req.user.id;
   const userSettings = storage.getSettings(userId);
@@ -1074,7 +1074,7 @@ Output ONLY the transformed text. Do not add explanations, conversational remark
 // ==========================================
 // 5. NOTETAKER: Meeting Notes & Action Items
 // ==========================================
-app.post('/api/notetaker/summarize', requireAuth, async (req, res) => {
+app.post('/api/notetaker/summarize', optionalAuth, async (req, res) => {
   const userId = req.user.id;
   const rawSettings = storage.getRawSettings(userId);
   const userSettings = storage.getSettings(userId);
@@ -1132,11 +1132,11 @@ app.post('/api/notetaker/summarize', requireAuth, async (req, res) => {
 // ==========================================
 
 // Settings (API Keys are NEVER exposed)
-app.get('/api/settings', requireAuth, (req, res) => {
+app.get('/api/settings', optionalAuth, (req, res) => {
   res.json(storage.getSettings(req.user.id));
 });
 
-app.post('/api/settings', requireAuth, (req, res) => {
+app.post('/api/settings', optionalAuth, (req, res) => {
   try {
     const updated = storage.updateSettings(req.body, req.user.id);
     res.json({ success: true, settings: updated });
@@ -1150,7 +1150,7 @@ app.post('/api/settings', requireAuth, (req, res) => {
 // ==========================================
 
 // List configured keys for user (Safe: keyHint only, NEVER returns raw decrypted key)
-app.get('/api/keys', requireAuth, (req, res) => {
+app.get('/api/keys', optionalAuth, (req, res) => {
   try {
     const keys = apiKeyService.listUserKeys(req.user.id);
     res.json({ success: true, keys });
@@ -1160,7 +1160,7 @@ app.get('/api/keys', requireAuth, (req, res) => {
 });
 
 // Add or update an encrypted user API key
-app.post('/api/keys', requireAuth, async (req, res) => {
+app.post('/api/keys', optionalAuth, async (req, res) => {
   try {
     const { provider, key, validate = true } = req.body;
     if (!provider || !key) {
@@ -1179,7 +1179,7 @@ app.post('/api/keys', requireAuth, async (req, res) => {
 });
 
 // Delete a user API key (reverts to system defaults if present)
-app.delete('/api/keys/:provider', requireAuth, (req, res) => {
+app.delete('/api/keys/:provider', optionalAuth, (req, res) => {
   try {
     const provider = (req.params.provider || '').toLowerCase();
     apiKeyService.deleteUserKey(req.user.id, provider);
@@ -1194,7 +1194,7 @@ app.delete('/api/keys/:provider', requireAuth, (req, res) => {
 });
 
 // Validate an API key (either raw key in body, or user's stored BYOK key)
-app.post('/api/keys/validate', requireAuth, async (req, res) => {
+app.post('/api/keys/validate', optionalAuth, async (req, res) => {
   try {
     const { provider, key } = req.body;
     if (!provider) {
@@ -1224,20 +1224,21 @@ app.post('/api/keys/validate', requireAuth, async (req, res) => {
 });
 
 // Dictionary
-app.get('/api/dictionary', requireAuth, (req, res) => {
+app.get('/api/dictionary', optionalAuth, (req, res) => {
   res.json(storage.getDictionary(req.user.id));
 });
 
-app.post('/api/dictionary', requireAuth, (req, res) => {
+app.post('/api/dictionary', optionalAuth, (req, res) => {
   try {
-    const updated = storage.addDictionaryItem(req.body, req.user.id);
+    storage.addDictionaryItem(req.body, req.user.id);
+    const updated = storage.getDictionary(req.user.id);
     res.json({ success: true, dictionary: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.put('/api/dictionary/:id', requireAuth, (req, res) => {
+app.put('/api/dictionary/:id', optionalAuth, (req, res) => {
   try {
     const updated = storage.updateDictionaryItem(req.params.id, req.body, req.user.id);
     res.json({ success: true, dictionary: updated });
@@ -1246,7 +1247,7 @@ app.put('/api/dictionary/:id', requireAuth, (req, res) => {
   }
 });
 
-app.delete('/api/dictionary/:id', requireAuth, (req, res) => {
+app.delete('/api/dictionary/:id', optionalAuth, (req, res) => {
   try {
     const updated = storage.deleteDictionaryItem(req.params.id, req.user.id);
     res.json({ success: true, dictionary: updated });
@@ -1256,20 +1257,21 @@ app.delete('/api/dictionary/:id', requireAuth, (req, res) => {
 });
 
 // Snippets
-app.get('/api/snippets', requireAuth, (req, res) => {
+app.get('/api/snippets', optionalAuth, (req, res) => {
   res.json(storage.getSnippets(req.user.id));
 });
 
-app.post('/api/snippets', requireAuth, (req, res) => {
+app.post('/api/snippets', optionalAuth, (req, res) => {
   try {
-    const updated = storage.addSnippet(req.body, req.user.id);
+    storage.addSnippet(req.body, req.user.id);
+    const updated = storage.getSnippets(req.user.id);
     res.json({ success: true, snippets: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.put('/api/snippets/:id', requireAuth, (req, res) => {
+app.put('/api/snippets/:id', optionalAuth, (req, res) => {
   try {
     const updated = storage.updateSnippet(req.params.id, req.body, req.user.id);
     res.json({ success: true, snippets: updated });
@@ -1278,7 +1280,7 @@ app.put('/api/snippets/:id', requireAuth, (req, res) => {
   }
 });
 
-app.delete('/api/snippets/:id', requireAuth, (req, res) => {
+app.delete('/api/snippets/:id', optionalAuth, (req, res) => {
   try {
     const updated = storage.deleteSnippet(req.params.id, req.user.id);
     res.json({ success: true, snippets: updated });
@@ -1288,22 +1290,22 @@ app.delete('/api/snippets/:id', requireAuth, (req, res) => {
 });
 
 // History
-app.get('/api/history', requireAuth, (req, res) => {
+app.get('/api/history', optionalAuth, (req, res) => {
   const limit = parseInt(req.query.limit, 10) || 50;
   res.json(storage.getHistory(limit, req.user.id));
 });
 
-app.delete('/api/history', requireAuth, (req, res) => {
+app.delete('/api/history', optionalAuth, (req, res) => {
   storage.clearHistory(req.user.id);
   res.json({ success: true, history: [] });
 });
 
 // Meetings
-app.get('/api/meetings', requireAuth, (req, res) => {
+app.get('/api/meetings', optionalAuth, (req, res) => {
   res.json(storage.getMeetings(req.user.id));
 });
 
-app.get('/api/meetings/:id', requireAuth, (req, res) => {
+app.get('/api/meetings/:id', optionalAuth, (req, res) => {
   const meeting = storage.getMeetingById(req.params.id, req.user.id);
   if (!meeting) return res.status(404).json({ error: 'Meeting not found' });
   res.json(meeting);
@@ -1313,13 +1315,13 @@ app.get('/api/meetings/:id', requireAuth, (req, res) => {
 // 7. USAGE, QUOTAS & PRIVACY (Phase 9)
 // ==========================================
 
-app.get('/api/usage', requireAuth, (req, res) => {
+app.get('/api/usage', optionalAuth, (req, res) => {
   const stats = usageService.getUserStats(req.user.id);
   const events = usageService.getUserEvents(req.user.id);
   res.json({ success: true, stats, events });
 });
 
-app.get('/api/usage/events', requireAuth, (req, res) => {
+app.get('/api/usage/events', optionalAuth, (req, res) => {
   const limit = Math.min(200, parseInt(req.query.limit, 10) || 50);
   const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
   const status = req.query.status || null;
@@ -1327,7 +1329,7 @@ app.get('/api/usage/events', requireAuth, (req, res) => {
   res.json({ success: true, events });
 });
 
-app.get('/api/quotas', requireAuth, (req, res) => {
+app.get('/api/quotas', optionalAuth, (req, res) => {
   const quota = quotaService.getUserQuota(req.user.id);
   const stats = usageService.getUserStats(req.user.id);
   res.json({
@@ -1340,7 +1342,7 @@ app.get('/api/quotas', requireAuth, (req, res) => {
   });
 });
 
-app.get('/api/usage/dashboard', requireAuth, (req, res) => {
+app.get('/api/usage/dashboard', optionalAuth, (req, res) => {
   const dashboard = usageService.getDashboardStats(req.user.id);
   const quota = quotaService.getUserQuota(req.user.id);
   res.json({ success: true, quota, ...dashboard });

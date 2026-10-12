@@ -875,7 +875,10 @@ class WhisperFlowApp {
     const apply = (theme) => {
       if (theme !== 'light' && theme !== 'dark' && theme !== 'contrast') return;
       document.documentElement.setAttribute('data-theme', theme);
-      try { localStorage.setItem('whisperflow-theme', theme); } catch (e) {}
+      try {
+        localStorage.setItem('mumble-theme', theme);
+        localStorage.setItem('whisperflow-theme', theme);
+      } catch (e) {}
       buttons.forEach(btn => {
         const on = btn.getAttribute('data-theme-choice') === theme;
         btn.classList.toggle('is-selected', on);
@@ -886,6 +889,14 @@ class WhisperFlowApp {
     buttons.forEach(btn => {
       btn.addEventListener('click', () => apply(btn.getAttribute('data-theme-choice')));
     });
+
+    // Initialize button state from current document attribute or storage
+    const initialTheme = document.documentElement.getAttribute('data-theme') || 
+      (() => {
+        try { return localStorage.getItem('mumble-theme') || localStorage.getItem('whisperflow-theme') || 'light'; }
+        catch (e) { return 'light'; }
+      })();
+    apply(initialTheme);
   }
 
   setupHistory() {
@@ -1271,7 +1282,9 @@ class WhisperFlowApp {
   async loadInitialSettings() {
     try {
       const res = await fetch('/api/settings');
+      if (!res.ok) return;
       const settings = await res.json();
+      if (!settings || typeof settings !== 'object' || settings.error) return;
 
       this.currentSttProvider = settings.sttProvider || 'groq';
       this.currentSttModel = settings.sttModel || 'whisper-large-v3-turbo';

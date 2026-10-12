@@ -38,15 +38,27 @@ export class SnippetsManager {
   async load() {
     try {
       const res = await fetch('/api/snippets');
-      this.items = await res.json();
+      if (!res.ok) {
+        console.warn('Could not load snippets, server status:', res.status);
+        this.items = [];
+        this.render();
+        return;
+      }
+      const data = await res.json();
+      this.items = Array.isArray(data) ? data : (Array.isArray(data?.snippets) ? data.snippets : []);
       this.render();
     } catch (err) {
       console.warn('Could not load snippets:', err.message);
+      this.items = [];
+      this.render();
     }
   }
 
   render() {
     if (!this.listContainer) return;
+    if (!Array.isArray(this.items)) {
+      this.items = [];
+    }
     const query = (this.searchInput?.value || '').toLowerCase().trim();
 
     const filtered = this.items.filter(item => {
@@ -179,9 +191,12 @@ export class SnippetsManager {
       }
 
       const data = await res.json();
-      if (data.snippets) {
+      if (Array.isArray(data.snippets)) {
         this.items = data.snippets;
         this.render();
+        this.resetForm();
+      } else {
+        await this.load();
         this.resetForm();
       }
     } catch (err) {
@@ -201,9 +216,11 @@ export class SnippetsManager {
         body: JSON.stringify({ enabled: newEnabled })
       });
       const data = await res.json();
-      if (data.snippets) {
+      if (Array.isArray(data.snippets)) {
         this.items = data.snippets;
         this.render();
+      } else {
+        await this.load();
       }
     } catch (err) {
       alert('Failed to toggle snippet: ' + err.message);
@@ -215,9 +232,11 @@ export class SnippetsManager {
     try {
       const res = await fetch(`/api/snippets/${id}`, { method: 'DELETE' });
       const data = await res.json();
-      if (data.snippets) {
+      if (Array.isArray(data.snippets)) {
         this.items = data.snippets;
         this.render();
+      } else {
+        await this.load();
       }
     } catch (err) {
       alert('Failed to delete snippet: ' + err.message);
