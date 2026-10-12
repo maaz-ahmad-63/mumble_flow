@@ -17,6 +17,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY:-}
       - DEFAULT_STT_PROVIDER=${DEFAULT_STT_PROVIDER:-groq}
       - DEFAULT_LLM_PROVIDER=${DEFAULT_LLM_PROVIDER:-groq}
+      - DATABASE_URL=${DATABASE_URL:-}
+      - DB_POOL_MAX=${DB_POOL_MAX:-10}
     volumes:
       - whisperflow_data:/app/data
     healthcheck:

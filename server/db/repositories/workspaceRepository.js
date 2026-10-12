@@ -1,25 +1,29 @@
-import { sqliteAdapter } from '../sqliteAdapter.js';
+import { db } from '../index.js';
 
 export class WorkspaceRepository {
-  constructor(adapter = sqliteAdapter) {
+  constructor(adapter = db) {
     this.db = adapter;
   }
 
   createWorkspace({ id, name, slug, ownerId }) {
     const now = new Date().toISOString();
-    this.db.run(
+    const res1 = this.db.run(
       `INSERT INTO workspaces (id, name, slug, owner_id, created_at)
        VALUES (?, ?, ?, ?, ?)`,
       [id, name, slug, ownerId, now]
     );
 
     const memberId = `wm_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    this.db.run(
+    const addMember = () => this.db.run(
       `INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at)
        VALUES (?, ?, ?, ?, ?)`,
       [memberId, id, ownerId, 'owner', now]
     );
 
+    if (res1 instanceof Promise) {
+      return res1.then(addMember).then(() => this.findById(id));
+    }
+    addMember();
     return this.findById(id);
   }
 
@@ -41,8 +45,11 @@ export class WorkspaceRepository {
   addMember({ id, workspaceId, userId, role = 'member' }) {
     const now = new Date().toISOString();
     this.db.run(
-      `INSERT OR REPLACE INTO workspace_members (id, workspace_id, user_id, role, created_at)
-       VALUES (?, ?, ?, ?, ?)`,
+      `INSERT INTO workspace_members (id, workspace_id, user_id, role, created_at)
+       VALUES (?, ?, ?, ?, ?)
+       ON CONFLICT (workspace_id, user_id) DO UPDATE SET
+         role = EXCLUDED.role,
+         created_at = EXCLUDED.created_at`,
       [id, workspaceId, userId, role, now]
     );
   }

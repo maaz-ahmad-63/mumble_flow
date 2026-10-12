@@ -4,7 +4,7 @@ import { authService } from '../services/authService.js';
  * Authentication middleware that extracts Bearer token and verifies user session.
  * Rejects invalid/expired credentials.
  */
-export function requireAuth(req, res, next) {
+export async function requireAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
 
@@ -20,7 +20,7 @@ export function requireAuth(req, res, next) {
     });
   }
 
-  const user = authService.validateToken(token);
+  const user = await authService.validateToken(token);
   if (!user) {
     return res.status(401).json({
       error: 'Invalid or expired session token.',
@@ -35,12 +35,12 @@ export function requireAuth(req, res, next) {
 /**
  * Optional authentication middleware for public endpoints that can be enhanced with user context
  */
-export function optionalAuth(req, res, next) {
+export async function optionalAuth(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
 
   if (token) {
-    const user = authService.validateToken(token);
+    const user = await authService.validateToken(token);
     if (user) {
       req.user = user;
     } else {

@@ -1,4 +1,4 @@
-import { sqliteAdapter } from '../sqliteAdapter.js';
+import { db } from '../index.js';
 import { apiKeyRepository } from './apiKeyRepository.js';
 import { cryptoService } from '../../services/cryptoService.js';
 
@@ -29,58 +29,77 @@ const DEFAULT_SETTINGS = {
 };
 
 export class SettingsRepository {
-  constructor(adapter = sqliteAdapter) {
+  constructor(adapter = db) {
     this.db = adapter;
   }
 
   getRawSettings(userId = 'default_user') {
-    const row = this.db.get('SELECT settings_json FROM settings WHERE user_id = ?', [userId]);
-    if (!row) {
-      return { ...DEFAULT_SETTINGS };
-    }
-    try {
-      const parsed = JSON.parse(row.settings_json);
-      // Migration: support legacy single 'provider' key
-      if (parsed.provider && !parsed.sttProvider) {
-        parsed.sttProvider = parsed.provider;
-        parsed.sttModel = 'whisper-large-v3-turbo';
-        parsed.llmProvider = parsed.provider;
-        parsed.llmModel = 'openai/gpt-oss-20b';
+    const rowRes = this.db.get('SELECT settings_json FROM settings WHERE user_id = ?', [userId]);
+
+    const parseRow = (row) => {
+      if (!row || !row.settings_json) {
+        return { ...DEFAULT_SETTINGS };
       }
-      return { ...DEFAULT_SETTINGS, ...parsed };
-    } catch (e) {
-      return { ...DEFAULT_SETTINGS };
+      try {
+        const parsed = JSON.parse(row.settings_json);
+        // Migration: support legacy single 'provider' key
+        if (parsed.provider && !parsed.sttProvider) {
+          parsed.sttProvider = parsed.provider;
+          parsed.sttModel = 'whisper-large-v3-turbo';
+          parsed.llmProvider = parsed.provider;
+          parsed.llmModel = 'openai/gpt-oss-20b';
+        }
+        return { ...DEFAULT_SETTINGS, ...parsed };
+      } catch (e) {
+        return { ...DEFAULT_SETTINGS };
+      }
+    };
+
+    if (rowRes instanceof Promise) {
+      return rowRes.then(parseRow);
     }
+    return parseRow(rowRes);
   }
 
   getSafeSettings(userId = 'default_user') {
-    const raw = this.getRawSettings(userId);
-    let userKeySet = new Set();
-    try {
-      const userKeys = this.db.query('SELECT provider FROM user_api_keys WHERE user_id = ?', [userId]);
-      userKeySet = new Set(userKeys.map(k => k.provider));
-    } catch (e) {}
+    const rawRes = this.getRawSettings(userId);
+    const keysRes = this.db.query('SELECT provider FROM user_api_keys WHERE user_id = ?', [userId]);
 
-    const hasGroqKey = Boolean(process.env.GROQ_API_KEY || raw.apiKeyGroq || userKeySet.has('groq'));
-    const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY || raw.apiKeyGemini || userKeySet.has('gemini'));
-    const hasOpenaiKey = Boolean(process.env.OPENAI_API_KEY || raw.apiKeyOpenai || userKeySet.has('openai'));
+    const buildSafe = (raw, userKeys) => {
+      let userKeySet = new Set();
+      if (Array.isArray(userKeys)) {
+        userKeySet = new Set(userKeys.map(k => k.provider));
+      }
 
-    // Deep copy and strip API keys
-    const safe = { ...raw };
-    delete safe.apiKeyGroq;
-    delete safe.apiKeyGemini;
-    delete safe.apiKeyOpenai;
-    delete safe.jwtSecret;
+      const hasGroqKey = Boolean(process.env.GROQ_API_KEY || raw.apiKeyGroq || userKeySet.has('groq'));
+      const hasGeminiKey = Boolean(process.env.GEMINI_API_KEY || raw.apiKeyGemini || userKeySet.has('gemini'));
+      const hasOpenaiKey = Boolean(process.env.OPENAI_API_KEY || raw.apiKeyOpenai || userKeySet.has('openai'));
 
-    return {
-      ...safe,
-      hasGroqKey,
-      hasGeminiKey,
-      hasOpenaiKey,
-      groqKeyConfigured: hasGroqKey,
-      geminiKeyConfigured: hasGeminiKey,
-      openaiKeyConfigured: hasOpenaiKey
+      // Deep copy and strip API keys
+      const safe = { ...raw };
+      delete safe.apiKeyGroq;
+      delete safe.apiKeyGemini;
+      delete safe.apiKeyOpenai;
+      delete safe.jwtSecret;
+
+      return {
+        ...safe,
+        hasGroqKey,
+        hasGeminiKey,
+        hasOpenaiKey,
+        groqKeyConfigured: hasGroqKey,
+        geminiKeyConfigured: hasGeminiKey,
+        openaiKeyConfigured: hasOpenaiKey
+      };
     };
+
+    if (rawRes instanceof Promise || keysRes instanceof Promise) {
+      return Promise.all([
+        Promise.resolve(rawRes),
+        Promise.resolve(keysRes).catch(() => [])
+      ]).then(([raw, keys]) => buildSafe(raw, keys));
+    }
+    return buildSafe(rawRes, keysRes);
   }
 
   updateSettings(userId = 'default_user', updates = {}) {
@@ -118,22 +137,34 @@ export class SettingsRepository {
       }
     }
 
-    const current = this.getRawSettings(userId);
-    // Strip raw unencrypted keys from store
-    delete current.apiKeyGroq;
-    delete current.apiKeyGemini;
-    delete current.apiKeyOpenai;
+    const currentRes = this.getRawSettings(userId);
+    const saveAndReturn = (current) => {
+      delete current.apiKeyGroq;
+      delete current.apiKeyGemini;
+      delete current.apiKeyOpenai;
 
-    const updated = { ...current, ...cleanUpdates };
-    const now = new Date().toISOString();
+      const updated = { ...current, ...cleanUpdates };
+      const now = new Date().toISOString();
 
-    this.db.run(
-      `INSERT OR REPLACE INTO settings (user_id, settings_json, updated_at)
-       VALUES (?, ?, ?)`,
-      [userId, JSON.stringify(updated), now]
-    );
+      const runRes = this.db.run(
+        `INSERT INTO settings (user_id, settings_json, updated_at)
+         VALUES (?, ?, ?)
+         ON CONFLICT (user_id) DO UPDATE SET
+           settings_json = EXCLUDED.settings_json,
+           updated_at = EXCLUDED.updated_at`,
+        [userId, JSON.stringify(updated), now]
+      );
 
-    return this.getSafeSettings(userId);
+      if (runRes instanceof Promise) {
+        return runRes.then(() => this.getSafeSettings(userId));
+      }
+      return this.getSafeSettings(userId);
+    };
+
+    if (currentRes instanceof Promise) {
+      return currentRes.then(saveAndReturn);
+    }
+    return saveAndReturn(currentRes);
   }
 
   updateUserSettings(userId, updates) {

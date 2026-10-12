@@ -64,6 +64,16 @@ With a disk attached, Render stops the old copy before starting the new one, so 
 
 `render.yaml` turns off automatic deploys. To update, open the service and click **Manual Deploy**, then **Deploy latest commit**.
 
+## Migrate to Supabase PostgreSQL
+
+To switch from the local SQLite disk to a managed Supabase PostgreSQL database:
+
+1. Follow the step-by-step guide in [../database-migration.md](../database-migration.md).
+2. Run data migration: `DATABASE_URL="postgres://..." npm run migrate:pg`.
+3. In Render Dashboard &rarr; **Environment**, add `DATABASE_URL` with your Supabase pooler URI.
+4. Render redeploys and automatically routes all traffic to PostgreSQL. Existing SQLite data on disk remains untouched as a safe fallback.
+5. **Rollback limitation:** If you remove `DATABASE_URL` to roll back to SQLite, any new records or changes written to PostgreSQL while active are **not automatically synchronized back to SQLite**. See [../database-migration.md](../database-migration.md#7-rollback-plan--important-limitations) for details.
+
 ## Back up
 
 Render takes a daily snapshot of the disk. To restore one, open the service, then **Disks**, and pick a snapshot. To keep a copy outside Render, see [../google-shared-drive.md](../google-shared-drive.md).

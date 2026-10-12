@@ -139,17 +139,17 @@ app.post('/api/auth/logout', requireAuth, async (req, res) => {
   }
 });
 
-app.get('/api/auth/me', (req, res) => {
+app.get('/api/auth/me', async (req, res) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.startsWith('Bearer ') ? authHeader.substring(7).trim() : null;
   if (!token) {
     return res.status(401).json({ authenticated: false, error: 'No active session token' });
   }
-  const user = authService.validateToken(token);
+  const user = await authService.validateToken(token);
   if (!user) {
     return res.status(401).json({ authenticated: false, error: 'Invalid or expired session token' });
   }
-  const profile = authService.getUserProfile(user.id);
+  const profile = await authService.getUserProfile(user.id);
   if (!profile) {
     return res.status(404).json({ error: 'User profile not found' });
   }
@@ -188,7 +188,7 @@ function isTestAccountRecord(u) {
 }
 
 // List users with status, role, quota, and test account flag (Admin only)
-app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
+app.get('/api/admin/users', requireAuth, requireAdmin, async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page, 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
@@ -196,12 +196,12 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
     const search = req.query.search || '';
     const filter = req.query.filter || 'all'; // 'genuine' | 'test' | 'all'
 
-    const users = userRepository.findAll({ limit: 500, offset: 0, search });
+    const users = await userRepository.findAll({ limit: 500, offset: 0, search });
 
     // Enrich users with usage statistics, quota, and genuine/test account categorization
-    let enriched = users.map(u => {
-      const stats = userRepository.getUserStatsSummary(u.id);
-      const quota = quotaService.getUserQuota(u.id);
+    let enriched = await Promise.all((users || []).map(async (u) => {
+      const stats = await userRepository.getUserStatsSummary(u.id);
+      const quota = await quotaService.getUserQuota(u.id);
       const isTestAccount = isTestAccountRecord(u);
       return {
         id: u.id,
@@ -215,7 +215,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
         stats,
         quota
       };
-    });
+    }));
 
     if (filter === 'genuine') {
       enriched = enriched.filter(u => !u.isTestAccount);
@@ -242,7 +242,7 @@ app.get('/api/admin/users', requireAuth, requireAdmin, (req, res) => {
 });
 
 // Update user status: 'active' | 'suspended' (Admin only)
-app.patch('/api/admin/users/:id/status', requireAuth, requireAdmin, (req, res) => {
+app.patch('/api/admin/users/:id/status', requireAuth, requireAdmin, async (req, res) => {
   try {
     const targetUserId = req.params.id;
     const { status } = req.body;
@@ -256,14 +256,14 @@ app.patch('/api/admin/users/:id/status', requireAuth, requireAdmin, (req, res) =
       return res.status(400).json({ error: 'Administrators cannot suspend their own account' });
     }
 
-    const updated = userRepository.update(targetUserId, { status });
+    const updated = await userRepository.update(targetUserId, { status });
     if (!updated) {
       return res.status(404).json({ error: 'User not found' });
     }
 
     // If suspended, invalidate all active sessions immediately
     if (status === 'suspended') {
-      userRepository.deleteAllUserSessions(targetUserId);
+      await userRepository.deleteAllUserSessions(targetUserId);
     }
 
     res.json({
@@ -282,7 +282,7 @@ app.patch('/api/admin/users/:id/status', requireAuth, requireAdmin, (req, res) =
 });
 
 // Update user role: 'user' | 'admin' (Admin only)
-app.patch('/api/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => {
+app.patch('/api/admin/users/:id/role', requireAuth, requireAdmin, async (req, res) => {
   try {
     const targetUserId = req.params.id;
     const { role } = req.body;
@@ -296,7 +296,7 @@ app.patch('/api/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => 
       return res.status(400).json({ error: 'Cannot demote your own administrator account' });
     }
 
-    const updated = userRepository.update(targetUserId, { role });
+    const updated = await userRepository.update(targetUserId, { role });
     if (!updated) {
       return res.status(404).json({ error: 'User not found' });
     }
@@ -317,15 +317,15 @@ app.patch('/api/admin/users/:id/role', requireAuth, requireAdmin, (req, res) => 
 });
 
 // System-wide usage and health statistics (Admin only)
-app.get('/api/admin/stats', requireAuth, requireAdmin, (req, res) => {
+app.get('/api/admin/stats', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const allUsers = userRepository.findAll({ limit: 10000, offset: 0 });
+    const allUsers = (await userRepository.findAll({ limit: 10000, offset: 0 })) || [];
     const totalUsers = allUsers.length;
     const genuineUsers = allUsers.filter(u => !isTestAccountRecord(u));
     const testRecords = allUsers.filter(u => isTestAccountRecord(u));
     const activeUsers = genuineUsers.filter(u => u.status === 'active').length;
     const suspendedUsers = genuineUsers.filter(u => u.status === 'suspended').length;
-    const systemUsage = usageRepository.getGlobalSystemStats();
+    const systemUsage = await usageRepository.getGlobalSystemStats();
     const uptimeSeconds = Math.floor(process.uptime());
     const mem = process.memoryUsage();
 
@@ -607,15 +607,15 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
     // Resolve credentials with strict precedence:
     // Explicit request body param > User BYOK encrypted key > Legacy user setting > System .env
     const explicitSttKey = sttProvider === 'gemini' ? apiKeyGemini : sttProvider === 'openai' ? apiKeyOpenai : apiKeyGroq;
-    const resolvedStt = explicitSttKey ? { key: explicitSttKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, sttProvider);
+    const resolvedStt = explicitSttKey ? { key: explicitSttKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, sttProvider);
     const isByokStt = resolvedStt.source === 'user';
 
     const explicitLlmKey = llmProvider === 'gemini' ? apiKeyGemini : llmProvider === 'openai' ? apiKeyOpenai : apiKeyGroq;
-    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, llmProvider);
+    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, llmProvider);
     const isByokLlm = resolvedLlm.source === 'user';
 
     // Check Quotas (BYOK requests are exempt from platform quotas)
-    const audioQuota = quotaService.checkAudioQuota(userId, 5, { isByok: isByokStt });
+    const audioQuota = await quotaService.checkAudioQuota(userId, 5, { isByok: isByokStt });
     if (!audioQuota.allowed) {
       return res.status(429).json({ error: audioQuota.reason, code: 'QUOTA_EXCEEDED', quota: audioQuota });
     }
@@ -764,7 +764,7 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
     const totalCost = pricingService.calculateTotalCost(sttCost, llmCost);
 
     // Step 3: Record to user history
-    const historyEntry = storage.addHistory({
+    const historyEntry = await storage.addHistory({
       rawTranscript,
       processedText: zeroEditResult.processedText,
       durationMs: Math.round((asrResult.duration || 0) * 1000),
@@ -862,12 +862,12 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
   const startTime = Date.now();
   const userId = req.user.id;
   try {
-    const rawSettings = storage.getRawSettings(userId);
-    const userSettings = storage.getSettings(userId);
+    const rawSettings = await storage.getRawSettings(userId);
+    const userSettings = await storage.getSettings(userId);
 
     const {
       text,
-      llmProvider = userSettings.llmProvider || config.defaultLlmProvider || 'groq',
+      llmProvider = userSettings?.llmProvider || config.defaultLlmProvider || 'groq',
       processName,
       windowTitle,
       apiKeyGroq,
@@ -880,11 +880,11 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
     }
 
     const explicitLlmKey = llmProvider === 'gemini' ? apiKeyGemini : llmProvider === 'openai' ? apiKeyOpenai : (apiKeyGroq || req.body.apiKey);
-    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, llmProvider);
+    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, llmProvider);
     const isByokLlm = resolvedLlm.source === 'user';
 
     // Check LLM Quota (BYOK requests are exempt)
-    const llmQuota = quotaService.checkLlmQuota(userId, { isByok: isByokLlm });
+    const llmQuota = await quotaService.checkLlmQuota(userId, { isByok: isByokLlm });
     if (!llmQuota.allowed) {
       return res.status(429).json({ error: llmQuota.reason, code: 'QUOTA_EXCEEDED', quota: llmQuota });
     }
@@ -914,7 +914,7 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
       appName,
       application: resolved.context,
       llmProvider,
-      llmModel: req.body.llmModel || userSettings.llmModel || config.defaultLlmModel || 'openai/gpt-oss-20b',
+      llmModel: req.body.llmModel || userSettings?.llmModel || config.defaultLlmModel || 'openai/gpt-oss-20b',
       userId,
       apiKey: resolvedLlm.key,
       keySource: resolvedLlm.source
@@ -939,7 +939,7 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
     });
 
     // Save to user history
-    storage.addHistory({
+    await storage.addHistory({
       rawTranscript: text,
       processedText: result.processedText,
       durationMs: 0,
@@ -1055,7 +1055,7 @@ Output ONLY the transformed text. Do not add explanations, conversational remark
     });
   } catch (err) {
     logger.error(`Command Mode Failed: ${err.message}`);
-    const resolvedLlm = apiKeyService.getDecryptedKey(userId, req.body?.llmProvider || 'groq');
+    const resolvedLlm = await apiKeyService.getDecryptedKey(userId, req.body?.llmProvider || 'groq');
     usageService.recordFailure({
       userId,
       sessionId: req.id,
@@ -1064,8 +1064,8 @@ Output ONLY the transformed text. Do not add explanations, conversational remark
       model: 'default',
       latencyMs: Date.now() - startTime,
       errorMessage: err.message,
-      isByok: resolvedLlm.source === 'user',
-      keySource: resolvedLlm.source
+      isByok: resolvedLlm?.source === 'user',
+      keySource: resolvedLlm?.source || 'system'
     });
     res.status(500).json({ error: err.message });
   }
@@ -1076,8 +1076,8 @@ Output ONLY the transformed text. Do not add explanations, conversational remark
 // ==========================================
 app.post('/api/notetaker/summarize', optionalAuth, async (req, res) => {
   const userId = req.user.id;
-  const rawSettings = storage.getRawSettings(userId);
-  const userSettings = storage.getSettings(userId);
+  const rawSettings = await storage.getRawSettings(userId);
+  const userSettings = await storage.getSettings(userId);
 
   try {
     const {
@@ -1132,13 +1132,18 @@ app.post('/api/notetaker/summarize', optionalAuth, async (req, res) => {
 // ==========================================
 
 // Settings (API Keys are NEVER exposed)
-app.get('/api/settings', optionalAuth, (req, res) => {
-  res.json(storage.getSettings(req.user.id));
+app.get('/api/settings', optionalAuth, async (req, res) => {
+  try {
+    const settings = await storage.getSettings(req.user.id);
+    res.json(settings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/settings', optionalAuth, (req, res) => {
+app.post('/api/settings', optionalAuth, async (req, res) => {
   try {
-    const updated = storage.updateSettings(req.body, req.user.id);
+    const updated = await storage.updateSettings(req.body, req.user.id);
     res.json({ success: true, settings: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1150,9 +1155,9 @@ app.post('/api/settings', optionalAuth, (req, res) => {
 // ==========================================
 
 // List configured keys for user (Safe: keyHint only, NEVER returns raw decrypted key)
-app.get('/api/keys', optionalAuth, (req, res) => {
+app.get('/api/keys', optionalAuth, async (req, res) => {
   try {
-    const keys = apiKeyService.listUserKeys(req.user.id);
+    const keys = await apiKeyService.listUserKeys(req.user.id);
     res.json({ success: true, keys });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1179,10 +1184,10 @@ app.post('/api/keys', optionalAuth, async (req, res) => {
 });
 
 // Delete a user API key (reverts to system defaults if present)
-app.delete('/api/keys/:provider', optionalAuth, (req, res) => {
+app.delete('/api/keys/:provider', optionalAuth, async (req, res) => {
   try {
     const provider = (req.params.provider || '').toLowerCase();
-    apiKeyService.deleteUserKey(req.user.id, provider);
+    await apiKeyService.deleteUserKey(req.user.id, provider);
     res.json({
       success: true,
       provider,
@@ -1203,7 +1208,7 @@ app.post('/api/keys/validate', optionalAuth, async (req, res) => {
     const p = provider.toLowerCase().trim();
     let keyToTest = key;
     if (!keyToTest) {
-      const stored = apiKeyService.getDecryptedKey(req.user.id, p);
+      const stored = await apiKeyService.getDecryptedKey(req.user.id, p);
       if (!stored.key) {
         return res.status(400).json({ error: `No configured API key found for ${p} to validate.` });
       }
@@ -1212,9 +1217,9 @@ app.post('/api/keys/validate', optionalAuth, async (req, res) => {
 
     const check = await apiKeyService.validateKey(p, keyToTest);
     if (check.valid) {
-      apiKeyService.repo.updateValidationStatus(req.user.id, p, 'valid');
+      await apiKeyService.repo.updateValidationStatus(req.user.id, p, 'valid');
     } else {
-      apiKeyService.repo.updateValidationStatus(req.user.id, p, 'invalid');
+      await apiKeyService.repo.updateValidationStatus(req.user.id, p, 'invalid');
     }
 
     res.json({ success: true, ...check });
@@ -1224,32 +1229,37 @@ app.post('/api/keys/validate', optionalAuth, async (req, res) => {
 });
 
 // Dictionary
-app.get('/api/dictionary', optionalAuth, (req, res) => {
-  res.json(storage.getDictionary(req.user.id));
+app.get('/api/dictionary', optionalAuth, async (req, res) => {
+  try {
+    const dict = await storage.getDictionary(req.user.id);
+    res.json(dict);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/dictionary', optionalAuth, (req, res) => {
+app.post('/api/dictionary', optionalAuth, async (req, res) => {
   try {
-    storage.addDictionaryItem(req.body, req.user.id);
-    const updated = storage.getDictionary(req.user.id);
+    await storage.addDictionaryItem(req.body, req.user.id);
+    const updated = await storage.getDictionary(req.user.id);
     res.json({ success: true, dictionary: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.put('/api/dictionary/:id', optionalAuth, (req, res) => {
+app.put('/api/dictionary/:id', optionalAuth, async (req, res) => {
   try {
-    const updated = storage.updateDictionaryItem(req.params.id, req.body, req.user.id);
+    const updated = await storage.updateDictionaryItem(req.params.id, req.body, req.user.id);
     res.json({ success: true, dictionary: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.delete('/api/dictionary/:id', optionalAuth, (req, res) => {
+app.delete('/api/dictionary/:id', optionalAuth, async (req, res) => {
   try {
-    const updated = storage.deleteDictionaryItem(req.params.id, req.user.id);
+    const updated = await storage.deleteDictionaryItem(req.params.id, req.user.id);
     res.json({ success: true, dictionary: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1257,32 +1267,37 @@ app.delete('/api/dictionary/:id', optionalAuth, (req, res) => {
 });
 
 // Snippets
-app.get('/api/snippets', optionalAuth, (req, res) => {
-  res.json(storage.getSnippets(req.user.id));
+app.get('/api/snippets', optionalAuth, async (req, res) => {
+  try {
+    const snippets = await storage.getSnippets(req.user.id);
+    res.json(snippets);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.post('/api/snippets', optionalAuth, (req, res) => {
+app.post('/api/snippets', optionalAuth, async (req, res) => {
   try {
-    storage.addSnippet(req.body, req.user.id);
-    const updated = storage.getSnippets(req.user.id);
+    await storage.addSnippet(req.body, req.user.id);
+    const updated = await storage.getSnippets(req.user.id);
     res.json({ success: true, snippets: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.put('/api/snippets/:id', optionalAuth, (req, res) => {
+app.put('/api/snippets/:id', optionalAuth, async (req, res) => {
   try {
-    const updated = storage.updateSnippet(req.params.id, req.body, req.user.id);
+    const updated = await storage.updateSnippet(req.params.id, req.body, req.user.id);
     res.json({ success: true, snippets: updated });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
 });
 
-app.delete('/api/snippets/:id', optionalAuth, (req, res) => {
+app.delete('/api/snippets/:id', optionalAuth, async (req, res) => {
   try {
-    const updated = storage.deleteSnippet(req.params.id, req.user.id);
+    const updated = await storage.deleteSnippet(req.params.id, req.user.id);
     res.json({ success: true, snippets: updated });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1290,68 +1305,104 @@ app.delete('/api/snippets/:id', optionalAuth, (req, res) => {
 });
 
 // History
-app.get('/api/history', optionalAuth, (req, res) => {
-  const limit = parseInt(req.query.limit, 10) || 50;
-  res.json(storage.getHistory(limit, req.user.id));
+app.get('/api/history', optionalAuth, async (req, res) => {
+  try {
+    const limit = parseInt(req.query.limit, 10) || 50;
+    const history = await storage.getHistory(limit, req.user.id);
+    res.json(history);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.delete('/api/history', optionalAuth, (req, res) => {
-  storage.clearHistory(req.user.id);
-  res.json({ success: true, history: [] });
+app.delete('/api/history', optionalAuth, async (req, res) => {
+  try {
+    await storage.clearHistory(req.user.id);
+    res.json({ success: true, history: [] });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Meetings
-app.get('/api/meetings', optionalAuth, (req, res) => {
-  res.json(storage.getMeetings(req.user.id));
+app.get('/api/meetings', optionalAuth, async (req, res) => {
+  try {
+    const meetings = await storage.getMeetings(req.user.id);
+    res.json(meetings);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/meetings/:id', optionalAuth, (req, res) => {
-  const meeting = storage.getMeetingById(req.params.id, req.user.id);
-  if (!meeting) return res.status(404).json({ error: 'Meeting not found' });
-  res.json(meeting);
+app.get('/api/meetings/:id', optionalAuth, async (req, res) => {
+  try {
+    const meeting = await storage.getMeetingById(req.params.id, req.user.id);
+    if (!meeting) return res.status(404).json({ error: 'Meeting not found' });
+    res.json(meeting);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // ==========================================
 // 7. USAGE, QUOTAS & PRIVACY (Phase 9)
 // ==========================================
 
-app.get('/api/usage', optionalAuth, (req, res) => {
-  const stats = usageService.getUserStats(req.user.id);
-  const events = usageService.getUserEvents(req.user.id);
-  res.json({ success: true, stats, events });
+app.get('/api/usage', optionalAuth, async (req, res) => {
+  try {
+    const stats = await usageService.getUserStats(req.user.id);
+    const events = await usageService.getUserEvents(req.user.id);
+    res.json({ success: true, stats, events });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/usage/events', optionalAuth, (req, res) => {
-  const limit = Math.min(200, parseInt(req.query.limit, 10) || 50);
-  const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
-  const status = req.query.status || null;
-  const events = usageService.getUserEvents(req.user.id, { limit, offset, status });
-  res.json({ success: true, events });
+app.get('/api/usage/events', optionalAuth, async (req, res) => {
+  try {
+    const limit = Math.min(200, parseInt(req.query.limit, 10) || 50);
+    const offset = Math.max(0, parseInt(req.query.offset, 10) || 0);
+    const status = req.query.status || null;
+    const events = await usageService.getUserEvents(req.user.id, { limit, offset, status });
+    res.json({ success: true, events });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/quotas', optionalAuth, (req, res) => {
-  const quota = quotaService.getUserQuota(req.user.id);
-  const stats = usageService.getUserStats(req.user.id);
-  res.json({
-    success: true,
-    quota,
-    stats,
-    remainingMinutes: Math.max(0, Math.round((quota.monthlyAudioMinutes - stats.systemAudioMinutes) * 100) / 100),
-    remainingLlmRequests: Math.max(0, quota.monthlyLlmRequests - stats.systemLlmRequests),
-    byokUnlimited: true
-  });
+app.get('/api/quotas', optionalAuth, async (req, res) => {
+  try {
+    const quota = await quotaService.getUserQuota(req.user.id);
+    const stats = await usageService.getUserStats(req.user.id);
+    const remainingMinutes = Math.max(0, Math.round(((quota?.monthlyAudioMinutes || 0) - (stats?.systemAudioMinutes || 0)) * 100) / 100);
+    const remainingLlmRequests = Math.max(0, (quota?.monthlyLlmRequests || 0) - (stats?.systemLlmRequests || 0));
+    res.json({
+      success: true,
+      quota,
+      stats,
+      remainingMinutes,
+      remainingLlmRequests,
+      byokUnlimited: true
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/usage/dashboard', optionalAuth, (req, res) => {
-  const dashboard = usageService.getDashboardStats(req.user.id);
-  const quota = quotaService.getUserQuota(req.user.id);
-  res.json({ success: true, quota, ...dashboard });
+app.get('/api/usage/dashboard', optionalAuth, async (req, res) => {
+  try {
+    const dashboard = await usageService.getDashboardStats(req.user.id);
+    const quota = await quotaService.getUserQuota(req.user.id);
+    res.json({ success: true, quota, ...dashboard });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Admin Usage & Platform Telemetry Overview (Admin only)
-app.get('/api/admin/usage', requireAuth, requireAdmin, (req, res) => {
+app.get('/api/admin/usage', requireAuth, requireAdmin, async (req, res) => {
   try {
-    const adminStats = usageService.getGlobalAdminStats();
+    const adminStats = await usageService.getGlobalAdminStats();
     res.json({ success: true, ...adminStats });
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -1359,11 +1410,11 @@ app.get('/api/admin/usage', requireAuth, requireAdmin, (req, res) => {
 });
 
 // Admin Quota Configuration (Admin only)
-app.patch('/api/admin/users/:id/quota', requireAuth, requireAdmin, (req, res) => {
+app.patch('/api/admin/users/:id/quota', requireAuth, requireAdmin, async (req, res) => {
   try {
     const targetUserId = req.params.id;
     const { tier, monthlyAudioMinutes, monthlyLlmRequests, monthlyBudgetUsd } = req.body;
-    const updatedQuota = quotaService.setUserQuota(targetUserId, tier, {
+    const updatedQuota = await quotaService.setUserQuota(targetUserId, tier, {
       monthlyAudioMinutes,
       monthlyLlmRequests,
       monthlyBudgetUsd
@@ -1378,19 +1429,34 @@ app.patch('/api/admin/users/:id/quota', requireAuth, requireAdmin, (req, res) =>
 // 8. MODEL CATALOG & LIVE COST ESTIMATOR (Phase 11)
 // ==========================================
 
-app.get('/api/models', optionalAuth, (req, res) => {
-  const userId = req.user?.id || 'default_user';
-  res.json({ success: true, ...modelCatalogService.getFullCatalog(userId) });
+app.get('/api/models', optionalAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id || 'default_user';
+    const catalog = await modelCatalogService.getFullCatalog(userId);
+    res.json({ success: true, ...catalog });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/models/stt', optionalAuth, (req, res) => {
-  const userId = req.user?.id || 'default_user';
-  res.json({ success: true, models: modelCatalogService.getSttModels(userId) });
+app.get('/api/models/stt', optionalAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id || 'default_user';
+    const models = await modelCatalogService.getSttModels(userId);
+    res.json({ success: true, models });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
-app.get('/api/models/llm', optionalAuth, (req, res) => {
-  const userId = req.user?.id || 'default_user';
-  res.json({ success: true, models: modelCatalogService.getLlmModels(userId) });
+app.get('/api/models/llm', optionalAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id || 'default_user';
+    const models = await modelCatalogService.getLlmModels(userId);
+    res.json({ success: true, models });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/models/pricing', (req, res) => {
@@ -1398,7 +1464,7 @@ app.get('/api/models/pricing', (req, res) => {
   res.json({
     success: true,
     currency: 'USD',
-    stt: catalog.stt.map(m => ({
+    stt: (catalog.stt || []).map(m => ({
       provider: m.provider,
       model: m.model,
       displayName: m.displayName,
@@ -1407,7 +1473,7 @@ app.get('/api/models/pricing', (req, res) => {
       pricingSource: m.pricingSource,
       effectiveDate: m.effectiveDate
     })),
-    llm: catalog.llm.map(m => ({
+    llm: (catalog.llm || []).map(m => ({
       provider: m.provider,
       model: m.model,
       displayName: m.displayName,
@@ -1419,19 +1485,23 @@ app.get('/api/models/pricing', (req, res) => {
   });
 });
 
-app.get('/api/models/:provider', optionalAuth, (req, res) => {
-  const userId = req.user?.id || 'default_user';
-  const provider = req.params.provider.toLowerCase();
-  const stt = modelCatalogService.getSttModels(userId).filter(m => m.provider === provider);
-  const llm = modelCatalogService.getLlmModels(userId).filter(m => m.provider === provider);
-  const status = modelCatalogService.getProviderStatus(provider, 'all', userId);
-  res.json({
-    success: true,
-    provider,
-    status,
-    modelsSTT: stt,
-    modelsLLM: llm
-  });
+app.get('/api/models/:provider', optionalAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id || 'default_user';
+    const provider = req.params.provider.toLowerCase();
+    const stt = (await modelCatalogService.getSttModels(userId)).filter(m => m.provider === provider);
+    const llm = (await modelCatalogService.getLlmModels(userId)).filter(m => m.provider === provider);
+    const status = await modelCatalogService.getProviderStatus(provider, 'all', userId);
+    res.json({
+      success: true,
+      provider,
+      status,
+      modelsSTT: stt,
+      modelsLLM: llm
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.post('/api/models/estimate', (req, res) => {
@@ -1440,16 +1510,20 @@ app.post('/api/models/estimate', (req, res) => {
 });
 
 // Delete all user data (Privacy & GDPR compliance)
-app.delete('/api/user/data', requireAuth, (req, res) => {
-  const userId = req.user.id;
-  storage.clearHistory(userId);
-  // Clear dictionary and snippets for user
-  const dict = storage.getDictionary(userId);
-  for (const d of dict) storage.deleteDictionaryItem(d.id, userId);
-  const snips = storage.getSnippets(userId);
-  for (const s of snips) storage.deleteSnippet(s.id, userId);
+app.delete('/api/user/data', requireAuth, async (req, res) => {
+  try {
+    const userId = req.user.id;
+    await storage.clearHistory(userId);
+    // Clear dictionary and snippets for user
+    const dict = await storage.getDictionary(userId);
+    for (const d of dict) await storage.deleteDictionaryItem(d.id, userId);
+    const snips = await storage.getSnippets(userId);
+    for (const s of snips) await storage.deleteSnippet(s.id, userId);
 
-  res.json({ success: true, message: 'All user data and history successfully wiped.' });
+    res.json({ success: true, message: 'All user data and history successfully wiped.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 // Health Checks

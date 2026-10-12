@@ -29,80 +29,105 @@ export class ModelCatalogService {
    */
   getProviderStatus(providerName, type = 'stt', userId = 'default_user') {
     const p = providerName?.toLowerCase();
-    const settings = storage.getSettings(userId);
+    const settingsRes = storage.getSettings(userId);
 
-    if (p === 'deterministic' || p === 'local') {
+    const resolveStatus = (settings, keyInfo) => {
+      if (p === 'deterministic' || p === 'local') {
+        return {
+          status: p === 'local' ? 'local' : 'available',
+          hasAdapter: true,
+          hasApiKey: true,
+          isConfigured: true,
+          configured: true,
+          badge: p === 'local' ? 'Local' : 'Available'
+        };
+      }
+
+      if (p === 'groq' || p === 'openai' || p === 'gemini') {
+        const capKey = p === 'groq' ? 'Groq' : p === 'openai' ? 'Openai' : 'Gemini';
+        const hasKey = Boolean(keyInfo?.key || settings?.[`has${capKey}Key`] || settings?.[`apiKey${capKey}`]);
+        const badge = hasKey
+          ? (keyInfo?.source === 'user' ? 'BYOK Active' : 'Available')
+          : 'Requires API key';
+
+        return {
+          status: hasKey ? 'available' : 'requires_api_key',
+          hasAdapter: true,
+          hasApiKey: hasKey,
+          isConfigured: hasKey,
+          configured: hasKey,
+          source: keyInfo?.source,
+          keyHint: keyInfo?.keyHint,
+          badge
+        };
+      }
+
+      // Catalogued providers without implemented adapters in this repo yet (Deepgram, AssemblyAI, Anthropic)
+      if (p === 'deepgram' || p === 'assemblyai' || p === 'anthropic') {
+        return {
+          status: 'requires_api_key',
+          hasAdapter: false,
+          hasApiKey: false,
+          isConfigured: false,
+          configured: false,
+          badge: 'Requires Adapter & Key'
+        };
+      }
+
       return {
-        status: p === 'local' ? 'local' : 'available',
-        hasAdapter: true,
-        hasApiKey: true,
-        isConfigured: true,
-        configured: true,
-        badge: p === 'local' ? 'Local' : 'Available'
-      };
-    }
-
-    if (p === 'groq' || p === 'openai' || p === 'gemini') {
-      const keyInfo = apiKeyService.getDecryptedKey(userId, p);
-      const capKey = p === 'groq' ? 'Groq' : p === 'openai' ? 'Openai' : 'Gemini';
-      const hasKey = Boolean(keyInfo.key || settings?.[`has${capKey}Key`] || settings?.[`apiKey${capKey}`]);
-      const badge = hasKey
-        ? (keyInfo.source === 'user' ? 'BYOK Active' : 'Available')
-        : 'Requires API key';
-
-      return {
-        status: hasKey ? 'available' : 'requires_api_key',
-        hasAdapter: true,
-        hasApiKey: hasKey,
-        isConfigured: hasKey,
-        configured: hasKey,
-        source: keyInfo.source,
-        keyHint: keyInfo.keyHint,
-        badge
-      };
-    }
-
-    // Catalogued providers without implemented adapters in this repo yet (Deepgram, AssemblyAI, Anthropic)
-    if (p === 'deepgram' || p === 'assemblyai' || p === 'anthropic') {
-      return {
-        status: 'requires_api_key',
+        status: 'unsupported',
         hasAdapter: false,
         hasApiKey: false,
         isConfigured: false,
         configured: false,
-        badge: 'Requires Adapter & Key'
+        badge: 'Unavailable'
       };
+    };
+
+    if (p === 'groq' || p === 'openai' || p === 'gemini') {
+      const keyInfoRes = apiKeyService.getDecryptedKey(userId, p);
+      if (settingsRes instanceof Promise || keyInfoRes instanceof Promise) {
+        return Promise.all([Promise.resolve(settingsRes), Promise.resolve(keyInfoRes)])
+          .then(([settings, keyInfo]) => resolveStatus(settings, keyInfo));
+      }
+      return resolveStatus(settingsRes, keyInfoRes);
     }
 
-    return {
-      status: 'unsupported',
-      hasAdapter: false,
-      hasApiKey: false,
-      isConfigured: false,
-      configured: false,
-      badge: 'Unavailable'
-    };
+    if (settingsRes instanceof Promise) {
+      return settingsRes.then(settings => resolveStatus(settings, null));
+    }
+    return resolveStatus(settingsRes, null);
   }
 
   /**
    * List all STT models with dynamic availability annotations.
    */
   getSttModels(userId = 'default_user') {
-    const list = [];
-    for (const [provider, models] of Object.entries(this.sttCatalog)) {
-      const providerStatus = this.getProviderStatus(provider, 'stt', userId);
-      for (const m of models) {
-        list.push({
-          ...m,
-          type: 'stt',
-          status: providerStatus.status,
-          configured: providerStatus.configured,
-          statusBadge: providerStatus.badge,
-          hasAdapter: m.hasAdapter && providerStatus.hasAdapter
-        });
+    const buildList = (statuses) => {
+      const list = [];
+      let i = 0;
+      for (const [provider, models] of Object.entries(this.sttCatalog)) {
+        const providerStatus = statuses[i++];
+        for (const m of models) {
+          list.push({
+            ...m,
+            type: 'stt',
+            status: providerStatus.status,
+            configured: providerStatus.configured,
+            statusBadge: providerStatus.badge,
+            hasAdapter: m.hasAdapter && providerStatus.hasAdapter
+          });
+        }
       }
+      return list;
+    };
+
+    const providers = Object.keys(this.sttCatalog);
+    const statuses = providers.map(p => this.getProviderStatus(p, 'stt', userId));
+    if (statuses.some(s => s instanceof Promise)) {
+      return Promise.all(statuses).then(buildList);
     }
-    return list;
+    return buildList(statuses);
   }
 
   listSttModels(userId = 'default_user') {
@@ -113,21 +138,31 @@ export class ModelCatalogService {
    * List all LLM models with dynamic availability annotations.
    */
   getLlmModels(userId = 'default_user') {
-    const list = [];
-    for (const [provider, models] of Object.entries(this.llmCatalog)) {
-      const providerStatus = this.getProviderStatus(provider, 'llm', userId);
-      for (const m of models) {
-        list.push({
-          ...m,
-          type: 'llm',
-          status: providerStatus.status,
-          configured: providerStatus.configured,
-          statusBadge: providerStatus.badge,
-          hasAdapter: m.hasAdapter && providerStatus.hasAdapter
-        });
+    const buildList = (statuses) => {
+      const list = [];
+      let i = 0;
+      for (const [provider, models] of Object.entries(this.llmCatalog)) {
+        const providerStatus = statuses[i++];
+        for (const m of models) {
+          list.push({
+            ...m,
+            type: 'llm',
+            status: providerStatus.status,
+            configured: providerStatus.configured,
+            statusBadge: providerStatus.badge,
+            hasAdapter: m.hasAdapter && providerStatus.hasAdapter
+          });
+        }
       }
+      return list;
+    };
+
+    const providers = Object.keys(this.llmCatalog);
+    const statuses = providers.map(p => this.getProviderStatus(p, 'llm', userId));
+    if (statuses.some(s => s instanceof Promise)) {
+      return Promise.all(statuses).then(buildList);
     }
-    return list;
+    return buildList(statuses);
   }
 
   listLlmModels(userId = 'default_user') {
@@ -138,12 +173,18 @@ export class ModelCatalogService {
    * Return full catalog with product branding and pricing metadata.
    */
   getFullCatalog(userId = 'default_user') {
-    return {
+    const sttRes = this.getSttModels(userId);
+    const llmRes = this.getLlmModels(userId);
+    const format = (stt, llm) => ({
       product: this.productIdentity,
       defaults: this.defaultSelection,
-      stt: this.getSttModels(userId),
-      llm: this.getLlmModels(userId)
-    };
+      stt,
+      llm
+    });
+    if (sttRes instanceof Promise || llmRes instanceof Promise) {
+      return Promise.all([Promise.resolve(sttRes), Promise.resolve(llmRes)]).then(([stt, llm]) => format(stt, llm));
+    }
+    return format(sttRes, llmRes);
   }
 
   /**

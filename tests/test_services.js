@@ -281,7 +281,7 @@ async function runTests() {
 
   // Test 15: Phase 6 — Developer & Code Mode Suite
   console.log('1️⃣5️⃣ Testing Phase 6: Developer & Code Mode Suite...');
-  
+
   // A. Normal prose isolation check (normal mode must never convert plain speech to code)
   const normalProse = "I'm going to meet Rahul at five tomorrow.";
   const normalOut = textProcessingService.cleanText(normalProse, { tone: 'casual' });
@@ -650,7 +650,11 @@ async function runTests() {
   const { runPhase3UsageAndCostTests } = await import('./test_phase3_usage_and_costs.js');
   await runPhase3UsageAndCostTests();
 
-  console.log('\n🎉 ALL TESTS PASSED! Mumble AI core services, SaaS Foundation, Model Hub, BYOK, Usage Tracking, Cost Control, QA Fixes & App Awareness are functional.\n');
+  // Test 27: PostgreSQL Migration & Compatibility (Supabase, connection pooling, schema migrations)
+  const { runPostgresMigrationTests } = await import('./test_postgres_migration.js');
+  await runPostgresMigrationTests();
+
+  console.log('\n🎉 ALL TESTS PASSED! Mumble AI core services, SaaS Foundation, Model Hub, BYOK, Usage Tracking, Cost Control, QA Fixes, App Awareness & PostgreSQL are functional.\n');
 }
 
 runTests().catch(err => {

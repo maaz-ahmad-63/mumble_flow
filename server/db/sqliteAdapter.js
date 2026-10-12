@@ -48,22 +48,31 @@ export class SqliteAdapter extends IDatabaseAdapter {
     return this.db;
   }
 
+  _normalizeParams(params = []) {
+    if (!Array.isArray(params)) return [];
+    return params.map(val => {
+      if (typeof val === 'boolean') return val ? 1 : 0;
+      if (val === undefined) return null;
+      return val;
+    });
+  }
+
   query(sql, params = []) {
     const db = this.getNativeDb();
     const stmt = db.prepare(sql);
-    return stmt.all(...params);
+    return stmt.all(...this._normalizeParams(params));
   }
 
   get(sql, params = []) {
     const db = this.getNativeDb();
     const stmt = db.prepare(sql);
-    return stmt.get(...params);
+    return stmt.get(...this._normalizeParams(params));
   }
 
   run(sql, params = []) {
     const db = this.getNativeDb();
     const stmt = db.prepare(sql);
-    return stmt.run(...params);
+    return stmt.run(...this._normalizeParams(params));
   }
 
   transaction(callback) {

@@ -5,10 +5,10 @@
  * Strictly protects credentials and prevents cross-user exposure.
  */
 
-import { sqliteAdapter } from '../sqliteAdapter.js';
+import { db } from '../index.js';
 
 export class ApiKeyRepository {
-  constructor(adapter = sqliteAdapter) {
+  constructor(adapter = db) {
     this.db = adapter;
   }
 
@@ -16,7 +16,7 @@ export class ApiKeyRepository {
     const now = new Date().toISOString();
     const p = provider.toLowerCase().trim();
 
-    this.db.run(
+    const res = this.db.run(
       `INSERT INTO user_api_keys (id, user_id, provider, encrypted_key, key_hint, validation_status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
        ON CONFLICT(user_id, provider) DO UPDATE SET
@@ -27,6 +27,9 @@ export class ApiKeyRepository {
       [id, userId, p, encryptedKey, keyHint, validationStatus, now, now]
     );
 
+    if (res instanceof Promise) {
+      return res.then(() => this.findKey(userId, p));
+    }
     return this.findKey(userId, p);
   }
 
@@ -64,7 +67,7 @@ export class ApiKeyRepository {
       'SELECT id, user_id, provider, key_hint, validation_status, last_validated_at, created_at, updated_at FROM user_api_keys WHERE user_id = ? ORDER BY provider ASC',
       [userId]
     );
-    return rows.map(r => ({
+    const mapRows = (list) => (list || []).map(r => ({
       id: r.id,
       userId: r.user_id,
       provider: r.provider,
@@ -74,6 +77,11 @@ export class ApiKeyRepository {
       createdAt: r.created_at,
       updatedAt: r.updated_at
     }));
+
+    if (rows instanceof Promise) {
+      return rows.then(mapRows);
+    }
+    return mapRows(rows);
   }
 }
 

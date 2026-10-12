@@ -11,7 +11,9 @@
   "scripts": {
     "start": "node server/index.js",
     "dev": "node --watch server/index.js",
-    "test": "node tests/test_services.js"
+    "test": "node tests/test_services.js",
+    "test:pg": "node tests/test_postgres_migration.js",
+    "migrate:pg": "node scripts/migrate-sqlite-to-postgres.js"
   },
   "keywords": [
     "wisprflow",
@@ -32,6 +34,7 @@
     "express": "^5.2.1",
     "groq-sdk": "^1.6.0",
     "multer": "^2.4.0",
+    "pg": "^8.23.1",
     "ws": "^8.18.0"
   }
 }

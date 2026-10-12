@@ -29,3 +29,5 @@ services:
         generateValue: true
       - key: ENCRYPTION_KEY
         generateValue: true
+      - key: DATABASE_URL
+        sync: false

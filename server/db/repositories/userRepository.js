@@ -1,7 +1,7 @@
-import { sqliteAdapter } from '../sqliteAdapter.js';
+import { db } from '../index.js';
 
 export class UserRepository {
-  constructor(adapter = sqliteAdapter) {
+  constructor(adapter = db) {
     this.db = adapter;
   }
 
@@ -16,11 +16,14 @@ export class UserRepository {
 
   create({ id, email, passwordHash, name, role = 'user', status = 'active' }) {
     const now = new Date().toISOString();
-    this.db.run(
+    const res = this.db.run(
       `INSERT INTO users (id, email, password_hash, name, role, status, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [id, email.toLowerCase().trim(), passwordHash, name.trim(), role, status, now, now]
     );
+    if (res instanceof Promise) {
+      return res.then(() => this.findById(id));
+    }
     return this.findById(id);
   }
 
@@ -44,23 +47,32 @@ export class UserRepository {
       params.push(`%${search.trim().toLowerCase()}%`, `%${search.trim().toLowerCase()}%`);
     }
     const row = this.db.get(query, params);
-    return row ? row.count : 0;
+    if (row instanceof Promise) {
+      return row.then(r => r ? parseInt(r.count || 0, 10) : 0);
+    }
+    return row ? parseInt(row.count || 0, 10) : 0;
   }
 
   getUserStatsSummary(userId) {
     const historyRow = this.db.get('SELECT COUNT(*) as count FROM history WHERE user_id = ?', [userId]);
     const usageRow = this.db.get(`
-      SELECT 
+      SELECT
         COALESCE(SUM(audio_seconds), 0) as audioSeconds,
         COALESCE(SUM(estimated_cost), 0) as totalCost
-      FROM usage_events 
+      FROM usage_events
       WHERE user_id = ? AND status = 'success'
     `, [userId]);
-    return {
-      dictationsCount: historyRow ? historyRow.count : 0,
-      audioMinutes: usageRow ? Math.round(((usageRow.audioSeconds || 0) / 60) * 10) / 10 : 0,
-      estimatedCost: usageRow ? Math.round((usageRow.totalCost || 0) * 10000) / 10000 : 0
-    };
+
+    const formatStats = (h, u) => ({
+      dictationsCount: h ? parseInt(h.count || 0, 10) : 0,
+      audioMinutes: u ? Math.round(((u.audioSeconds || u.audioseconds || 0) / 60) * 10) / 10 : 0,
+      estimatedCost: u ? Math.round((u.totalCost || u.totalcost || 0) * 10000) / 10000 : 0
+    });
+
+    if (historyRow instanceof Promise || usageRow instanceof Promise) {
+      return Promise.all([historyRow, usageRow]).then(([h, u]) => formatStats(h, u));
+    }
+    return formatStats(historyRow, usageRow);
   }
 
   update(id, updates) {
@@ -93,13 +105,16 @@ export class UserRepository {
     values.push(new Date().toISOString());
     values.push(id);
 
-    this.db.run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+    const res = this.db.run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, values);
+    if (res instanceof Promise) {
+      return res.then(() => this.findById(id));
+    }
     return this.findById(id);
   }
 
   createSession({ id, userId, tokenHash, expiresAt }) {
     const now = new Date().toISOString();
-    this.db.run(
+    return this.db.run(
       `INSERT INTO sessions (id, user_id, token_hash, expires_at, created_at)
        VALUES (?, ?, ?, ?, ?)`,
       [id, userId, tokenHash, expiresAt, now]
@@ -117,11 +132,11 @@ export class UserRepository {
   }
 
   deleteSession(tokenHash) {
-    this.db.run('DELETE FROM sessions WHERE token_hash = ?', [tokenHash]);
+    return this.db.run('DELETE FROM sessions WHERE token_hash = ?', [tokenHash]);
   }
 
   deleteAllUserSessions(userId) {
-    this.db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
+    return this.db.run('DELETE FROM sessions WHERE user_id = ?', [userId]);
   }
 }
 

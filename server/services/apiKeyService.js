@@ -138,7 +138,7 @@ export class ApiKeyService {
     const keyHint = this.crypto.maskKey(cleanKey);
     const id = `key_${userId}_${p}_${Date.now()}`;
 
-    const saved = this.repo.saveKey({
+    const saved = await this.repo.saveKey({
       id,
       userId,
       provider: p,
@@ -148,7 +148,7 @@ export class ApiKeyService {
     });
 
     if (validationStatus === 'valid') {
-      this.repo.updateValidationStatus(userId, p, 'valid');
+      await this.repo.updateValidationStatus(userId, p, 'valid');
     }
 
     logger.info(`[BYOK] Successfully saved and encrypted API key for user ${userId} (provider: ${p}, hint: ${keyHint})`);
@@ -158,7 +158,7 @@ export class ApiKeyService {
       provider: p,
       keyHint,
       validationStatus,
-      updatedAt: saved.updated_at
+      updatedAt: saved?.updated_at
     };
   }
 
@@ -168,14 +168,17 @@ export class ApiKeyService {
   deleteUserKey(userId, provider) {
     if (!userId || !provider) return false;
     const p = provider.toLowerCase().trim();
-    this.repo.deleteKey(userId, p);
+    const res = this.repo.deleteKey(userId, p);
     logger.info(`[BYOK] Deleted user API key for user ${userId} (provider: ${p})`);
+    if (res instanceof Promise) {
+      return res.then(() => true);
+    }
     return true;
   }
 
   /**
    * Retrieve decrypted API key for a provider, honoring precedence:
-   * 1. User BYOK key (stored encrypted at rest in SQLite)
+   * 1. User BYOK key (stored encrypted at rest in SQLite/PostgreSQL)
    * 2. Legacy user settings key
    * 3. System-managed environment key (server-side)
    *
@@ -186,50 +189,61 @@ export class ApiKeyService {
   getDecryptedKey(userId = 'default_user', provider = 'groq') {
     const p = provider.toLowerCase().trim();
 
-    // 1. Check user BYOK key
-    const userRow = this.repo.findKey(userId, p);
-    if (userRow && userRow.encrypted_key) {
-      try {
-        const decrypted = this.crypto.decrypt(userRow.encrypted_key);
-        if (decrypted) {
-          return {
-            key: decrypted,
-            source: 'user',
-            keyHint: userRow.key_hint,
-            validationStatus: userRow.validation_status
-          };
+    const resolveKey = (userRow, rawSettings) => {
+      // 1. Check user BYOK key
+      if (userRow && userRow.encrypted_key) {
+        try {
+          const decrypted = this.crypto.decrypt(userRow.encrypted_key);
+          if (decrypted) {
+            return {
+              key: decrypted,
+              source: 'user',
+              keyHint: userRow.key_hint,
+              validationStatus: userRow.validation_status
+            };
+          }
+        } catch (err) {
+          logger.error(`[BYOK Decrypt Error] Failed to decrypt key for user ${userId} (${p}): ${err.message}`);
         }
-      } catch (err) {
-        logger.error(`[BYOK Decrypt Error] Failed to decrypt key for user ${userId} (${p}): ${err.message}`);
       }
+
+      // 2. Check legacy user settings
+      const legacyKey = p === 'groq' ? rawSettings?.apiKeyGroq : p === 'gemini' ? rawSettings?.apiKeyGemini : p === 'openai' ? rawSettings?.apiKeyOpenai : null;
+      if (legacyKey && typeof legacyKey === 'string' && legacyKey.trim()) {
+        return {
+          key: legacyKey.trim(),
+          source: 'user',
+          keyHint: this.crypto.maskKey(legacyKey)
+        };
+      }
+
+      // 3. Fallback to system-managed server environment credentials
+      let systemKey = null;
+      if (p === 'groq') systemKey = process.env.GROQ_API_KEY || config.groqApiKey;
+      else if (p === 'gemini') systemKey = process.env.GEMINI_API_KEY || config.geminiApiKey;
+      else if (p === 'openai') systemKey = process.env.OPENAI_API_KEY || config.openaiApiKey;
+
+      if (systemKey && systemKey.trim()) {
+        return {
+          key: systemKey.trim(),
+          source: 'system',
+          keyHint: '(System Key)'
+        };
+      }
+
+      return { key: null, source: 'none' };
+    };
+
+    const userRowRes = this.repo.findKey(userId, p);
+    const rawSettingsRes = storage.getRawSettings(userId);
+
+    if (userRowRes instanceof Promise || rawSettingsRes instanceof Promise) {
+      return Promise.all([
+        Promise.resolve(userRowRes),
+        Promise.resolve(rawSettingsRes)
+      ]).then(([userRow, rawSettings]) => resolveKey(userRow, rawSettings));
     }
-
-    // 2. Check legacy user settings
-    const rawSettings = storage.getRawSettings(userId);
-    const legacyKey = p === 'groq' ? rawSettings?.apiKeyGroq : p === 'gemini' ? rawSettings?.apiKeyGemini : p === 'openai' ? rawSettings?.apiKeyOpenai : null;
-    if (legacyKey && typeof legacyKey === 'string' && legacyKey.trim()) {
-      return {
-        key: legacyKey.trim(),
-        source: 'user',
-        keyHint: this.crypto.maskKey(legacyKey)
-      };
-    }
-
-    // 3. Fallback to system-managed server environment credentials
-    let systemKey = null;
-    if (p === 'groq') systemKey = process.env.GROQ_API_KEY || config.groqApiKey;
-    else if (p === 'gemini') systemKey = process.env.GEMINI_API_KEY || config.geminiApiKey;
-    else if (p === 'openai') systemKey = process.env.OPENAI_API_KEY || config.openaiApiKey;
-
-    if (systemKey && systemKey.trim()) {
-      return {
-        key: systemKey.trim(),
-        source: 'system',
-        keyHint: '(System Key)'
-      };
-    }
-
-    return { key: null, source: 'none' };
+    return resolveKey(userRowRes, rawSettingsRes);
   }
 
   /**
@@ -237,48 +251,65 @@ export class ApiKeyService {
    * Safe summary with masked hints only; raw secrets are never returned.
    */
   listUserKeys(userId = 'default_user') {
-    const userKeys = this.repo.findByUser(userId);
-    const userKeyMap = new Map(userKeys.map(k => [k.provider, k]));
+    const userKeysRes = this.repo.findByUser(userId);
 
-    return SUPPORTED_PROVIDERS.map((provider) => {
-      const userKey = userKeyMap.get(provider);
+    const buildList = (userKeys) => {
+      const userKeyMap = new Map((userKeys || []).map(k => [k.provider, k]));
 
-      if (userKey) {
-        return {
-          provider,
-          isConfigured: true,
-          source: 'user',
-          keyHint: userKey.keyHint,
-          validationStatus: userKey.validationStatus,
-          lastValidatedAt: userKey.lastValidatedAt,
-          updatedAt: userKey.updatedAt
+      const results = SUPPORTED_PROVIDERS.map((provider) => {
+        const userKey = userKeyMap.get(provider);
+        if (userKey) {
+          return {
+            provider,
+            isConfigured: true,
+            source: 'user',
+            keyHint: userKey.keyHint,
+            validationStatus: userKey.validationStatus,
+            lastValidatedAt: userKey.lastValidatedAt,
+            updatedAt: userKey.updatedAt
+          };
+        }
+
+        const fallbackRes = this.getDecryptedKey(userId, provider);
+        const formatFallback = ({ key, source } = {}) => {
+          if (source === 'system' && key) {
+            return {
+              provider,
+              isConfigured: true,
+              source: 'system',
+              keyHint: 'System Managed (.env)',
+              validationStatus: 'valid',
+              lastValidatedAt: null,
+              updatedAt: null
+            };
+          }
+          return {
+            provider,
+            isConfigured: false,
+            source: 'none',
+            keyHint: null,
+            validationStatus: 'missing',
+            lastValidatedAt: null,
+            updatedAt: null
+          };
         };
-      }
 
-      // Check system fallback
-      const { key, source } = this.getDecryptedKey(userId, provider);
-      if (source === 'system' && key) {
-        return {
-          provider,
-          isConfigured: true,
-          source: 'system',
-          keyHint: 'System Managed (.env)',
-          validationStatus: 'valid',
-          lastValidatedAt: null,
-          updatedAt: null
-        };
-      }
+        if (fallbackRes instanceof Promise) {
+          return fallbackRes.then(formatFallback);
+        }
+        return formatFallback(fallbackRes);
+      });
 
-      return {
-        provider,
-        isConfigured: false,
-        source: 'none',
-        keyHint: null,
-        validationStatus: 'missing',
-        lastValidatedAt: null,
-        updatedAt: null
-      };
-    });
+      if (results.some(r => r instanceof Promise)) {
+        return Promise.all(results);
+      }
+      return results;
+    };
+
+    if (userKeysRes instanceof Promise) {
+      return userKeysRes.then(buildList);
+    }
+    return buildList(userKeysRes);
   }
 }
 

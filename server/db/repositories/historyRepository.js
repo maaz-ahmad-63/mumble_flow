@@ -1,7 +1,7 @@
-import { sqliteAdapter } from '../sqliteAdapter.js';
+import { db } from '../index.js';
 
 export class HistoryRepository {
-  constructor(adapter = sqliteAdapter) {
+  constructor(adapter = db) {
     this.db = adapter;
   }
 
@@ -19,7 +19,11 @@ export class HistoryRepository {
        LIMIT ?`,
       [userId, limit]
     );
-    return rows.map(r => ({ ...r, isSnippet: Boolean(r.isSnippet) }));
+    const mapRows = (list) => (list || []).map(r => ({ ...r, isSnippet: Boolean(r.isSnippet) }));
+    if (rows instanceof Promise) {
+      return rows.then(mapRows);
+    }
+    return mapRows(rows);
   }
 
   insert({
@@ -58,7 +62,7 @@ export class HistoryRepository {
         latencyAsrMs,
         latencyLlmMs,
         totalLatencyMs,
-        isSnippet ? 1 : 0,
+        Boolean(isSnippet),
         sttProvider,
         llmProvider,
         now

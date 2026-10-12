@@ -95,7 +95,7 @@ export class AuthService {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const existing = this.userRepo.findByEmail(cleanEmail);
+    const existing = await this.userRepo.findByEmail(cleanEmail);
     if (existing) {
       throw new Error('An account with this email already exists');
     }
@@ -103,7 +103,7 @@ export class AuthService {
     const userId = `usr_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
     const passwordHash = hashPassword(password);
 
-    const user = this.userRepo.create({
+    const user = await this.userRepo.create({
       id: userId,
       email: cleanEmail,
       passwordHash,
@@ -116,7 +116,7 @@ export class AuthService {
     const workspaceId = `ws_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
     const cleanName = name.toLowerCase().replace(/[^a-z0-9]/g, '-').substring(0, 20);
     const slug = `${cleanName}-${crypto.randomBytes(3).toString('hex')}`;
-    this.wsRepo.createWorkspace({
+    await this.wsRepo.createWorkspace({
       id: workspaceId,
       name: `${name}'s Workspace`,
       slug,
@@ -124,9 +124,9 @@ export class AuthService {
     });
 
     // Initialize quota tier
-    quotaService.setUserQuota(userId, 'free');
+    await quotaService.setUserQuota(userId, 'free');
 
-    const token = this.generateSession(userId);
+    const token = await this.generateSession(userId);
 
     return {
       token,
@@ -150,7 +150,7 @@ export class AuthService {
     }
 
     const cleanEmail = email.toLowerCase().trim();
-    const user = this.userRepo.findByEmail(cleanEmail);
+    const user = await this.userRepo.findByEmail(cleanEmail);
     if (!user) {
       throw new Error('Invalid email or password');
     }
@@ -164,8 +164,8 @@ export class AuthService {
       throw new Error('Invalid email or password');
     }
 
-    const token = this.generateSession(user.id);
-    const workspaces = this.wsRepo.findUserWorkspaces(user.id);
+    const token = await this.generateSession(user.id);
+    const workspaces = await this.wsRepo.findUserWorkspaces(user.id);
 
     return {
       token,
@@ -193,13 +193,16 @@ export class AuthService {
     const sessionId = `sess_${Date.now()}_${crypto.randomBytes(4).toString('hex')}`;
     const expiresAt = new Date(exp * 1000).toISOString();
 
-    this.userRepo.createSession({
+    const createRes = this.userRepo.createSession({
       id: sessionId,
       userId,
       tokenHash,
       expiresAt
     });
 
+    if (createRes instanceof Promise) {
+      return createRes.then(() => token);
+    }
     return token;
   }
 
@@ -208,27 +211,35 @@ export class AuthService {
     if (!payload || !payload.sub) return null;
 
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    const session = this.userRepo.findSession(tokenHash);
-    if (!session) return null;
+    const sessionRes = this.userRepo.findSession(tokenHash);
 
-    if (session.status === 'suspended') {
-      this.userRepo.deleteSession(tokenHash);
-      return null;
-    }
+    const handleSession = (session) => {
+      if (!session) return null;
 
-    return {
-      id: session.user_id,
-      email: session.email,
-      name: session.name,
-      role: session.role,
-      status: session.status || 'active'
+      if (session.status === 'suspended') {
+        this.userRepo.deleteSession(tokenHash);
+        return null;
+      }
+
+      return {
+        id: session.user_id,
+        email: session.email,
+        name: session.name,
+        role: session.role,
+        status: session.status || 'active'
+      };
     };
+
+    if (sessionRes instanceof Promise) {
+      return sessionRes.then(handleSession);
+    }
+    return handleSession(sessionRes);
   }
 
   logout(token) {
     if (!token) return;
     const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
-    this.userRepo.deleteSession(tokenHash);
+    return this.userRepo.deleteSession(tokenHash);
   }
 
   async changePassword(userId, { currentPassword, newPassword }) {
@@ -239,29 +250,29 @@ export class AuthService {
       throw new Error('New password must be at least 8 characters long');
     }
 
-    const user = this.userRepo.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user) throw new Error('User not found');
 
-    const fullUser = this.userRepo.findByEmail(user.email);
+    const fullUser = await this.userRepo.findByEmail(user.email);
     if (!fullUser || !verifyPassword(currentPassword, fullUser.password_hash)) {
       throw new Error('Current password is incorrect');
     }
 
     const passwordHash = hashPassword(newPassword);
-    this.userRepo.update(userId, { passwordHash });
+    await this.userRepo.update(userId, { passwordHash });
 
     // Invalidate all prior sessions on password change
-    this.userRepo.deleteAllUserSessions(userId);
-    const newToken = this.generateSession(userId);
+    await this.userRepo.deleteAllUserSessions(userId);
+    const newToken = await this.generateSession(userId);
 
     return { success: true, token: newToken };
   }
 
-  getUserProfile(userId) {
-    const user = this.userRepo.findById(userId);
+  async getUserProfile(userId) {
+    const user = await this.userRepo.findById(userId);
     if (!user) return null;
-    const workspaces = this.wsRepo.findUserWorkspaces(userId);
-    const quota = quotaService.getUserQuota(userId);
+    const workspaces = await this.wsRepo.findUserWorkspaces(userId);
+    const quota = await quotaService.getUserQuota(userId);
     return {
       user: {
         id: user.id,

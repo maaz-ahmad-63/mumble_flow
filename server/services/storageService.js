@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { sqliteAdapter } from '../db/sqliteAdapter.js';
+import { db, initializeDatabase } from '../db/index.js';
 import { settingsRepository } from '../db/repositories/settingsRepository.js';
 import { dictionaryRepository } from '../db/repositories/dictionaryRepository.js';
 import { snippetRepository } from '../db/repositories/snippetRepository.js';
@@ -13,8 +13,8 @@ const DATA_DIR = path.join(__dirname, '..', '..', 'data');
 
 class StorageService {
   constructor() {
-    // Initialize database adapter on startup
-    sqliteAdapter.initialize();
+    // Initialize database adapter on startup (SQLite or PostgreSQL)
+    db.initialize();
   }
 
   // --- Settings (Sensitive Keys Stripped by default) ---
@@ -115,7 +115,7 @@ class StorageService {
   addMeeting(meeting, userId = 'default_user') {
     const entryId = meeting.id || `mtg_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const now = new Date().toISOString();
-    sqliteAdapter.run(
+    const res = db.run(
       `INSERT INTO meetings (id, user_id, title, summary, action_items_json, topics_json, transcript, duration_seconds, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
@@ -130,6 +130,13 @@ class StorageService {
         now
       ]
     );
+    if (res instanceof Promise) {
+      return res.then(() => ({
+        id: entryId,
+        createdAt: now,
+        ...meeting
+      }));
+    }
     return {
       id: entryId,
       createdAt: now,
@@ -138,7 +145,7 @@ class StorageService {
   }
 
   getMeetings(userId = 'default_user') {
-    const rows = sqliteAdapter.query(
+    const rowsRes = db.query(
       `SELECT id, user_id as userId, title, summary, action_items_json as actionItemsJson,
               topics_json as topicsJson, transcript, duration_seconds as durationSeconds, created_at as createdAt
        FROM meetings
@@ -146,27 +153,37 @@ class StorageService {
        ORDER BY created_at DESC`,
       [userId]
     );
-    return rows.map(r => ({
+    const mapRows = (rows) => (rows || []).map(r => ({
       ...r,
       actionItems: JSON.parse(r.actionItemsJson || '[]'),
       topics: JSON.parse(r.topicsJson || '[]')
     }));
+    if (rowsRes instanceof Promise) {
+      return rowsRes.then(mapRows);
+    }
+    return mapRows(rowsRes);
   }
 
   getMeetingById(id, userId = 'default_user') {
-    const row = sqliteAdapter.get(
+    const rowRes = db.get(
       `SELECT id, user_id as userId, title, summary, action_items_json as actionItemsJson,
               topics_json as topicsJson, transcript, duration_seconds as durationSeconds, created_at as createdAt
        FROM meetings
        WHERE id = ? AND user_id = ?`,
       [id, userId]
     );
-    if (!row) return null;
-    return {
-      ...row,
-      actionItems: JSON.parse(row.actionItemsJson || '[]'),
-      topics: JSON.parse(row.topicsJson || '[]')
+    const mapRow = (row) => {
+      if (!row) return null;
+      return {
+        ...row,
+        actionItems: JSON.parse(row.actionItemsJson || '[]'),
+        topics: JSON.parse(row.topicsJson || '[]')
+      };
     };
+    if (rowRes instanceof Promise) {
+      return rowRes.then(mapRow);
+    }
+    return mapRow(rowRes);
   }
 }
 

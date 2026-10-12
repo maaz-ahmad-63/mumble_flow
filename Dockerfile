@@ -26,6 +26,7 @@ COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
 COPY server/ ./server/
 COPY client/ ./client/
+COPY scripts/ ./scripts/
 COPY data/ ./data/
 
 # Create uploads directory with appropriate permissions
