@@ -33,7 +33,7 @@ export class UsageRepository {
     const platformCost = (status === 'failure' || isByokBool) ? 0.0 : estCostNum;
     const costIsEstBool = Boolean(costIsEstimated !== false);
 
-    this.db.run(
+    const runRes = this.db.run(
       `INSERT INTO usage_events (
         id, user_id, workspace_id, session_id, type, provider, model,
         audio_seconds, latency_ms, input_tokens, output_tokens, estimated_cost,
@@ -62,6 +62,10 @@ export class UsageRepository {
         now
       ]
     );
+
+    if (runRes instanceof Promise) {
+      runRes.catch(() => {});
+    }
 
     return {
       id: eventId,

@@ -38,14 +38,23 @@ export class GeminiTranscriptionProvider extends BaseTranscriptionProvider {
   async transcribe(filePath, options = {}) {
     const startTime = Date.now();
     const ai = this.getClient(options);
-    const modelName = options.model || storage.getSettings().geminiModel || config.models.geminiSTT;
+    let settings = options.preloadedSettings || storage.getSettings();
+    if (settings instanceof Promise) settings = await settings.catch(() => ({}));
+    const modelName = options.model || (settings && settings.geminiModel) || config.models.geminiSTT;
     const model = ai.getGenerativeModel({ model: modelName });
 
     const mimeType = options.mimetype || 'audio/webm';
     const audioBuffer = fs.readFileSync(filePath);
     const base64Audio = audioBuffer.toString('base64');
 
-    const dictWords = storage.getDictionary().map(d => d.word).join(', ');
+    let dictWords = '';
+    const dict = options.preloadedDictionary || storage.getDictionary();
+    if (Array.isArray(dict)) {
+      dictWords = dict.map(d => d.word).join(', ');
+    } else if (dict instanceof Promise) {
+      const resolved = await dict.catch(() => []);
+      if (Array.isArray(resolved)) dictWords = resolved.map(d => d.word).join(', ');
+    }
     const prompt = `You are an accurate speech-to-text transcriber. 
 Transcribe the speech in this audio verbatim into text. 
 Do not add timestamps, commentary, or speaker tags unless requested.

@@ -13,7 +13,7 @@ export class TranscriptionService {
    * @returns {Promise<{ providerName: string, isLocal: boolean, fallbackReason?: string }>}
    */
   async resolveProvider(options = {}) {
-    const userSettings = storage.getSettings(options.userId);
+    const userSettings = (await storage.getSettings(options.userId)) || {};
     const mode = (options.transcriptionMode || userSettings.transcriptionMode || 'auto').toLowerCase();
     const configuredCloudProvider = options.sttProvider || userSettings.sttProvider || config.defaultSttProvider || 'groq';
 
@@ -55,7 +55,7 @@ export class TranscriptionService {
     logger.info(`[TranscriptionService] Routing audio to STT provider: "${targetProviderName}" (Local: ${resolution.isLocal})`);
 
     try {
-      const userSettings = storage.getSettings(options.userId);
+      const userSettings = (await storage.getSettings(options.userId)) || {};
       const modelToUse = options.sttModel || options.model || userSettings.sttModel;
       const transcribeOptions = { ...options, model: modelToUse };
 
@@ -69,7 +69,7 @@ export class TranscriptionService {
     } catch (primaryErr) {
       // If primary local provider failed during transcribe, fall back to cloud provider
       if (resolution.isLocal) {
-        const userSettings = storage.getSettings(options.userId);
+        const userSettings = (await storage.getSettings(options.userId)) || {};
         const cloudProviderName = options.sttProvider || userSettings.sttProvider || config.defaultSttProvider || 'groq';
         const modelToUse = options.sttModel || options.model || userSettings.sttModel;
         const transcribeOptions = { ...options, model: modelToUse };
@@ -98,7 +98,9 @@ export class TranscriptionService {
    * Create a streaming transcription session for low-latency live dictation.
    */
   createStreamingSession(options = {}) {
-    const providerName = options.sttProvider || storage.getSettings(options.userId).sttProvider || config.defaultSttProvider || 'groq';
+    const settings = options.preloadedSettings || storage.getSettings(options.userId);
+    const userSettings = settings instanceof Promise ? {} : (settings || {});
+    const providerName = options.sttProvider || userSettings.sttProvider || config.defaultSttProvider || 'groq';
     logger.info(`[TranscriptionService] Initializing streaming session for provider: "${providerName}"`);
 
     const provider = providerRegistry.getTranscriptionProvider(providerName);

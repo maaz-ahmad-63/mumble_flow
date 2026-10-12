@@ -12,6 +12,23 @@ function getFilenameForMime(mimeType) {
   return 'recording.webm';
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 25000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => {
+    controller.abort(new Error(`Request timed out after ${timeoutMs / 1000}s`));
+  }, timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export class ZeroEditClient {
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
@@ -39,13 +56,19 @@ export class ZeroEditClient {
     if (options.apiKeyGemini) formData.append('apiKeyGemini', options.apiKeyGemini);
     if (options.apiKeyOpenai) formData.append('apiKeyOpenai', options.apiKeyOpenai);
 
-    const response = await fetch(`${this.baseUrl}/api/dictate`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}/api/dictate`, {
       method: 'POST',
       body: formData
-    });
+    }, 25000);
 
     const clientRoundtripMs = Date.now() - clientSentAt;
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { error: response.statusText || 'Failed to parse response' };
+    }
+
     if (!response.ok) {
       throw new Error(data.error || 'Dictation API failed');
     }
@@ -70,13 +93,18 @@ export class ZeroEditClient {
     if (options.apiKeyGroq) formData.append('apiKeyGroq', options.apiKeyGroq);
     if (options.apiKeyGemini) formData.append('apiKeyGemini', options.apiKeyGemini);
 
-    const response = await fetch(`${this.baseUrl}/api/transcribe`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}/api/transcribe`, {
       method: 'POST',
       body: formData
-    });
+    }, 25000);
 
     const clientRoundtripMs = Date.now() - clientSentAt;
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { error: response.statusText || 'Failed to parse response' };
+    }
     if (!response.ok) {
       throw new Error(data.error || 'Transcription API failed');
     }
@@ -89,7 +117,7 @@ export class ZeroEditClient {
    * Process raw text through Zero-Edit Engine
    */
   async processText(text, options = {}) {
-    const response = await fetch(`${this.baseUrl}/api/process-text`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}/api/process-text`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -100,9 +128,14 @@ export class ZeroEditClient {
         apiKeyGroq: options.apiKeyGroq,
         apiKeyGemini: options.apiKeyGemini
       })
-    });
+    }, 20000);
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { error: response.statusText || 'Failed to parse response' };
+    }
     if (!response.ok) {
       throw new Error(data.error || 'Text processing failed');
     }
@@ -113,7 +146,7 @@ export class ZeroEditClient {
    * Execute voice command on highlighted text
    */
   async executeCommand(instruction, selectedText, options = {}) {
-    const response = await fetch(`${this.baseUrl}/api/command`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}/api/command`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -123,9 +156,14 @@ export class ZeroEditClient {
         apiKeyGroq: options.apiKeyGroq,
         apiKeyGemini: options.apiKeyGemini
       })
-    });
+    }, 20000);
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { error: response.statusText || 'Failed to parse response' };
+    }
     if (!response.ok) {
       throw new Error(data.error || 'Command execution failed');
     }
@@ -136,7 +174,7 @@ export class ZeroEditClient {
    * Summarize meeting
    */
   async summarizeMeeting(transcript, options = {}) {
-    const response = await fetch(`${this.baseUrl}/api/notetaker/summarize`, {
+    const response = await fetchWithTimeout(`${this.baseUrl}/api/notetaker/summarize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -147,9 +185,14 @@ export class ZeroEditClient {
         apiKeyGroq: options.apiKeyGroq,
         apiKeyGemini: options.apiKeyGemini
       })
-    });
+    }, 25000);
 
-    const data = await response.json();
+    let data;
+    try {
+      data = await response.json();
+    } catch {
+      data = { error: response.statusText || 'Failed to parse response' };
+    }
     if (!response.ok) {
       throw new Error(data.error || 'Meeting summarization failed');
     }

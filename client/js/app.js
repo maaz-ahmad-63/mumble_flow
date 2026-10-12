@@ -55,6 +55,7 @@ class WhisperFlowApp {
     this.streamingClient = streamingClient;
     this.streamConfirmedSegments = new Map();
     this.streamInterimText = '';
+    this.processingTimeoutTimer = null;
 
     this.sandboxTextarea = document.getElementById('sandboxTextarea');
     this.rawTranscriptEl = document.getElementById('diffRawText');
@@ -140,17 +141,32 @@ class WhisperFlowApp {
     };
 
     this.streamingClient.onProcessingStarted = () => {
+      this.startProcessingTimeout(25000);
       this.pillWidget.setState('processing', 'Transcribing');
     };
 
     this.streamingClient.onProcessingCompleted = (data) => {
+      this.clearProcessingTimeout();
       this.handleStreamingDictationSuccess(data);
     };
 
     this.streamingClient.onError = (err) => {
       console.warn('[Streaming Error]', err);
-      if (!err.recoverable) {
-        this.showToast(`Streaming note: ${err.error || 'Temporary provider failure'}`, 'error');
+      this.clearProcessingTimeout();
+      if (this.pillWidget && (this.pillWidget.state === 'processing' || this.pillWidget.state === 'listening')) {
+        this.pillWidget.setState('idle');
+      }
+      this.showToast(`Transcription note: ${err.error || 'Temporary provider failure'}`, 'error');
+    };
+
+    this.streamingClient.onConnectionChange = (status) => {
+      if (status === 'disconnected') {
+        if (this.pillWidget && this.pillWidget.state === 'processing') {
+          console.warn('[Streaming] WebSocket disconnected while processing.');
+          this.clearProcessingTimeout();
+          this.pillWidget.setState('idle');
+          this.showToast('Connection lost during transcription.', 'error');
+        }
       }
     };
 
@@ -321,18 +337,21 @@ class WhisperFlowApp {
     this.soundEffects.playStop();
     this.hotkeyManager.setRecordingState(false);
     this.pillWidget.setState('processing', 'Transcribing');
+    this.startProcessingTimeout(25000);
 
     // Notify streaming server that user stopped speaking
     this.streamingClient.stopRecording();
 
     const result = await this.audioRecorder.stop();
     if (!result || !result.blob) {
+      this.clearProcessingTimeout();
       this.pillWidget.setState('idle');
       return;
     }
 
     // Ignore accidental micro-clicks or silence under 500ms (< 0.5s)
     if (result.durationMs < 500 || (result.hasSpoken === false && result.durationMs < 1000)) {
+      this.clearProcessingTimeout();
       this.streamingClient.cancel();
       this.pillWidget.setState('idle');
       this.showToast('Recording too short or silent (< 0.5s). Hold Space to speak.', 'info');
@@ -344,6 +363,7 @@ class WhisperFlowApp {
 
     // Check if user selected native Web Speech API
     if (provider === 'webspeech') {
+      this.clearProcessingTimeout();
       this.handleWebSpeechFlow(tone);
       return;
     }
@@ -360,6 +380,7 @@ class WhisperFlowApp {
           appName: 'Mumble AI Sandbox'
         });
 
+        this.clearProcessingTimeout();
         if (dictateRes.empty) {
           this.pillWidget.setState('idle');
           this.showToast(dictateRes.message || 'No speech detected.', 'info');
@@ -369,6 +390,7 @@ class WhisperFlowApp {
         this.handleDictationSuccess(dictateRes, result.durationMs);
       } catch (err) {
         console.error('Dictation error:', err);
+        this.clearProcessingTimeout();
         this.pillWidget.setState('idle');
         this.showToast(`Error: ${err.message}`, 'error');
       }
@@ -376,6 +398,7 @@ class WhisperFlowApp {
   }
 
   cancelRecording() {
+    this.clearProcessingTimeout();
     this.soundEffects.playClick();
     this.audioRecorder.cancel();
     this.streamingClient.cancel();
@@ -386,6 +409,24 @@ class WhisperFlowApp {
     this.streamInterimText = '';
     this.updateLiveTranscriptDisplay();
     this.showToast('Dictation cancelled', 'info');
+  }
+
+  startProcessingTimeout(ms = 25000) {
+    this.clearProcessingTimeout();
+    this.processingTimeoutTimer = setTimeout(() => {
+      if (this.pillWidget && this.pillWidget.state === 'processing') {
+        console.warn('[Transcription Timeout] Processing took too long, resetting state.');
+        this.pillWidget.setState('idle');
+        this.showToast('Transcription timed out. Please try again.', 'error');
+      }
+    }, ms);
+  }
+
+  clearProcessingTimeout() {
+    if (this.processingTimeoutTimer) {
+      clearTimeout(this.processingTimeoutTimer);
+      this.processingTimeoutTimer = null;
+    }
   }
 
   updateLiveTranscriptDisplay() {
@@ -414,6 +455,7 @@ class WhisperFlowApp {
   }
 
   handleStreamingDictationSuccess(data) {
+    this.clearProcessingTimeout();
     this.pillWidget.setState('idle');
     if (data.empty || (!data.rawTranscript && !data.processedText)) {
       this.showToast(data.message || 'No speech detected.', 'info');
@@ -497,6 +539,8 @@ class WhisperFlowApp {
   }
 
   handleDictationSuccess(res, durationMs) {
+    this.clearProcessingTimeout();
+    this.pillWidget.setState('idle');
     const raw = res.rawTranscript || '';
     const clean = res.processedText || '';
 

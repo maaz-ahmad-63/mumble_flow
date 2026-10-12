@@ -670,23 +670,29 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
 
     logger.info(`[Dictate] User: ${userId} | Audio: ${req.file.originalname || path.basename(tempFilePath)} (${(normalized.size / 1024).toFixed(1)} KB, format: ${normalized.ext}) | Tone: ${tone} | STT: ${sttProvider} (${sttModel}) [BYOK: ${isByokStt}] | LLM: ${llmProvider} (${llmModel}) [BYOK: ${isByokLlm}]`);
 
-    // Step 1: ASR Transcription
+    // Step 1: ASR Transcription with finite timeout
     let asrResult;
     try {
-      asrResult = await transcriptionService.transcribeAudio(tempFilePath, options);
+      const asrPromise = transcriptionService.transcribeAudio(tempFilePath, options);
+      asrResult = await Promise.race([
+        asrPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Transcription timed out after 25 seconds')), 25000))
+      ]);
     } catch (asrErr) {
       logger.error(`[ASR Error] ${asrErr.message}`);
-      usageService.recordFailure({
-        userId,
-        sessionId: req.id,
-        type: 'transcription',
-        provider: sttProvider,
-        model: sttModel,
-        latencyMs: Date.now() - startTime,
-        errorMessage: asrErr.message,
-        isByok: isByokStt,
-        keySource: resolvedStt.source
-      });
+      try {
+        usageService.recordFailure({
+          userId,
+          sessionId: req.id,
+          type: 'transcription',
+          provider: sttProvider,
+          model: sttModel,
+          latencyMs: Date.now() - startTime,
+          errorMessage: asrErr.message,
+          isByok: isByokStt,
+          keySource: resolvedStt.source
+        });
+      } catch (e) {}
       return res.status(500).json({
         error: `Transcription error (${sttProvider}): ${asrErr.message}`,
         suggestion: 'Please verify your API key in Settings or try another provider.'
@@ -719,19 +725,24 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
       });
     }
 
-    // Record STT usage with BYOK distinction
-    const sttUsage = usageService.recordTranscriptionUsage({
-      userId,
-      sessionId: req.id,
-      provider: asrResult.provider,
-      model: asrResult.model,
-      audioSeconds,
-      latencyMs: asrResult.latencyMs,
-      status: 'success',
-      isByok: isByokStt,
-      keySource: resolvedStt.source,
-      costIsEstimated: true
-    });
+    // Record STT usage with BYOK distinction (non-blocking)
+    let sttUsage = null;
+    try {
+      sttUsage = usageService.recordTranscriptionUsage({
+        userId,
+        sessionId: req.id,
+        provider: asrResult.provider,
+        model: asrResult.model,
+        audioSeconds,
+        latencyMs: asrResult.latencyMs,
+        status: 'success',
+        isByok: isByokStt,
+        keySource: resolvedStt.source,
+        costIsEstimated: true
+      });
+    } catch (uErr) {
+      logger.warn(`[Usage Warning] Non-blocking STT usage error: ${uErr.message}`);
+    }
 
     // Step 2: Zero-Edit Formatting & Optional AI Enhancement
     const zeroEditOptions = {
@@ -743,51 +754,70 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
       userId
     };
 
-    const zeroEditResult = await textProcessingService.process(rawTranscript, zeroEditOptions);
+    let zeroEditResult;
+    try {
+      const zeroEditPromise = textProcessingService.process(rawTranscript, zeroEditOptions);
+      zeroEditResult = await Promise.race([
+        zeroEditPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('AI enhancement timed out after 20s')), 20000))
+      ]);
+    } catch (llmErr) {
+      logger.warn(`[LLM Timeout/Error] ${llmErr.message}. Safely returning raw transcript.`);
+      zeroEditResult = { processedText: rawTranscript, enhancedByAI: false };
+    }
+
     const totalLatency = Date.now() - startTime;
     const isEnhancedByAi = Boolean(zeroEditResult.enhancedByAI);
     const inTokens = isEnhancedByAi ? Math.ceil(rawTranscript.length / 4) : 0;
     const outTokens = isEnhancedByAi ? Math.ceil((zeroEditResult.processedText || '').length / 4) : 0;
 
-    // Record LLM usage only if AI was actually invoked
+    // Record LLM usage only if AI was actually invoked (non-blocking)
     let llmCost = 0.0;
     if (isEnhancedByAi) {
-      const llmUsage = usageService.recordLlmUsage({
-        userId,
-        sessionId: req.id,
-        provider: zeroEditResult.provider,
-        model: zeroEditResult.model || 'llm',
-        inputTokens: inTokens,
-        outputTokens: outTokens,
-        latencyMs: zeroEditResult.aiMs || 0,
-        type: 'text_processing',
-        status: 'success',
-        isByok: isByokLlm,
-        keySource: resolvedLlm.source,
-        costIsEstimated: true
-      });
-      llmCost = llmUsage?.estimatedCost || 0.0;
+      try {
+        const llmUsage = usageService.recordLlmUsage({
+          userId,
+          sessionId: req.id,
+          provider: zeroEditResult.provider,
+          model: zeroEditResult.model || 'llm',
+          inputTokens: inTokens,
+          outputTokens: outTokens,
+          latencyMs: zeroEditResult.aiMs || 0,
+          type: 'text_processing',
+          status: 'success',
+          isByok: isByokLlm,
+          keySource: resolvedLlm.source,
+          costIsEstimated: true
+        });
+        llmCost = llmUsage?.estimatedCost || 0.0;
+      } catch (uErr) {
+        logger.warn(`[Usage Warning] Non-blocking LLM usage error: ${uErr.message}`);
+      }
     }
 
     const sttCost = sttUsage?.estimatedCost ?? (asrResult.isLocal ? 0.0 : pricingService.calculateSttCost(asrResult.provider, asrResult.model, audioSeconds));
     const totalCost = pricingService.calculateTotalCost(sttCost, llmCost);
 
-    // Step 3: Record to user history
-    const historyEntry = await storage.addHistory({
-      rawTranscript,
-      processedText: zeroEditResult.processedText,
-      durationMs: Math.round((asrResult.duration || 0) * 1000),
-      appName,
-      tone,
-      language: asrResult.language || language,
-      latencyAsrMs: asrResult.latencyMs,
-      latencyLlmMs: zeroEditResult.aiMs || 0,
-      totalLatencyMs: totalLatency,
-      isSnippet: zeroEditResult.isSnippet || false,
-      sttProvider: asrResult.provider,
-      llmProvider: isEnhancedByAi ? zeroEditResult.provider : 'none',
-      userId
-    }, userId);
+    // Step 3: Record to user history (non-blocking)
+    try {
+      await storage.addHistory({
+        rawTranscript,
+        processedText: zeroEditResult.processedText,
+        durationMs: Math.round((asrResult.duration || 0) * 1000),
+        appName,
+        tone,
+        language: asrResult.language || language,
+        latencyAsrMs: asrResult.latencyMs,
+        latencyLlmMs: zeroEditResult.aiMs || 0,
+        totalLatencyMs: totalLatency,
+        isSnippet: zeroEditResult.isSnippet || false,
+        sttProvider: asrResult.provider,
+        llmProvider: isEnhancedByAi ? zeroEditResult.provider : 'none',
+        userId
+      }, userId);
+    } catch (histErr) {
+      logger.warn(`[History Warning] Non-blocking history error: ${histErr.message}`);
+    }
 
     res.json({
       success: true,
@@ -932,37 +962,46 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
     const result = await textProcessingService.process(text, options);
 
     // Record LLM usage with BYOK separation
-    usageService.recordLlmUsage({
-      userId,
-      sessionId: req.id,
-      provider: result.provider,
-      model: result.model,
-      inputTokens: Math.ceil(text.length / 4),
-      outputTokens: Math.ceil((result.processedText || '').length / 4),
-      latencyMs: result.latencyMs,
-      type: 'text_processing',
-      status: 'success',
-      isByok: isByokLlm,
-      keySource: resolvedLlm.source,
-      costIsEstimated: true
-    });
+    // Record LLM telemetry (non-blocking)
+    try {
+      usageService.recordLlmUsage({
+        userId,
+        sessionId: req.id,
+        provider: result.provider,
+        model: result.model,
+        inputTokens: Math.ceil(text.length / 4),
+        outputTokens: Math.ceil((result.processedText || '').length / 4),
+        latencyMs: result.latencyMs,
+        type: 'text_processing',
+        status: 'success',
+        isByok: isByokLlm,
+        keySource: resolvedLlm.source,
+        costIsEstimated: true
+      });
+    } catch (uErr) {
+      logger.warn(`[Usage Warning] Non-blocking LLM usage error: ${uErr.message}`);
+    }
 
-    // Save to user history
-    await storage.addHistory({
-      rawTranscript: text,
-      processedText: result.processedText,
-      durationMs: 0,
-      appName,
-      tone,
-      language: 'en',
-      latencyAsrMs: 0,
-      latencyLlmMs: result.latencyMs,
-      totalLatencyMs: result.latencyMs,
-      isSnippet: result.isSnippet || false,
-      sttProvider: 'client-webspeech',
-      llmProvider,
-      userId
-    }, userId);
+    // Save to user history (non-blocking)
+    try {
+      await storage.addHistory({
+        rawTranscript: text,
+        processedText: result.processedText,
+        durationMs: 0,
+        appName,
+        tone,
+        language: 'en',
+        latencyAsrMs: 0,
+        latencyLlmMs: result.latencyMs,
+        totalLatencyMs: result.latencyMs,
+        isSnippet: result.isSnippet || false,
+        sttProvider: 'client-webspeech',
+        llmProvider,
+        userId
+      }, userId);
+    } catch (hErr) {
+      logger.warn(`[History Warning] Non-blocking history save error: ${hErr.message}`);
+    }
 
     res.json({
       success: true,
@@ -979,18 +1018,20 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
     });
   } catch (err) {
     logger.error(`Process Text Failed: ${err.message}`);
-    const resolvedLlm = apiKeyService.getDecryptedKey(userId, req.body?.llmProvider || 'groq');
-    usageService.recordFailure({
-      userId,
-      sessionId: req.id,
-      type: 'text_processing',
-      provider: req.body?.llmProvider || 'unknown',
-      model: req.body?.llmModel || 'default',
-      latencyMs: Date.now() - startTime,
-      errorMessage: err.message,
-      isByok: resolvedLlm.source === 'user',
-      keySource: resolvedLlm.source
-    });
+    try {
+      const resolvedLlm = await apiKeyService.getDecryptedKey(userId, req.body?.llmProvider || 'groq');
+      usageService.recordFailure({
+        userId,
+        sessionId: req.id,
+        type: 'text_processing',
+        provider: req.body?.llmProvider || 'unknown',
+        model: req.body?.llmModel || 'default',
+        latencyMs: Date.now() - startTime,
+        errorMessage: err.message,
+        isByok: resolvedLlm.source === 'user',
+        keySource: resolvedLlm.source
+      });
+    } catch (fErr) {}
     res.status(500).json({ error: err.message });
   }
 });

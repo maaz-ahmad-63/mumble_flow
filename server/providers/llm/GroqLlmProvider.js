@@ -22,13 +22,15 @@ export class GroqLlmProvider extends BaseLlmProvider {
     if (!key) {
       throw new Error('Groq API Key is not configured. Please add it in Settings or .env');
     }
-    return new Groq({ apiKey: key });
+    return new Groq({ apiKey: key, timeout: 20000 });
   }
 
   async formatText(systemPrompt, userText, options = {}) {
     const startTime = Date.now();
     const groq = this.getClient(options);
-    const model = options.model || storage.getSettings().groqModelLLM || config.models.groqLLM;
+    let settings = options.preloadedSettings || storage.getSettings(options.userId);
+    if (settings instanceof Promise) settings = await settings.catch(() => ({}));
+    const model = options.model || (settings && settings.groqModelLLM) || config.models.groqLLM;
 
     logger.info(`[Groq LLM] Running AI formatting on ${userText.length} chars with model: ${model}`);
 

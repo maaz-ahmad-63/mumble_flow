@@ -15,7 +15,7 @@ export class DictionaryRepository {
     );
     const mapRows = (list) => (list || []).map(r => ({ ...r, enabled: Boolean(r.enabled) }));
     if (rows instanceof Promise) {
-      return rows.then(mapRows);
+      return rows.then(mapRows).catch(() => []);
     }
     return mapRows(rows);
   }
@@ -29,7 +29,7 @@ export class DictionaryRepository {
     );
     const mapRow = (r) => (!r ? null : { ...r, enabled: Boolean(r.enabled) });
     if (row instanceof Promise) {
-      return row.then(mapRow);
+      return row.then(mapRow).catch(() => null);
     }
     return mapRow(row);
   }

@@ -114,12 +114,12 @@ export class StreamingDictationServer {
             }
 
             case 'config': {
-              const currentSettings = storage.getSettings(clientContext.userId);
+              const currentSettings = await storage.getSettings(clientContext.userId);
               clientContext.config = {
                 ...clientContext.config,
                 ...msg,
-                apiKeyGroq: msg.apiKeyGroq || currentSettings.apiKeyGroq,
-                apiKeyGemini: msg.apiKeyGemini || currentSettings.apiKeyGemini
+                apiKeyGroq: msg.apiKeyGroq || currentSettings?.apiKeyGroq,
+                apiKeyGemini: msg.apiKeyGemini || currentSettings?.apiKeyGemini
               };
               sendEvent({ type: 'config_ack', config: clientContext.config });
               break;
@@ -129,35 +129,35 @@ export class StreamingDictationServer {
             case 'recording_started':
             case 'start_speech': {
               const userId = clientContext.userId || 'default_user';
-              const currentSettings = storage.getSettings(userId);
+              const currentSettings = await storage.getSettings(userId);
               const sessionId = msg.sessionId || `stream-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
               clientContext.currentSessionId = sessionId;
 
-              const effectiveProvider = msg.sttProvider || clientContext.config.sttProvider || currentSettings.sttProvider || 'groq';
+              const effectiveProvider = msg.sttProvider || clientContext.config.sttProvider || currentSettings?.sttProvider || 'groq';
               const language = msg.language || clientContext.config.language || 'auto';
               const mimeType = msg.mimeType || 'audio/webm';
-              const tone = msg.tone || clientContext.config.tone || currentSettings.defaultTone || 'casual';
+              const tone = msg.tone || clientContext.config.tone || currentSettings?.defaultTone || 'casual';
               const mode = msg.mode || tone;
               const appName = msg.appName || msg.app || null;
               const processName = msg.processName || null;
               const application = msg.application || null;
-              const llmProvider = msg.llmProvider || clientContext.config.llmProvider || currentSettings.llmProvider || 'groq';
-              const llmModel = msg.llmModel || clientContext.config.llmModel || currentSettings.llmModel;
+              const llmProvider = msg.llmProvider || clientContext.config.llmProvider || currentSettings?.llmProvider || 'groq';
+              const llmModel = msg.llmModel || clientContext.config.llmModel || currentSettings?.llmModel;
 
-              // Resolve BYOK / platform keys
-              const resolvedStt = msg.apiKeyGroq ? { key: msg.apiKeyGroq, source: 'user' } : apiKeyService.getDecryptedKey(userId, effectiveProvider);
-              const resolvedLlm = msg.apiKeyGroq ? { key: msg.apiKeyGroq, source: 'user' } : apiKeyService.getDecryptedKey(userId, llmProvider);
-              const isByokStt = resolvedStt.source === 'user';
-              const isByokLlm = resolvedLlm.source === 'user';
+              // Resolve BYOK / platform keys (properly awaited for PostgreSQL async compatibility)
+              const resolvedStt = msg.apiKeyGroq ? { key: msg.apiKeyGroq, source: 'user' } : await apiKeyService.getDecryptedKey(userId, effectiveProvider);
+              const resolvedLlm = msg.apiKeyGroq ? { key: msg.apiKeyGroq, source: 'user' } : await apiKeyService.getDecryptedKey(userId, llmProvider);
+              const isByokStt = resolvedStt?.source === 'user';
+              const isByokLlm = resolvedLlm?.source === 'user';
 
-              // Enforce quota server-side
-              const quotaCheck = quotaService.checkAudioQuota(userId, 5, { isByok: isByokStt });
-              if (!quotaCheck.allowed) {
+              // Enforce quota server-side (properly awaited for PostgreSQL async compatibility)
+              const quotaCheck = await quotaService.checkAudioQuota(userId, 5, { isByok: isByokStt });
+              if (!quotaCheck?.allowed) {
                 sendEvent({
                   type: 'error',
                   sessionId,
                   code: 'QUOTA_EXCEEDED',
-                  error: quotaCheck.reason,
+                  error: quotaCheck?.reason || 'Audio quota exceeded',
                   recoverable: false
                 });
                 return;
@@ -173,7 +173,7 @@ export class StreamingDictationServer {
                 sttProvider: effectiveProvider,
                 language,
                 mimeType,
-                apiKey: resolvedStt.key,
+                apiKey: resolvedStt?.key,
                 tone,
                 mode,
                 appName,
@@ -211,39 +211,43 @@ export class StreamingDictationServer {
                   });
                 },
                 onProcessingCompleted: (completedData) => {
-                  const audioSec = (completedData.durationMs || 0) / 1000;
-                  if (audioSec > 0 && !completedData.empty) {
-                    usageService.recordTranscriptionUsage({
-                      userId,
-                      sessionId: completedData.sessionId,
-                      provider: effectiveProvider,
-                      model: completedData.model || 'whisper-large-v3-turbo',
-                      audioSeconds: audioSec,
-                      latencyMs: completedData.latency?.asrMs || 0,
-                      status: 'success',
-                      isByok: isByokStt,
-                      keySource: resolvedStt.source,
-                      costIsEstimated: true
-                    });
-
-                    if (completedData.enhancedByAI) {
-                      const inTokens = Math.ceil((completedData.rawTranscript || '').length / 4);
-                      const outTokens = Math.ceil((completedData.processedText || '').length / 4);
-                      usageService.recordLlmUsage({
+                  try {
+                    const audioSec = (completedData.durationMs || 0) / 1000;
+                    if (audioSec > 0 && !completedData.empty) {
+                      usageService.recordTranscriptionUsage({
                         userId,
                         sessionId: completedData.sessionId,
-                        provider: llmProvider,
-                        model: llmModel || 'llm',
-                        inputTokens: inTokens,
-                        outputTokens: outTokens,
-                        latencyMs: completedData.latency?.llmMs || 0,
-                        type: 'text_processing',
+                        provider: effectiveProvider,
+                        model: completedData.model || 'whisper-large-v3-turbo',
+                        audioSeconds: audioSec,
+                        latencyMs: completedData.latency?.asrMs || 0,
                         status: 'success',
-                        isByok: isByokLlm,
-                        keySource: resolvedLlm.source,
+                        isByok: isByokStt,
+                        keySource: resolvedStt?.source || 'system',
                         costIsEstimated: true
                       });
+
+                      if (completedData.enhancedByAI) {
+                        const inTokens = Math.ceil((completedData.rawTranscript || '').length / 4);
+                        const outTokens = Math.ceil((completedData.processedText || '').length / 4);
+                        usageService.recordLlmUsage({
+                          userId,
+                          sessionId: completedData.sessionId,
+                          provider: llmProvider,
+                          model: llmModel || 'llm',
+                          inputTokens: inTokens,
+                          outputTokens: outTokens,
+                          latencyMs: completedData.latency?.llmMs || 0,
+                          type: 'text_processing',
+                          status: 'success',
+                          isByok: isByokLlm,
+                          keySource: resolvedLlm?.source || 'system',
+                          costIsEstimated: true
+                        });
+                      }
                     }
+                  } catch (usageErr) {
+                    logger.warn(`[Streaming Usage Tracking] Non-blocking warning: ${usageErr.message}`);
                   }
 
                   sendEvent({
@@ -265,16 +269,18 @@ export class StreamingDictationServer {
                   });
                 },
                 onError: (errData) => {
-                  usageService.recordFailure({
-                    userId,
-                    sessionId: errData.sessionId || sessionId,
-                    type: 'transcription',
-                    provider: effectiveProvider,
-                    model: 'streaming',
-                    errorMessage: errData.error,
-                    isByok: isByokStt,
-                    keySource: resolvedStt.source
-                  });
+                  try {
+                    usageService.recordFailure({
+                      userId,
+                      sessionId: errData.sessionId || sessionId,
+                      type: 'transcription',
+                      provider: effectiveProvider,
+                      model: 'streaming',
+                      errorMessage: errData.error,
+                      isByok: isByokStt,
+                      keySource: resolvedStt?.source || 'system'
+                    });
+                  } catch (e) {}
 
                   sendEvent({
                     type: 'error',
@@ -329,7 +335,23 @@ export class StreamingDictationServer {
 
               const activeSession = clientContext.streamingSession;
               clientContext.streamingSession = null;
-              await activeSession.stop();
+
+              // Wrap activeSession.stop() with a safety timeout so it never hangs
+              try {
+                await Promise.race([
+                  activeSession.stop(),
+                  new Promise((_, reject) => setTimeout(() => reject(new Error('Transcription timed out on server (25s limit)')), 25000))
+                ]);
+              } catch (stopErr) {
+                logger.error(`[Streaming Stop Error] ${stopErr.message}`);
+                sendEvent({
+                  type: 'error',
+                  sessionId: clientContext.currentSessionId,
+                  code: 'TRANSCRIPTION_TIMEOUT',
+                  error: stopErr.message,
+                  recoverable: false
+                });
+              }
               break;
             }
 

@@ -50,7 +50,13 @@ export class TextProcessingService {
     let text = rawText.trim();
 
     // 1. Retrieve personal dictionary terms + developer vocabulary
-    const userDict = storage.getDictionary(options.userId).map(d => d.word || d.preferredOutput);
+    let userDictRaw = options.preloadedDictionary || storage.getDictionary(options.userId);
+    if (userDictRaw instanceof Promise) {
+      userDictRaw = [];
+    }
+    const userDict = Array.isArray(userDictRaw)
+      ? userDictRaw.map(d => d.word || d.preferredOutput)
+      : [];
     const devDict = developerDictionary.getAllTerms();
     const allTerms = Array.from(new Set([...userDict, ...devDict]));
 
@@ -79,7 +85,9 @@ export class TextProcessingService {
     cleaned = personalizationEngine.applyDictionary(cleaned, options);
 
     // 9. Phase 6: Developer Processing (active when Developer / Code / Terminal mode is selected)
-    const mode = options.tone || options.mode || storage.getSettings(options.userId).defaultTone || 'casual';
+    const settings = options.preloadedSettings || storage.getSettings(options.userId);
+    const defaultTone = settings instanceof Promise ? 'casual' : (settings?.defaultTone || 'casual');
+    const mode = options.tone || options.mode || defaultTone;
     if (developerProcessingService.isDeveloperMode(mode)) {
       cleaned = developerProcessingService.process(cleaned, options);
     }
@@ -239,8 +247,22 @@ Output ONLY the transformed, polished text. Do NOT add conversational replies, e
 
     const text = rawTranscript.trim();
 
+    const userId = options.userId || 'default_user';
+    const [preloadedDict, preloadedSnippets, preloadedSettings] = await Promise.all([
+      Promise.resolve(options.preloadedDictionary || storage.getDictionary(userId)).catch(() => []),
+      Promise.resolve(options.preloadedSnippets || storage.getSnippets(userId)).catch(() => []),
+      Promise.resolve(options.preloadedSettings || storage.getSettings(userId)).catch(() => ({}))
+    ]);
+    const enrichedOptions = {
+      ...options,
+      userId,
+      preloadedDictionary: Array.isArray(preloadedDict) ? preloadedDict : [],
+      preloadedSnippets: Array.isArray(preloadedSnippets) ? preloadedSnippets : [],
+      preloadedSettings: preloadedSettings || {}
+    };
+
     // 1. Check Snippets First
-    const snippetCheck = this.checkSnippets(text, options);
+    const snippetCheck = this.checkSnippets(text, enrichedOptions);
     if (snippetCheck.matched) {
       return {
         rawTranscript: text,
@@ -272,15 +294,15 @@ Output ONLY the transformed, polished text. Do NOT add conversational replies, e
 
     // 3. Stage 1 & 2: Local Deterministic Cleanup, Self-Correction & Mode Formatting
     const detStart = Date.now();
-    const preCleaned = this.cleanText(text, options);
-    const mode = options.tone || options.mode || storage.getSettings(options.userId).defaultTone || 'casual';
-    let deterministicFormatted = modeFormatter.format(preCleaned, mode, options);
+    const preCleaned = this.cleanText(text, enrichedOptions);
+    const mode = enrichedOptions.tone || enrichedOptions.mode || enrichedOptions.preloadedSettings.defaultTone || config.defaultTone || 'casual';
+    let deterministicFormatted = modeFormatter.format(preCleaned, mode, enrichedOptions);
 
     // 4. AI Escalation Engine Decision
-    const escalation = escalationEngine.evaluate(text, deterministicFormatted, options);
+    const escalation = escalationEngine.evaluate(text, deterministicFormatted, enrichedOptions);
     const effectiveMode = escalation.detectedMode || mode;
     if (escalation.detectedMode && escalation.detectedMode !== mode) {
-      deterministicFormatted = modeFormatter.format(preCleaned, effectiveMode, options);
+      deterministicFormatted = modeFormatter.format(preCleaned, effectiveMode, enrichedOptions);
     }
     const deterministicMs = Date.now() - detStart;
 

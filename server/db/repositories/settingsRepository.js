@@ -56,7 +56,7 @@ export class SettingsRepository {
     };
 
     if (rowRes instanceof Promise) {
-      return rowRes.then(parseRow);
+      return rowRes.then(parseRow).catch(() => ({ ...DEFAULT_SETTINGS }));
     }
     return parseRow(rowRes);
   }
@@ -95,7 +95,7 @@ export class SettingsRepository {
 
     if (rawRes instanceof Promise || keysRes instanceof Promise) {
       return Promise.all([
-        Promise.resolve(rawRes),
+        Promise.resolve(rawRes).catch(() => ({ ...DEFAULT_SETTINGS })),
         Promise.resolve(keysRes).catch(() => [])
       ]).then(([raw, keys]) => buildSafe(raw, keys));
     }

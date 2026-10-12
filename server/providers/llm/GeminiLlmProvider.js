@@ -28,7 +28,9 @@ export class GeminiLlmProvider extends BaseLlmProvider {
   async formatText(systemPrompt, userText, options = {}) {
     const startTime = Date.now();
     const ai = this.getClient(options);
-    const modelName = options.model || storage.getSettings().geminiModel || config.models.geminiLLM;
+    let settings = options.preloadedSettings || storage.getSettings(options.userId);
+    if (settings instanceof Promise) settings = await settings.catch(() => ({}));
+    const modelName = options.model || (settings && settings.geminiModel) || config.models.geminiLLM;
 
     logger.info(`[Gemini LLM] Running AI formatting on ${userText.length} chars with model: ${modelName}`);
 

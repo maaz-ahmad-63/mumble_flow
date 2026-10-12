@@ -54,7 +54,8 @@ export class LocalWhisperProvider extends BaseTranscriptionProvider {
       });
 
       clearTimeout(timeoutId);
-      this.isAvailableCached = Boolean(res && res.ok);
+      const isJson = Boolean(res && res.headers && res.headers.get('content-type')?.includes('application/json'));
+      this.isAvailableCached = Boolean(res && res.ok && isJson);
     } catch (err) {
       this.isAvailableCached = false;
     }

@@ -26,7 +26,11 @@ export class PersonalizationEngine {
     if (!text || typeof text !== 'string') return { matched: false, snippet: null };
 
     const userId = options.userId || 'default_user';
-    const snippets = storage.getSnippets(userId);
+    let snippets = options.preloadedSnippets || storage.getSnippets(userId);
+    if (snippets instanceof Promise) {
+      snippets = [];
+    }
+    if (!Array.isArray(snippets)) snippets = [];
     const appName = (options.appName || '').toLowerCase();
     const currentMode = (options.tone || options.mode || '').toLowerCase();
 
@@ -98,7 +102,12 @@ export class PersonalizationEngine {
     if (!text || typeof text !== 'string') return '';
 
     const userId = options.userId || 'default_user';
-    const userDict = storage.getDictionary(userId).filter(item => item.enabled !== false);
+    let userDict = options.preloadedDictionary || storage.getDictionary(userId);
+    if (userDict instanceof Promise) {
+      userDict = [];
+    }
+    if (!Array.isArray(userDict)) userDict = [];
+    userDict = userDict.filter(item => item && item.enabled !== false);
 
     // 1. Mask URLs, email addresses, file paths, and code identifiers first
     // This prevents dictionary replacement from corrupting technical tokens or URLs

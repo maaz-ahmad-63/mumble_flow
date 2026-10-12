@@ -35,15 +35,24 @@ export class GroqWhisperProvider extends BaseTranscriptionProvider {
     if (!key) {
       throw new Error('Groq API Key is not configured. Please add it in Settings or .env');
     }
-    return new Groq({ apiKey: key });
+    return new Groq({ apiKey: key, timeout: 20000 });
   }
 
   async transcribe(filePath, options = {}) {
     const startTime = Date.now();
     const groq = this.getClient(options);
-    const model = options.model || storage.getSettings().groqModelSTT || config.models.groqSTT;
+    let settings = options.preloadedSettings || storage.getSettings();
+    if (settings instanceof Promise) settings = await settings.catch(() => ({}));
+    const model = options.model || (settings && settings.groqModelSTT) || config.models.groqSTT;
 
-    const dictWords = storage.getDictionary().map(d => d.word).join(', ');
+    let dictWords = '';
+    const dict = options.preloadedDictionary || storage.getDictionary();
+    if (Array.isArray(dict)) {
+      dictWords = dict.map(d => d.word).join(', ');
+    } else if (dict instanceof Promise) {
+      const resolved = await dict.catch(() => []);
+      if (Array.isArray(resolved)) dictWords = resolved.map(d => d.word).join(', ');
+    }
     const initialPrompt = options.prompt || (dictWords ? `Vocabulary: ${dictWords}` : undefined);
 
     // Detect genuine container from file magic bytes or fallback

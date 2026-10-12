@@ -19,6 +19,14 @@ export const QUOTA_TIERS = {
   }
 };
 
+const DEFAULT_USER_QUOTA = {
+  tier: 'free',
+  monthlyAudioMinutes: QUOTA_TIERS.free.monthlyAudioMinutes,
+  monthlyLlmRequests: QUOTA_TIERS.free.monthlyLlmRequests,
+  monthlyBudgetUsd: 0.0,
+  name: QUOTA_TIERS.free.name
+};
+
 export class QuotaService {
   constructor(adapter = db, usageRepo = usageRepository) {
     this.db = adapter;
@@ -132,7 +140,10 @@ export class QuotaService {
     };
 
     if (quotaRes instanceof Promise || statsRes instanceof Promise) {
-      return Promise.all([Promise.resolve(quotaRes), Promise.resolve(statsRes)]).then(([q, s]) => evaluate(q, s));
+      return Promise.all([
+        Promise.resolve(quotaRes).catch(() => DEFAULT_USER_QUOTA),
+        Promise.resolve(statsRes).catch(() => ({ systemAudioMinutes: 0, audioMinutes: 0 }))
+      ]).then(([q, s]) => evaluate(q, s));
     }
     return evaluate(quotaRes, statsRes);
   }
@@ -188,7 +199,10 @@ export class QuotaService {
     };
 
     if (quotaRes instanceof Promise || statsRes instanceof Promise) {
-      return Promise.all([Promise.resolve(quotaRes), Promise.resolve(statsRes)]).then(([q, s]) => evaluate(q, s));
+      return Promise.all([
+        Promise.resolve(quotaRes).catch(() => DEFAULT_USER_QUOTA),
+        Promise.resolve(statsRes).catch(() => ({ systemLlmRequests: 0, llmRequestCount: 0 }))
+      ]).then(([q, s]) => evaluate(q, s));
     }
     return evaluate(quotaRes, statsRes);
   }

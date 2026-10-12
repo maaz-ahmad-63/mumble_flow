@@ -45,7 +45,7 @@ export class HistoryRepository {
     const entryId = id || `hist_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     const now = new Date().toISOString();
 
-    this.db.run(
+    const runRes = this.db.run(
       `INSERT INTO history (
         id, user_id, raw_transcript, processed_text, duration_ms, app_name, tone, language,
         latency_asr_ms, latency_llm_ms, total_latency_ms, is_snippet, stt_provider, llm_provider, created_at
@@ -68,6 +68,10 @@ export class HistoryRepository {
         now
       ]
     );
+
+    if (runRes instanceof Promise) {
+      runRes.catch(() => {});
+    }
 
     return {
       id: entryId,

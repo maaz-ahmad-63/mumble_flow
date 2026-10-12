@@ -89,6 +89,11 @@ export class StreamingTranscriptionClient {
           this.isConnected = false;
           this.isConnecting = false;
           this.stopHeartbeat();
+          if (this.activeSessionId) {
+            const sid = this.activeSessionId;
+            this.activeSessionId = null;
+            this.onError({ error: 'Connection lost during transcription', sessionId: sid, recoverable: false });
+          }
           this.onConnectionChange('disconnected');
           this.scheduleReconnect();
           resolve(false);
@@ -96,6 +101,11 @@ export class StreamingTranscriptionClient {
       } catch (err) {
         console.error('[StreamingWS] Failed to create WebSocket:', err);
         this.isConnecting = false;
+        if (this.activeSessionId) {
+          const sid = this.activeSessionId;
+          this.activeSessionId = null;
+          this.onError({ error: 'Failed to connect to dictation service', sessionId: sid, recoverable: false });
+        }
         this.onConnectionChange('disconnected');
         resolve(false);
       }
@@ -193,6 +203,7 @@ export class StreamingTranscriptionClient {
 
         case 'error':
           console.error('[StreamingWS Error]', msg.error);
+          this.activeSessionId = null;
           this.onError(msg);
           break;
 
@@ -290,6 +301,11 @@ export class StreamingTranscriptionClient {
 
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
       this.ws.send(JSON.stringify(stopPayload));
+    } else {
+      console.warn('[StreamingWS] Socket not open during stopRecording.');
+      const sid = this.activeSessionId;
+      this.activeSessionId = null;
+      this.onError({ error: 'Connection lost before finalizing transcription', sessionId: sid, recoverable: false });
     }
   }
 

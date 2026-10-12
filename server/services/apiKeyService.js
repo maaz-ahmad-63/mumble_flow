@@ -239,8 +239,8 @@ export class ApiKeyService {
 
     if (userRowRes instanceof Promise || rawSettingsRes instanceof Promise) {
       return Promise.all([
-        Promise.resolve(userRowRes),
-        Promise.resolve(rawSettingsRes)
+        Promise.resolve(userRowRes).catch(() => null),
+        Promise.resolve(rawSettingsRes).catch(() => null)
       ]).then(([userRow, rawSettings]) => resolveKey(userRow, rawSettings));
     }
     return resolveKey(userRowRes, rawSettingsRes);

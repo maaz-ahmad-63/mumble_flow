@@ -173,7 +173,11 @@ export class ChunkedStreamingSession {
       fs.writeFileSync(tempFile, combined);
 
       const normalized = normalizeAudioFile(tempFile, this.options.mimeType || 'audio/webm');
-      const asrResult = await this.provider.transcribe(normalized.path, this.options);
+      const asrPromise = this.provider.transcribe(normalized.path, this.options);
+      const asrResult = await Promise.race([
+        asrPromise,
+        new Promise((_, reject) => setTimeout(() => reject(new Error('ASR transcription timed out after 20s')), 20000))
+      ]);
 
       const rawTranscript = (asrResult.text || '').trim();
       const finalDurationMs = asrResult.duration ? Math.round(asrResult.duration * 1000) : (Date.now() - this.startTime);
@@ -205,7 +209,7 @@ export class ChunkedStreamingSession {
       let processedResult = { processedText: rawTranscript, enhancedByAI: false };
       if (rawTranscript) {
         try {
-          processedResult = await textProcessingService.process(rawTranscript, {
+          const procPromise = textProcessingService.process(rawTranscript, {
             tone: this.options.tone,
             mode: this.options.mode,
             appName: this.options.appName,
@@ -215,6 +219,10 @@ export class ChunkedStreamingSession {
             llmModel: this.options.llmModel,
             userId: this.options.userId
           });
+          processedResult = await Promise.race([
+            procPromise,
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Text processing timed out after 15s')), 15000))
+          ]);
         } catch (procErr) {
           logger.warn(`[StreamingSession] Text processing fallback: ${procErr.message}`);
           processedResult = { processedText: rawTranscript, enhancedByAI: false };
