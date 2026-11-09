@@ -94,3 +94,4 @@ Users can open the settings interface at any time:
 | **Run Automated Tests** | `npm test` |
 | **Publish New App Version** | `git tag v1.0.X && git push origin v1.0.X` |
 | **Update Cloud VM** | `cd /opt/mumble-flow && sudo git pull && sudo systemctl restart mumble-ai` |
+

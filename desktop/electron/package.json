@@ -9,10 +9,10 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "pack": "electron-builder --mac --dir",
-    "dist": "electron-builder --mac",
-    "dist:mac": "electron-builder --mac",
-    "dist:win": "electron-builder --win",
-    "dist:all": "electron-builder --mac --win"
+    "dist": "electron-builder --mac -c.publish=never",
+    "dist:mac": "electron-builder --mac -c.publish=never",
+    "dist:win": "electron-builder --win -c.publish=never",
+    "dist:all": "electron-builder --mac --win -c.publish=never"
   },
   "build": {
     "appId": "com.mumbleai.desktop",
@@ -25,9 +25,7 @@
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "assets/icon.icns",
-      "hardenedRuntime": true,
-      "entitlements": "entitlements.mac.plist",
-      "entitlementsInherit": "entitlements.mac.plist",
+      "hardenedRuntime": false,
       "target": [
         "dmg",
         "zip"
