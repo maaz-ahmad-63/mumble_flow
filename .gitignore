@@ -34,3 +34,7 @@ marketing/
 .vscode/
 .idea/
 *.swp
+
+# Desktop build outputs
+desktop/electron/dist/
+dist/

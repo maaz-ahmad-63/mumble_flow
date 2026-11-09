@@ -65,12 +65,16 @@ if (window.electronAPI) {
   });
 }
 
-// Click the floating pill widget to toggle/stop recording
+// Click the floating pill widget to toggle/stop recording or dismiss when stuck
 const hudElement = document.getElementById('hud');
 if (hudElement) {
   hudElement.addEventListener('click', () => {
     if (document.body.classList.contains('state-recording') && window.electronAPI) {
       window.electronAPI.stopRecording();
+    } else if (window.electronAPI) {
+      // Clicking the pill while processing or in error state immediately cancels & dismisses it
+      cancelLocalAudioCapture();
+      window.electronAPI.cancelRecording();
     }
   });
 }

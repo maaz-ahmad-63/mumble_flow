@@ -199,6 +199,62 @@ export const DEFAULT_APP_PROFILES = [
     defaultMode: 'developer',
     enabled: true
   },
+  {
+    id: 'youtube',
+    name: 'YouTube',
+    titleIncludes: ['youtube'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
+  {
+    id: 'linkedin',
+    name: 'LinkedIn',
+    titleIncludes: ['linkedin'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
+  {
+    id: 'twitter',
+    name: 'Twitter / X',
+    titleIncludes: ['twitter', 'x.com', ' / x'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
+  {
+    id: 'reddit',
+    name: 'Reddit',
+    titleIncludes: ['reddit'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
+  {
+    id: 'instagram',
+    name: 'Instagram',
+    titleIncludes: ['instagram'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
+  {
+    id: 'facebook',
+    name: 'Facebook',
+    titleIncludes: ['facebook'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
+  {
+    id: 'tiktok',
+    name: 'TikTok',
+    titleIncludes: ['tiktok'],
+    category: 'communication',
+    defaultMode: 'social',
+    enabled: true
+  },
 
   // Messaging & Collaboration
   {

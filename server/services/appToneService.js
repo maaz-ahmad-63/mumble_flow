@@ -15,6 +15,15 @@ export const DEFAULT_APP_TONE_RULES = [
   { label: 'Claude', tone: 'prompt', titleIncludes: ['claude'] },
   { label: 'Browser IDE', tone: 'code', titleIncludes: ['stackblitz', 'codesandbox', 'replit', 'gitpod'] },
 
+  // Social Media & Video / Community platforms (Matched on window title)
+  { label: 'YouTube', tone: 'social', mode: 'social', titleIncludes: ['youtube'] },
+  { label: 'LinkedIn', tone: 'social', mode: 'social', titleIncludes: ['linkedin'] },
+  { label: 'Twitter / X', tone: 'social', mode: 'social', titleIncludes: ['twitter', 'x.com', ' / x'] },
+  { label: 'Reddit', tone: 'social', mode: 'social', titleIncludes: ['reddit'] },
+  { label: 'Instagram', tone: 'social', mode: 'social', titleIncludes: ['instagram'] },
+  { label: 'Facebook', tone: 'social', mode: 'social', titleIncludes: ['facebook'] },
+  { label: 'TikTok', tone: 'social', mode: 'social', titleIncludes: ['tiktok'] },
+
   // Web Browsers
   { label: 'Chrome', tone: 'browser', mode: 'browser', process: ['google chrome', 'chrome'] },
   { label: 'Safari', tone: 'browser', mode: 'browser', process: ['safari'] },

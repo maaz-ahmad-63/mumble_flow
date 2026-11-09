@@ -29,6 +29,12 @@ import { developerProcessingService } from './dictation/developerProcessingServi
 import { developerDictionary } from './dictation/developerDictionary.js';
 import { personalizationEngine } from './dictation/personalizationEngine.js';
 
+const REFUSAL_PATTERNS = [
+  /^(?:i\s*['’]?m\s+sorry|sorry)[,\s]+(?:but\s+)?i\s+(?:can\s*['’]?t|cannot|am\s+unable\s+to|won\s*['’]?t)\b/i,
+  /\bas\s+an\s+(?:ai|language\s+model)\b/i,
+  /\bi\s+(?:cannot|can\s*['’]?t|am\s+unable\s+to)\s+(?:help|assist|fulfill|provide\s+legal)\b/i
+];
+
 export class TextProcessingService {
   /**
    * Check if spoken text matches any stored snippet trigger conservatively.
@@ -47,6 +53,10 @@ export class TextProcessingService {
    */
   cleanText(rawText, options = {}) {
     if (!rawText || typeof rawText !== 'string') return '';
+    // If 'raw' mode is selected, preserve the transcript verbatim
+    if (options.tone === 'raw' || options.mode === 'raw') {
+      return rawText;
+    }
     let text = rawText.trim();
 
     // 1. Retrieve personal dictionary terms + developer vocabulary
@@ -99,18 +109,40 @@ export class TextProcessingService {
    * Local heuristic cleanup + mode formatting (zero LLM requirement).
    */
   localHeuristicCleanup(text, options = {}) {
+    if (options.tone === 'raw' || options.mode === 'raw') return text;
     const cleaned = this.cleanText(text, options);
-    const mode = options.tone || options.mode || storage.getSettings(options.userId).defaultTone || 'casual';
+    const rawSettings = options.preloadedSettings || storage.getSettings(options.userId);
+    const settings = rawSettings instanceof Promise ? {} : (rawSettings || {});
+    const mode = options.tone || options.mode || settings.defaultTone || 'casual';
     return modeFormatter.format(cleaned, mode, options);
   }
 
   /**
    * Build specialized LLM prompt for advanced AI formatting modes.
    */
-  buildSystemPrompt(options = {}) {
-    const tone = options.tone || options.mode || storage.getSettings(options.userId).defaultTone || config.defaultTone || 'casual';
+  async buildSystemPrompt(options = {}) {
+    let rawSettings = options.preloadedSettings || options.settings || storage.getSettings(options.userId);
+    let userSettings = rawSettings;
+    if (rawSettings instanceof Promise) {
+      try {
+        userSettings = await rawSettings;
+      } catch (e) {
+        userSettings = {};
+      }
+    }
+    userSettings = userSettings || {};
+    const tone = options.tone || options.mode || userSettings.defaultTone || config.defaultTone || 'casual';
     const appName = options.appName || 'General';
-    const dictionary = storage.getDictionary(options.userId).map(d => d.word);
+
+    let dictionary = [];
+    if (Array.isArray(options.preloadedDictionary)) {
+      dictionary = options.preloadedDictionary.map(d => d.word || d.preferredOutput || d).filter(Boolean);
+    } else {
+      const rawDict = storage.getDictionary(options.userId);
+      if (Array.isArray(rawDict)) {
+        dictionary = rawDict.map(d => d.word || d.preferredOutput || d).filter(Boolean);
+      }
+    }
 
     let toneInstruction = '';
     switch (tone) {
@@ -122,32 +154,83 @@ export class TextProcessingService {
         break;
       case 'formal':
       case 'professional':
-        toneInstruction = `Tone: Professional, well-structured, polished for business communication and documents. Use complete sentences, proper capitalization, and clear paragraphing.`;
+      case 'email':
+        toneInstruction = `Tone: Professional Business & Executive Email.
+- If the user dictates a request for an email (e.g. "write an email to schedule a meeting for today", "follow up on proposal"), draft the complete, ready-to-send email with:
+  **Subject:** Clear, concise subject line
+  
+  Professional greeting (e.g. Hi Team, / Dear [Name],)
+  Polished body paragraphs with context and time slots
+  Polite closing & professional sign-off (e.g. Best regards, [Your Name])
+- If the user dictates general business prose, format into eloquent, professional corporate English.`;
         break;
       case 'executive':
-        toneInstruction = `Tone: Executive Leadership. Ultra-crisp, high-impact, decisive tone. Start directly with the core message or decision, eliminate pleasantries, and highlight bottom-line impact.`;
+        toneInstruction = `Tone: Executive Leadership & C-Suite Brief.
+- Ultra-crisp, high-impact, decisive tone.
+- Start directly with the core takeaway or decision (BLUF: Bottom Line Up Front).
+- Use bullet points for key metrics, strategic trade-offs, and ROI/impact.
+- Eliminate pleasantries and conversational filler completely.`;
         break;
-      case 'email':
-        toneInstruction = `Tone: Email. Format as a clean, ready-to-send email with greeting, structured paragraphs, action items, and polite sign-off.`;
+      case 'terminal':
+        toneInstruction = `Tone: Terminal & CLI Command Generator.
+- If the user describes a task, command, or action (e.g. "write a command to push in a repository and change its commit", "install tailwind and prettier with npm", "kill port 3050", "docker run postgres with volume"), output the EXACT executable command(s) for bash/zsh/PowerShell (e.g. git commit --amend -m "..." && git push --force-with-lease origin main).
+- If multiple commands are needed, chain them with && or put them on separate lines.
+- Output ONLY the raw executable command(s). Do NOT wrap in markdown code blocks, do NOT add conversational explanation, do NOT add commentary. Output must be directly pasteable and runnable in a terminal.`;
         break;
       case 'code':
       case 'developer':
-      case 'terminal':
       case 'dev':
-        toneInstruction = `Tone: Developer & Coding Assistant (Cursor, VS Code, ChatGPT, Claude, GitHub, Terminal).
-- Accurately determine and format programming constructs:
-  * Functions/methods in camelCase
-  * Variables/parameters in camelCase or snake_case
-  * Constants & environment variables in SCREAMING_SNAKE_CASE
-  * Classes, types, interfaces in PascalCase
-- Preserve spoken programming symbols: equals (=), double equals (==), strict equals (===), not equals (!=), fat arrow (=>).
-- Accurately format CLI and terminal commands.
-- Correctly format file paths and extensions.
-- Preserve developer vocabulary.`;
+        toneInstruction = `Tone: Software Engineer & Code Implementation Generator.
+- When the user asks for code or describes functionality (e.g. "write code for a button that hovers on cursor", "react hook for local storage", "binary search in python"), output the clean, complete, ready-to-run code implementation with proper syntax, types, and comments.
+- Output the code inside clean markdown code fences with the language identifier (e.g. \`\`\`javascript or \`\`\`html). No chit-chat or introductory sentences.`;
+        break;
+      case 'commit':
+        toneInstruction = `Tone: Conventional Git Commit Message Generator.
+- Format the user's description into a standardized Conventional Commit message:
+  <type>(<optional scope>): <imperative summary in present tense>
+  
+  <optional detailed bullet points if complex>
+- Valid types: feat, fix, refactor, docs, style, test, chore, perf, ci.
+- Example: feat(auth): add Google OAuth2 authentication flow with session cookies
+- Output ONLY the commit message. No conversational fluff or quotation marks.`;
+        break;
+      case 'sql':
+        toneInstruction = `Tone: SQL & Database Query Generator.
+- Transform natural language requests (e.g. "find top 5 customers with highest total order amount in 2024", "create index on users email") into clean, optimized, syntactically correct SQL.
+- Use standard uppercase SQL keywords (SELECT, FROM, WHERE, JOIN, GROUP BY, ORDER BY).
+- Output the query inside \`\`\`sql code block. No conversational fluff.`;
+        break;
+      case 'meeting':
+      case 'minutes':
+        toneInstruction = `Tone: Executive Meeting Notes & Action Items.
+- Structure spoken meeting discussions into clean, professional minutes:
+  **Meeting Summary:** 1-2 sentence overview of the discussion.
+  **Key Decisions:**
+  - Bullet points of agreed decisions.
+  **Action Items:**
+  - [ ] Specific task — **Owner:** Name / TBD (Deadline if mentioned).
+  **Discussion Highlights:**
+  - Key discussion points and context.`;
+        break;
+      case 'translator':
+      case 'translate':
+      case 'translate_es':
+      case 'translate_fr':
+      case 'translate_de':
+      case 'translate_hi':
+      case 'translate_ja':
+        toneInstruction = `Tone: Universal Multilingual Translator.
+- Detect the user's requested target language from the speech (e.g. "translate this to Spanish", "in French", "German", "Hindi", "Japanese", "Chinese", "Arabic", "Portuguese", etc.).
+- If a target language is requested, translate the dictated message into fluent, natural phrasing in that target language.
+- If the user speaks in a foreign language without specifying a target language, translate it into polished, fluent English.
+- If the speech contains a translation directive like "translate to Spanish: I will be late", output ONLY the translated sentence in the target language. No conversational preamble.`;
         break;
       case 'bullet':
       case 'bullets':
-        toneInstruction = `Tone: Structured Bullet Points. Break key points into clean, readable Markdown bullet lists with clear bold headings if multi-topic.`;
+        toneInstruction = `Tone: Structured Bullet Points.
+- Extract key points from spoken dictation and organize them into clean Markdown bullet points.
+- If the user asks to "list the steps of...", enumerate the clear steps with bold lead-ins.
+- Use bold lead-in keywords for each bullet (e.g. "- **Step 1:** ...").`;
         break;
       case 'standup':
         toneInstruction = `Tone: Daily Engineering Standup. Format speech into clear sections:
@@ -156,32 +239,26 @@ export class TextProcessingService {
 **Blockers:** Any impediments (or None)`;
         break;
       case 'social':
-        toneInstruction = `Tone: High-Engagement LinkedIn / Social Post.
-- Hook in the first line that grabs attention.
-- Clean 1-2 sentence paragraphs with whitespace.
-- Bullet points for key takeaways.
-- Conclude with an engaging question and 3 relevant hashtags.`;
+      case 'comment':
+      case 'reply':
+        toneInstruction = `Tone: Social Media (Posts, Announcements, Comments, Replies & Boundary Notices).
+- When the user asks to write, add, draft, or give a comment or reply (e.g. appreciating a creator, thanking a follower, answering questions, or responding to negative/vulgar comments with warnings or legal restrictions):
+  * Write the EXACT comment or reply directly from the speaker's first-person perspective ("I", "my", "we").
+  * Tone matching:
+    - Positive/appreciative comments: warm, engaging, and genuine.
+    - Boundaries/restrictions/legal warnings: polite, firm, and composed formal notice (e.g., "Please refrain from using vulgar or abusive language. Continued harassment will be reported to the platform and pursued through appropriate legal channels.").
+  * Do NOT include hashtags, bullet lists, bold headers, quotation marks, or conversational intros ("Sure, here is your comment:"). Output ONLY the comment text ready to post.
+  * Make it sound completely authentic and natural for platforms like YouTube, LinkedIn, Twitter/X, Reddit, or Instagram.
+- For all social media posts, announcements, and thoughts (e.g. "Just open-sourced...", product updates, LinkedIn/X articles):
+  * Write an engaging hook in the first lines that grabs attention.
+  * Use clean spacing and concise sentences.
+  * Conclude with an engaging closing question or takeaway and ALWAYS include 3-5 relevant hashtags at the end (e.g. #OpenSource #Tech #AI).`;
         break;
       case 'support':
         toneInstruction = `Tone: Customer Support & Client Success. Warm, deeply empathetic, highly courteous, with numbered step-by-step guidance and reassurance.`;
         break;
       case 'prompt':
-        toneInstruction = `Tone: Meta Prompt Engineering Optimizer. Transform spoken instructions into a high-performance LLM prompt.`;
-        break;
-      case 'translate_es':
-        toneInstruction = `Tone: Accurate, natural Spanish translation.`;
-        break;
-      case 'translate_fr':
-        toneInstruction = `Tone: Elegant, fluent French translation.`;
-        break;
-      case 'translate_de':
-        toneInstruction = `Tone: Clear, precise German translation.`;
-        break;
-      case 'translate_hi':
-        toneInstruction = `Tone: Fluent Hindi translation.`;
-        break;
-      case 'translate_ja':
-        toneInstruction = `Tone: Polite, natural Japanese translation (Teineigo).`;
+        toneInstruction = `Tone: Meta Prompt Engineering Optimizer. If the user asks to write or generate a prompt (e.g. "write a prompt to make a change"), generate a complete, high-performance, structured LLM prompt with role, context, task instructions, constraints, and output format.`;
         break;
       case 'raw':
         toneInstruction = `Tone: Verbatim. Do minimal changes, only fixing basic punctuation and capitalization.`;
@@ -190,7 +267,7 @@ export class TextProcessingService {
         toneInstruction = `Tone: Balanced, clear, and natural.`;
     }
 
-    return `You are Mumble AI Intelligent Dictation Engine, an AI that transforms spoken voice transcripts into polished, ready-to-send writing.
+    return `You are Mumble AI Intelligent Dictation & Writing Engine, an AI that transforms spoken voice transcripts into polished, ready-to-send writing, emails, code, and prompts.
  
 CONTEXT:
 - Target Application: ${appName}
@@ -198,27 +275,32 @@ CONTEXT:
 ${dictionary.length > 0 ? `- Personal Dictionary: ${dictionary.join(', ')}` : ''}
 
 CRITICAL RULES:
-1. PRESERVE INTENT & FULL CONTEXT: Keep the speaker's original ideas, facts, numbers, code, and surrounding sentence structure intact.
-2. REMOVE FILLER WORDS: Erase verbal clutter.
-3. RESOLVE SELF-CORRECTIONS SURGICALLY: Replace ONLY the corrected element and PRESERVE surrounding clauses.
-4. STRUCTURE SPOKEN LISTS cleanly.
-5. PRESERVE TECHNICAL TERMS & SYNTAX.
+1. FULFILL INTENT & TRANSFORM: When a specialized tone or format is requested (such as Formal/Email, Code, Prompt, Translation, Bullets, Standup), TRANSFORM the speaker's request into the complete, ready-to-use output (e.g. draft the full email, generate the requested code, write the optimized prompt, or translate the text). Do not simply echo the instruction back.
+2. PRESERVE ORIGINAL FACTS & ENTITIES: When formatting normal dictation, keep the speaker's core facts, numbers, dates, and names accurate.
+3. REMOVE FILLER WORDS: Erase verbal clutter, "ums", and stutters.
+4. RESOLVE SELF-CORRECTIONS SURGICALLY: Replace only the corrected element and preserve surrounding clauses.
+5. STRUCTURE SPOKEN LISTS cleanly.
+6. PRESERVE TECHNICAL TERMS & SYNTAX.
 
 OUTPUT RESTRICTION:
-Output ONLY the transformed, polished text. Do NOT add conversational replies, explanations, or quotes.`;
+Output ONLY the transformed, polished text, code, or email. Do NOT add conversational replies ("Sure, here is your code:"), explanations, or quotes.`;
   }
 
   /**
    * Format text using LLM provider.
    */
   async formatWithLlm(text, options = {}) {
-    const systemPrompt = this.buildSystemPrompt(options);
-    const userSettings = storage.getSettings(options.userId);
-    const providerName = options.llmProvider || userSettings.llmProvider || config.defaultLlmProvider || 'groq';
-    const modelName = options.llmModel || options.model || userSettings.llmModel;
+    const systemPrompt = await this.buildSystemPrompt(options);
+    let userSettings = options.preloadedSettings || storage.getSettings(options.userId);
+    if (userSettings instanceof Promise) {
+      userSettings = await userSettings.catch(() => ({}));
+    }
+    const providerName = options.llmProvider || userSettings?.llmProvider || config.defaultLlmProvider || 'groq';
+    const modelName = options.llmModel || options.model || userSettings?.llmModel;
 
     const provider = providerRegistry.getLlmProvider(providerName);
-    return await provider.formatText(systemPrompt, text, { ...options, model: modelName });
+    const userPrompt = `[Dictated Speech]: ${text}\n\nTask: Output the final ready-to-use text representing what the speaker wants to communicate.`;
+    return await provider.formatText(systemPrompt, userPrompt, { ...options, model: modelName, originalUserText: text });
   }
 
   /**
@@ -340,8 +422,8 @@ Output ONLY the transformed, polished text. Do NOT add conversational replies, e
 
     // 6. Invoke LLM with Quality Fallback to preserve transcript on any failure
     const aiStart = Date.now();
-    const providerName = options.llmProvider || storage.getSettings(options.userId).llmProvider || config.defaultLlmProvider || 'groq';
-    const effectiveOptions = { ...options, tone: effectiveMode, mode: effectiveMode };
+    const providerName = options.llmProvider || enrichedOptions.preloadedSettings?.llmProvider || config.defaultLlmProvider || 'groq';
+    const effectiveOptions = { ...options, tone: effectiveMode, mode: effectiveMode, preloadedSettings: enrichedOptions.preloadedSettings, preloadedDictionary: enrichedOptions.preloadedDictionary };
 
     try {
       if (longDictationHandler.isLong(preCleaned)) {
@@ -366,8 +448,23 @@ Output ONLY the transformed, polished text. Do NOT add conversational replies, e
       }
 
       const result = await this.formatWithLlm(preCleaned, effectiveOptions);
-      const postFormatted = modeFormatter.format(result.text, effectiveMode, options);
+      const postFormatted = (result.text || '').trim();
       const aiMs = Date.now() - aiStart;
+
+      // Refusal Guard: If an LLM returns a canned refusal, NEVER insert that refusal into user app!
+      if (REFUSAL_PATTERNS.some(p => p.test(postFormatted))) {
+        logger.warn(`[Refusal Guard] LLM returned a canned refusal: "${postFormatted}". Safely applying quality fallback.`);
+        return {
+          rawTranscript: text,
+          processedText: deterministicFormatted,
+          latencyMs: Date.now() - startTime,
+          deterministicMs,
+          aiMs,
+          enhancedByAI: false,
+          escalationReason: 'refusal_fallback',
+          provider: 'deterministic-engine'
+        };
+      }
 
       return {
         rawTranscript: text,

@@ -77,6 +77,29 @@ export function classifyAppContext(rawInfo = {}) {
   const title = windowTitle.toLowerCase();
 
   // 1. Web-based specific apps (window title or web domain match inside browsers)
+  // Social Media & Video / Community Platforms
+  if (
+    title.includes('youtube') ||
+    title.includes('linkedin') ||
+    title.includes('twitter') ||
+    title.includes('x.com') ||
+    title.includes('reddit') ||
+    title.includes('instagram') ||
+    title.includes('facebook') ||
+    title.includes('tiktok') ||
+    bundle.includes('twitter') ||
+    bundle.includes('reddit')
+  ) {
+    return {
+      name: appName,
+      appName,
+      bundleId,
+      windowTitle,
+      category: CATEGORIES.COMMUNICATION,
+      recommendedMode: 'social'
+    };
+  }
+
   // Gmail
   if (title.includes('gmail') || title.includes('google mail') || bundle.includes('gmail')) {
     return {
@@ -317,19 +340,40 @@ export function normalizeManualMode(modeStr) {
   switch (norm) {
     case 'dev':
     case 'developer':
-    case 'code':
       return 'developer';
+    case 'code':
+      return 'code';
+    case 'terminal':
+      return 'terminal';
+    case 'commit':
+      return 'commit';
+    case 'sql':
+      return 'sql';
+    case 'meeting':
+    case 'minutes':
+      return 'meeting';
+    case 'executive':
+      return 'executive';
     case 'prompt':
     case 'ai':
       return 'prompt';
-    case 'email':
-    case 'mail':
-      return 'email';
     case 'bullet':
     case 'bullets':
       return 'bullets';
     case 'standup':
       return 'standup';
+    case 'social':
+    case 'comment':
+    case 'reply':
+      return 'social';
+    case 'support':
+      return 'support';
+    case 'translator':
+    case 'translate':
+      return 'translator';
+    case 'email':
+    case 'mail':
+      return 'email';
     case 'formal':
     case 'professional':
       return 'formal';
@@ -337,8 +381,8 @@ export function normalizeManualMode(modeStr) {
       return 'casual';
     case 'browser':
       return 'browser';
-    case 'terminal':
-      return 'terminal';
+    case 'raw':
+      return 'raw';
     default:
       return norm;
   }

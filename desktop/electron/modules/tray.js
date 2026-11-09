@@ -14,6 +14,7 @@ export class TrayManager {
     this.tray = null;
     this.onToggleDictation = options.onToggleDictation || (() => {});
     this.onOpenSettings = options.onOpenSettings || (() => {});
+    this.onCheckForUpdates = options.onCheckForUpdates || (() => {});
     this.onOpenWebUI = options.onOpenWebUI || (() => {});
     this.onSelectMode = options.onSelectMode || (() => {});
     this.currentMode = options.currentMode || 'auto';
@@ -62,13 +63,21 @@ export class TrayManager {
 
     const modeLabels = {
       auto: 'Auto (App-Aware)',
-      developer: 'Developer / Code',
+      formal: 'Formal',
+      code: 'Code',
+      terminal: 'Terminal',
+      commit: 'Commit',
+      sql: 'SQL',
+      meeting: 'Meeting Notes',
+      executive: 'Executive',
       prompt: 'Prompt',
-      email: 'Email',
       bullet: 'Bullets',
       standup: 'Standup',
+      social: 'Social',
+      support: 'Support',
+      translator: 'Translator',
       casual: 'Casual',
-      formal: 'Formal'
+      raw: 'Raw'
     };
 
     const contextMenu = Menu.buildFromTemplate([
@@ -82,13 +91,21 @@ export class TrayManager {
         submenu: [
           { label: 'Auto (App-Aware)', type: 'radio', checked: this.currentMode === 'auto', click: () => this.handleModeChange('auto') },
           { type: 'separator' },
-          { label: 'Developer / Code', type: 'radio', checked: this.currentMode === 'developer', click: () => this.handleModeChange('developer') },
+          { label: 'Formal', type: 'radio', checked: this.currentMode === 'formal', click: () => this.handleModeChange('formal') },
+          { label: 'Code', type: 'radio', checked: this.currentMode === 'code', click: () => this.handleModeChange('code') },
+          { label: 'Terminal', type: 'radio', checked: this.currentMode === 'terminal', click: () => this.handleModeChange('terminal') },
+          { label: 'Commit', type: 'radio', checked: this.currentMode === 'commit', click: () => this.handleModeChange('commit') },
+          { label: 'SQL', type: 'radio', checked: this.currentMode === 'sql', click: () => this.handleModeChange('sql') },
+          { label: 'Meeting Notes', type: 'radio', checked: this.currentMode === 'meeting', click: () => this.handleModeChange('meeting') },
+          { label: 'Executive', type: 'radio', checked: this.currentMode === 'executive', click: () => this.handleModeChange('executive') },
           { label: 'Prompt', type: 'radio', checked: this.currentMode === 'prompt', click: () => this.handleModeChange('prompt') },
-          { label: 'Email', type: 'radio', checked: this.currentMode === 'email', click: () => this.handleModeChange('email') },
           { label: 'Bullets', type: 'radio', checked: this.currentMode === 'bullet', click: () => this.handleModeChange('bullet') },
           { label: 'Standup', type: 'radio', checked: this.currentMode === 'standup', click: () => this.handleModeChange('standup') },
+          { label: 'Social', type: 'radio', checked: this.currentMode === 'social', click: () => this.handleModeChange('social') },
+          { label: 'Support', type: 'radio', checked: this.currentMode === 'support', click: () => this.handleModeChange('support') },
+          { label: 'Translator', type: 'radio', checked: this.currentMode === 'translator', click: () => this.handleModeChange('translator') },
           { label: 'Casual', type: 'radio', checked: this.currentMode === 'casual', click: () => this.handleModeChange('casual') },
-          { label: 'Formal', type: 'radio', checked: this.currentMode === 'formal', click: () => this.handleModeChange('formal') }
+          { label: 'Raw', type: 'radio', checked: this.currentMode === 'raw', click: () => this.handleModeChange('raw') }
         ]
       },
       { type: 'separator' },
@@ -99,6 +116,10 @@ export class TrayManager {
       {
         label: 'Settings...',
         click: () => this.onOpenSettings()
+      },
+      {
+        label: 'Check for Updates...',
+        click: () => this.onCheckForUpdates()
       },
       { type: 'separator' },
       {

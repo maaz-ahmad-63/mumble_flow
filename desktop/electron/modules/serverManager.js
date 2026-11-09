@@ -123,8 +123,9 @@ export class ServerManager {
     }
 
     console.log('[ServerManager] Starting embedded Mumble AI server...');
-    const projectRoot = path.resolve(__dirname, '../../..');
-    const serverPath = path.resolve(projectRoot, 'server/index.js');
+    const isPackaged = Boolean(process.resourcesPath && !process.env.ELECTRON_IS_DEV && fs.existsSync(path.join(process.resourcesPath, 'server/index.js')));
+    const projectRoot = isPackaged ? process.resourcesPath : path.resolve(__dirname, '../../..');
+    const serverPath = isPackaged ? path.join(process.resourcesPath, 'server/index.js') : path.resolve(projectRoot, 'server/index.js');
     const nodeBinary = findNodeBinary();
 
     console.log(`[ServerManager] Launching server using: ${nodeBinary} -> ${serverPath}`);

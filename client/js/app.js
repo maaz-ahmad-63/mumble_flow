@@ -314,7 +314,7 @@ class WhisperFlowApp {
       // Start low-latency streaming session immediately
       if (provider !== 'webspeech') {
         const tone = this.pillWidget.getTone();
-        this.streamingClient.startRecording({
+        await this.streamingClient.startRecording({
           sttProvider: provider,
           mimeType,
           language: 'auto',
@@ -506,6 +506,10 @@ class WhisperFlowApp {
     if (this.zeroEditRateEl) {
       this.zeroEditRateEl.textContent = '100%';
     }
+    if (this.costBadgeEl) {
+      const costVal = typeof data.cost === 'number' ? data.cost : (data.enhancedByAI ? 0.0001 : 0.0);
+      this.costBadgeEl.textContent = `$${costVal.toFixed(4)}`;
+    }
   }
 
   handleWebSpeechFlow(tone) {
@@ -608,6 +612,11 @@ class WhisperFlowApp {
     if (this.zeroEditRateEl) {
       const accuracyScore = this.calculateZeroEditAccuracy(raw, clean);
       this.zeroEditRateEl.textContent = accuracyScore !== null ? `${accuracyScore}%` : '—';
+    }
+
+    if (this.costBadgeEl) {
+      const costVal = typeof res.cost === 'number' ? res.cost : (res.totalCost || 0.0);
+      this.costBadgeEl.textContent = `$${Number(costVal).toFixed(4)}`;
     }
 
     // Auto copy to clipboard
@@ -1044,15 +1053,22 @@ class WhisperFlowApp {
     const names = {
       casual: 'Casual',
       formal: 'Formal',
+      code: 'Code',
       developer: 'Developer',
       terminal: 'Terminal',
+      commit: 'Commit',
+      sql: 'SQL',
+      meeting: 'Meeting Notes',
+      minutes: 'Meeting Notes',
       executive: 'Executive',
-      code: 'Code',
       bullet: 'Bullets',
+      bullets: 'Bullets',
       standup: 'Standup',
       social: 'Social',
       prompt: 'Prompt',
       support: 'Support',
+      translator: 'Translator',
+      translate: 'Translator',
       translate_es: 'Spanish',
       translate_fr: 'French',
       translate_de: 'German',
@@ -1060,7 +1076,7 @@ class WhisperFlowApp {
       translate_ja: 'Japanese',
       raw: 'Raw'
     };
-    return names[tone] || '';
+    return names[tone] || tone || '';
   }
 
   setupClearCopyButtons() {

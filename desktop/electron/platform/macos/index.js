@@ -85,6 +85,17 @@ export class MacOSActiveApplicationProvider extends IActiveApplicationProvider {
             set winTitle to name of front window
           end tell
         end try
+        if winTitle is "" or winTitle is "Google Chrome" or winTitle is "Brave Browser" or winTitle is "Microsoft Edge" or winTitle is "Arc" then
+          if appName is "Google Chrome" or appName is "Brave Browser" or appName is "Microsoft Edge" or appName is "Arc" then
+            try
+              tell application appName to set winTitle to (title of active tab of front window)
+            end try
+          else if appName is "Safari" then
+            try
+              tell application "Safari" to set winTitle to (name of current tab of front window)
+            end try
+          end if
+        end if
         return appName & "|||" & bundleId & "|||" & winTitle & "|||" & procId
       end tell
     `;
@@ -122,7 +133,7 @@ export class MacOSTextInsertionProvider extends ITextInsertionProvider {
     this.restoreDelayMs = options.restoreDelayMs || 600;
   }
 
-  async insertText(text) {
+  async insertText(text, options = {}) {
     if (!text || text.trim().length === 0) {
       return { success: false, error: 'No text to insert' };
     }
@@ -136,15 +147,45 @@ export class MacOSTextInsertionProvider extends ITextInsertionProvider {
       clipboard.writeText(text);
       await sleep(40);
 
-      // Simulate Cmd+V via AppleScript (System Events)
-      await runAppleScript('tell application "System Events" to keystroke "v" using command down');
+      // If a targetAppName is provided, ensure application focus before dispatching Cmd+V
+      if (options.targetAppName && options.targetAppName !== 'Active App' && options.targetAppName !== 'System') {
+        const escapedAppName = options.targetAppName.replace(/"/g, '\\"');
+        const script = `
+          tell application "System Events"
+            try
+              set frontmost of (first process whose name is "${escapedAppName}") to true
+            on error
+              try
+                tell application "${escapedAppName}" to activate
+              end try
+            end try
+            delay 0.15
+            keystroke "v" using command down
+          end tell
+        `;
+        try {
+          await runAppleScript(script);
+        } catch (actErr) {
+          console.warn('[MacOSTextInsertionProvider] Target process activation failed:', actErr.message);
+          // Fallback to standard frontmost keystroke if named activation fails
+          await runAppleScript('tell application "System Events" to keystroke "v" using command down');
+        }
+      } else {
+        await runAppleScript('tell application "System Events" to keystroke "v" using command down');
+      }
       console.log('[MacOSTextInsertionProvider] ✓ Cmd+V keystroke dispatched.');
 
       setTimeout(() => {
         try {
           if (savedClipboard !== undefined) {
-            clipboard.writeText(savedClipboard);
-            console.log('[MacOSTextInsertionProvider] ✓ Original clipboard restored.');
+            // Safe restoration: only restore if the clipboard still contains the inserted text
+            const currentClip = clipboard.readText();
+            if (currentClip === text) {
+              clipboard.writeText(savedClipboard);
+              console.log('[MacOSTextInsertionProvider] ✓ Original clipboard restored.');
+            } else {
+              console.log('[MacOSTextInsertionProvider] ℹ Clipboard content changed by user; preserving user copy.');
+            }
           }
         } catch (e) {}
       }, this.restoreDelayMs);
@@ -153,7 +194,9 @@ export class MacOSTextInsertionProvider extends ITextInsertionProvider {
     } catch (err) {
       console.error('[MacOSTextInsertionProvider] Keystroke error:', err.message);
       try {
-        if (savedClipboard) clipboard.writeText(savedClipboard);
+        if (savedClipboard && clipboard.readText() === text) {
+          clipboard.writeText(savedClipboard);
+        }
       } catch (e) {}
 
       return {

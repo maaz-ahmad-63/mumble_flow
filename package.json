@@ -13,7 +13,11 @@
     "dev": "node --watch server/index.js",
     "test": "node tests/test_services.js",
     "test:pg": "node tests/test_postgres_migration.js",
-    "migrate:pg": "node scripts/migrate-sqlite-to-postgres.js"
+    "migrate:pg": "node scripts/migrate-sqlite-to-postgres.js",
+    "desktop:start": "npm --prefix desktop/electron start",
+    "desktop:pack": "npm --prefix desktop/electron run pack",
+    "desktop:dist:mac": "npm --prefix desktop/electron run dist:mac",
+    "desktop:dist:win": "npm --prefix desktop/electron run dist:win"
   },
   "keywords": [
     "wisprflow",

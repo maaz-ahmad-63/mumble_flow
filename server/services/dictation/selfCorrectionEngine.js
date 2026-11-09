@@ -27,6 +27,16 @@ export class SelfCorrectionEngine {
       return `${prefix}${newVal}.`;
     });
 
+    // 2b. Cross-sentence preposition/time/day replacement (e.g. "for tomorrow. No, no, today at 8 PM.")
+    const extendedTriggers = '(?:actually\\s+no|actually\\s+make\\s+that|actually\\s+wait|actually|make\\s+that|or\\s+rather|scratch\\s+that|no\\s+wait|wait\\s+no|correction:|sorry\\s+no|no\\s+sorry|no[,\\s]+no|no[,\\s]+wait|wait[,\\s]+no)';
+    const crossSentenceRegex = new RegExp(
+      '(\\b(?:for|at|on|to|in|by|until|with|deploy)\\s+)([a-zA-Z0-9_$€£]+)[.!?]?\\s+' + extendedTriggers + '[,;—\\s]*([a-zA-Z0-9_$€£]+(?:\\s+(?:at|on)\\s+[0-9]+(?:\\s*(?:am|pm|AM|PM))?)?.*)',
+      'i'
+    );
+    if (crossSentenceRegex.test(result)) {
+      result = result.replace(crossSentenceRegex, '$1$3');
+    }
+
     // 3. Surgical Word/Entity Replacement with Suffix Preservation
     // Handles: "... <prefix> <target> actually (no/wait/make that) <replacement> <suffix> ..."
     // Examples:
@@ -36,7 +46,7 @@ export class SelfCorrectionEngine {
     // - "Let's meet at 5, actually make that 6 PM." -> "Let's meet at 6 PM."
     // - "I'll send it Friday, actually Monday." -> "I'll send it Monday."
     // - "the payment is done, actually not done, it's still being processed" -> "the payment is not done, it's still being processed"
-    const triggers = '(?:actually\\s+no|actually\\s+make\\s+that|actually\\s+wait|actually|make\\s+that|or\\s+rather|scratch\\s+that|no\\s+wait|wait\\s+no|correction:|sorry\\s+no|no\\s+sorry)';
+    const triggers = '(?:actually\\s+no|actually\\s+make\\s+that|actually\\s+wait|actually|make\\s+that|or\\s+rather|scratch\\s+that|no\\s+wait|wait\\s+no|correction:|sorry\\s+no|no\\s+sorry|no[,\\s]+no|no[,\\s]+wait|wait[,\\s]+no)';
 
     // 3a. Status/Adjective corrections: "<word>, actually not <word> <suffix>"
     // e.g. "payment is done, actually not done, it's still being processed"

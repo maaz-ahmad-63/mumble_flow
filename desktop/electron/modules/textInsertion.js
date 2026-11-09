@@ -23,11 +23,12 @@ import { getCurrentPlatform } from '../platform/index.js';
  * Delegates to Platform Provider Adapter.
  *
  * @param {string} text - The text to insert
+ * @param {Object} [options] - Options like targetAppName
  * @returns {Promise<{success: boolean, error?: string}>}
  */
-export async function insertTextAtCursor(text) {
+export async function insertTextAtCursor(text, options = {}) {
   const platform = getCurrentPlatform();
-  return await platform.textInsertion.insertText(text);
+  return await platform.textInsertion.insertText(text, options);
 }
 
 /**

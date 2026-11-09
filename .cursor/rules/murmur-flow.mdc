@@ -12,3 +12,5 @@ Key rules:
 - Do not change model IDs or add a login system unless asked.
 - Run `npm test` before finishing. Stop any server you started.
 - To install Mumble AI for a user, use the `setup` skill (`.claude/skills/setup/SKILL.md`).
+
+

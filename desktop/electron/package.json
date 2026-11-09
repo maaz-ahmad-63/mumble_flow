@@ -1,60 +1,76 @@
 {
   "name": "mumble-ai-desktop",
   "version": "1.0.0",
-  "description": "Mumble AI — Native macOS voice dictation app. Press F8, speak, text appears at your cursor.",
+  "description": "Mumble AI — Native desktop voice dictation app. Speak naturally, text appears at your cursor.",
+  "author": "Maaz Ahmad",
   "main": "main.js",
   "type": "module",
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
     "pack": "electron-builder --mac --dir",
-    "dist": "electron-builder --mac"
+    "dist": "electron-builder --mac",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win",
+    "dist:all": "electron-builder --mac --win"
   },
   "build": {
     "appId": "com.mumbleai.desktop",
     "productName": "Mumble AI",
+    "publish": {
+      "provider": "github",
+      "owner": "maaz-ahmad-63",
+      "repo": "mumble_flow"
+    },
     "mac": {
       "category": "public.app-category.productivity",
       "icon": "assets/icon.icns",
       "hardenedRuntime": true,
       "entitlements": "entitlements.mac.plist",
       "entitlementsInherit": "entitlements.mac.plist",
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "extendInfo": {
         "NSMicrophoneUsageDescription": "Mumble AI needs microphone access to transcribe your speech.",
         "NSAppleEventsUsageDescription": "Mumble AI uses Accessibility to type dictated text into your active application."
       }
     },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
     "files": [
       "main.js",
       "preload.js",
       "modules/**/*",
+      "platform/**/*",
       "assets/**/*",
       "overlay/**/*"
     ],
     "extraResources": [
       {
-        "from": "../server",
+        "from": "../../server",
         "to": "server",
         "filter": [
           "**/*",
-          "!node_modules"
+          "!node_modules",
+          "!**/*.test.js",
+          "!**/*.spec.js",
+          "!**/.env*"
         ]
       },
       {
-        "from": "../client",
+        "from": "../../client",
         "to": "client"
       },
       {
-        "from": "../data",
-        "to": "data"
-      },
-      {
-        "from": "../package.json",
+        "from": "../../package.json",
         "to": "package.json"
-      },
-      {
-        "from": "../node_modules",
-        "to": "node_modules"
       }
     ]
   },

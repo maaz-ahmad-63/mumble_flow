@@ -7,6 +7,7 @@ import { authService } from '../services/authService.js';
 import { apiKeyService } from '../services/apiKeyService.js';
 import { usageService } from '../services/usageService.js';
 import { quotaService } from '../services/quotaService.js';
+import { pricingService } from '../services/pricingService.js';
 
 /**
  * Event-Driven Low-Latency Streaming Dictation Server.
@@ -69,7 +70,9 @@ export class StreamingDictationServer {
           language: 'auto'
         },
         streamingSession: null,
-        currentSessionId: null
+        currentSessionId: null,
+        earlyChunkBuffer: [],
+        isInitializingSession: false
       };
 
       const sendEvent = (eventObj) => {
@@ -88,6 +91,9 @@ export class StreamingDictationServer {
           if (isBinary) {
             if (clientContext.streamingSession) {
               clientContext.streamingSession.addChunk(Buffer.from(data));
+            } else if (clientContext.isInitializingSession) {
+              // Buffer early chunks (e.g. chunk 0 containing EBML/WebM headers) while session is initializing
+              clientContext.earlyChunkBuffer.push(Buffer.from(data));
             }
             return;
           }
@@ -128,6 +134,8 @@ export class StreamingDictationServer {
             // Client starts recording
             case 'recording_started':
             case 'start_speech': {
+              clientContext.isInitializingSession = true;
+              clientContext.earlyChunkBuffer = [];
               const userId = clientContext.userId || 'default_user';
               const currentSettings = await storage.getSettings(userId);
               const sessionId = msg.sessionId || `stream-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
@@ -153,6 +161,8 @@ export class StreamingDictationServer {
               // Enforce quota server-side (properly awaited for PostgreSQL async compatibility)
               const quotaCheck = await quotaService.checkAudioQuota(userId, 5, { isByok: isByokStt });
               if (!quotaCheck?.allowed) {
+                clientContext.isInitializingSession = false;
+                clientContext.earlyChunkBuffer = [];
                 sendEvent({
                   type: 'error',
                   sessionId,
@@ -170,10 +180,12 @@ export class StreamingDictationServer {
 
               const streamCreation = transcriptionService.createStreamingSession({
                 sessionId,
+                userId,
                 sttProvider: effectiveProvider,
                 language,
                 mimeType,
                 apiKey: resolvedStt?.key,
+                llmApiKey: resolvedLlm?.key,
                 tone,
                 mode,
                 appName,
@@ -210,10 +222,20 @@ export class StreamingDictationServer {
                     timestamp: procData.timestamp
                   });
                 },
-                onProcessingCompleted: (completedData) => {
+                onProcessingCompleted: async (completedData) => {
+                  let calculatedCost = 0;
                   try {
                     const audioSec = (completedData.durationMs || 0) / 1000;
                     if (audioSec > 0 && !completedData.empty) {
+                      const sttCost = pricingService.calculateSttCost(effectiveProvider, completedData.model || 'whisper-large-v3-turbo', audioSec);
+                      let llmCost = 0;
+                      if (completedData.enhancedByAI) {
+                        const inTokens = Math.ceil((completedData.rawTranscript || '').length / 4);
+                        const outTokens = Math.ceil((completedData.processedText || '').length / 4);
+                        llmCost = pricingService.calculateLlmCost(llmProvider, llmModel || 'openai/gpt-oss-20b', inTokens, outTokens);
+                      }
+                      calculatedCost = pricingService.calculateTotalCost(sttCost, llmCost);
+
                       usageService.recordTranscriptionUsage({
                         userId,
                         sessionId: completedData.sessionId,
@@ -234,7 +256,7 @@ export class StreamingDictationServer {
                           userId,
                           sessionId: completedData.sessionId,
                           provider: llmProvider,
-                          model: llmModel || 'llm',
+                          model: llmModel || 'openai/gpt-oss-20b',
                           inputTokens: inTokens,
                           outputTokens: outTokens,
                           latencyMs: completedData.latency?.llmMs || 0,
@@ -244,6 +266,28 @@ export class StreamingDictationServer {
                           keySource: resolvedLlm?.source || 'system',
                           costIsEstimated: true
                         });
+                      }
+
+                      // Persist to user history in SQLite so it appears in "Recent Dictations"
+                      try {
+                        await storage.addHistory({
+                          rawTranscript: completedData.rawTranscript,
+                          processedText: completedData.processedText || completedData.rawTranscript,
+                          durationMs: completedData.durationMs || 0,
+                          appName: appName || 'Web Dictation',
+                          tone: completedData.mode || mode || tone,
+                          language: completedData.language || language,
+                          latencyAsrMs: completedData.latency?.asrMs || 0,
+                          latencyLlmMs: completedData.latency?.llmMs || 0,
+                          totalLatencyMs: completedData.latency?.totalMs || 0,
+                          isSnippet: completedData.isSnippet || false,
+                          sttProvider: effectiveProvider,
+                          llmProvider: completedData.enhancedByAI ? llmProvider : 'none',
+                          cost: calculatedCost,
+                          userId
+                        }, userId);
+                      } catch (hErr) {
+                        logger.warn(`[Streaming History Warning] ${hErr.message}`);
                       }
                     }
                   } catch (usageErr) {
@@ -264,6 +308,7 @@ export class StreamingDictationServer {
                     latency: completedData.latency,
                     provider: completedData.provider,
                     model: completedData.model,
+                    cost: calculatedCost,
                     empty: completedData.empty || false,
                     message: completedData.message
                   });
@@ -293,6 +338,15 @@ export class StreamingDictationServer {
               });
 
               clientContext.streamingSession = streamCreation.session;
+              clientContext.isInitializingSession = false;
+
+              // Deliver all chunks buffered while session was initializing (preserves EBML container headers)
+              if (clientContext.earlyChunkBuffer.length > 0) {
+                for (const earlyChunk of clientContext.earlyChunkBuffer) {
+                  clientContext.streamingSession.addChunk(earlyChunk);
+                }
+                clientContext.earlyChunkBuffer = [];
+              }
 
               // Acknowledge recording started
               sendEvent({
@@ -357,6 +411,8 @@ export class StreamingDictationServer {
 
             // User cancels recording
             case 'cancel': {
+              clientContext.isInitializingSession = false;
+              clientContext.earlyChunkBuffer = [];
               if (clientContext.streamingSession) {
                 clientContext.streamingSession.cancel();
                 clientContext.streamingSession = null;
@@ -385,6 +441,8 @@ export class StreamingDictationServer {
 
       ws.on('close', () => {
         logger.info('[WebSocket] Client disconnected');
+        clientContext.isInitializingSession = false;
+        clientContext.earlyChunkBuffer = [];
         if (clientContext.streamingSession) {
           clientContext.streamingSession.cancel();
           clientContext.streamingSession = null;

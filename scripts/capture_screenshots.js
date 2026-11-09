@@ -84,3 +84,9 @@ for (const screen of screens) {
 }
 
 console.log('🎉 Finished capturing screenshots!');
+
+
+
+
+
+

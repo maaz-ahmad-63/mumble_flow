@@ -439,8 +439,9 @@ app.post('/api/transcribe', dictateLimiter, optionalAuth, upload.single('audio')
       });
     }
 
+    const userSettings = (await storage.getSettings(userId)) || {};
     const {
-      sttProvider = storage.getSettings(userId).sttProvider || config.defaultSttProvider || 'groq',
+      sttProvider = userSettings.sttProvider || config.defaultSttProvider || 'groq',
       language = 'auto',
       apiKeyGroq,
       apiKeyGemini,
@@ -448,11 +449,11 @@ app.post('/api/transcribe', dictateLimiter, optionalAuth, upload.single('audio')
     } = req.body;
 
     const explicitSttKey = sttProvider === 'gemini' ? apiKeyGemini : sttProvider === 'openai' ? apiKeyOpenai : apiKeyGroq;
-    const resolvedStt = explicitSttKey ? { key: explicitSttKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, sttProvider);
+    const resolvedStt = explicitSttKey ? { key: explicitSttKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, sttProvider);
     const isByokStt = resolvedStt.source === 'user';
 
     // Check Audio Quota before calling provider (BYOK is exempt)
-    const quotaCheck = quotaService.checkAudioQuota(userId, normalized.size / 16000 / 2, { isByok: isByokStt });
+    const quotaCheck = await quotaService.checkAudioQuota(userId, normalized.size / 16000 / 2, { isByok: isByokStt });
     if (!quotaCheck.allowed) {
       return res.status(429).json({
         error: quotaCheck.reason,
@@ -580,14 +581,16 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
       });
     }
 
-    const userSettings = storage.getSettings(userId);
-    const rawSettings = storage.getRawSettings(userId);
+    const [userSettings, rawSettings] = await Promise.all([
+      Promise.resolve(storage.getSettings(userId)).catch(() => ({})),
+      Promise.resolve(storage.getRawSettings(userId)).catch(() => ({}))
+    ]);
 
     // Model selection precedence: Request param -> User Settings -> System Default
-    const sttProvider = req.body.sttProvider || userSettings.sttProvider || config.defaultSttProvider || 'groq';
-    const sttModel = req.body.sttModel || userSettings.sttModel || config.defaultSttModel || 'whisper-large-v3-turbo';
-    const llmProvider = req.body.llmProvider || userSettings.llmProvider || config.defaultLlmProvider || 'groq';
-    const llmModel = req.body.llmModel || userSettings.llmModel || config.defaultLlmModel || 'openai/gpt-oss-20b';
+    const sttProvider = req.body.sttProvider || userSettings?.sttProvider || config.defaultSttProvider || 'groq';
+    const sttModel = req.body.sttModel || userSettings?.sttModel || config.defaultSttModel || 'whisper-large-v3-turbo';
+    const llmProvider = req.body.llmProvider || userSettings?.llmProvider || config.defaultLlmProvider || 'groq';
+    const llmModel = req.body.llmModel || userSettings?.llmModel || config.defaultLlmModel || 'openai/gpt-oss-20b';
 
     // Validate provider/model selection
     const validation = modelCatalogService.validateSelection({
@@ -616,11 +619,13 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
     // Resolve credentials with strict precedence:
     // Explicit request body param > User BYOK encrypted key > Legacy user setting > System .env
     const explicitSttKey = sttProvider === 'gemini' ? apiKeyGemini : sttProvider === 'openai' ? apiKeyOpenai : apiKeyGroq;
-    const resolvedStt = explicitSttKey ? { key: explicitSttKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, sttProvider);
-    const isByokStt = resolvedStt.source === 'user';
-
     const explicitLlmKey = llmProvider === 'gemini' ? apiKeyGemini : llmProvider === 'openai' ? apiKeyOpenai : apiKeyGroq;
-    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, llmProvider);
+
+    const [resolvedStt, resolvedLlm] = await Promise.all([
+      explicitSttKey ? { key: explicitSttKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, sttProvider),
+      explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, llmProvider)
+    ]);
+    const isByokStt = resolvedStt.source === 'user';
     const isByokLlm = resolvedLlm.source === 'user';
 
     // Check Quotas (BYOK requests are exempt from platform quotas)
@@ -799,8 +804,9 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
     const totalCost = pricingService.calculateTotalCost(sttCost, llmCost);
 
     // Step 3: Record to user history (non-blocking)
+    let historyEntry = null;
     try {
-      await storage.addHistory({
+      historyEntry = await storage.addHistory({
         rawTranscript,
         processedText: zeroEditResult.processedText,
         durationMs: Math.round((asrResult.duration || 0) * 1000),
@@ -869,7 +875,7 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
         llmModel: isEnhancedByAi ? zeroEditResult.model : 'none',
         llmKeySource: resolvedLlm.source
       },
-      historyId: historyEntry.id
+      historyId: historyEntry?.id || null
     });
   } catch (err) {
     logger.error(`Dictation Pipeline Failed: ${err.message}`);
@@ -1042,7 +1048,7 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
 app.post('/api/command', optionalAuth, async (req, res) => {
   const startTime = Date.now();
   const userId = req.user.id;
-  const userSettings = storage.getSettings(userId);
+  const userSettings = (await storage.getSettings(userId)) || {};
 
   try {
     const {
@@ -1059,10 +1065,10 @@ app.post('/api/command', optionalAuth, async (req, res) => {
     }
 
     const explicitLlmKey = llmProvider === 'gemini' ? apiKeyGemini : llmProvider === 'openai' ? apiKeyOpenai : (apiKeyGroq || req.body.apiKey);
-    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : apiKeyService.getDecryptedKey(userId, llmProvider);
+    const resolvedLlm = explicitLlmKey ? { key: explicitLlmKey, source: 'user' } : await apiKeyService.getDecryptedKey(userId, llmProvider);
     const isByokLlm = resolvedLlm.source === 'user';
 
-    const llmQuota = quotaService.checkLlmQuota(userId, { isByok: isByokLlm });
+    const llmQuota = await quotaService.checkLlmQuota(userId, { isByok: isByokLlm });
     if (!llmQuota.allowed) {
       return res.status(429).json({ error: llmQuota.reason, code: 'QUOTA_EXCEEDED', quota: llmQuota });
     }

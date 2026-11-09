@@ -18,6 +18,7 @@ import { ServerManager } from './modules/serverManager.js';
 import { TrayManager } from './modules/tray.js';
 import { isMumbleApp, classifyAppContext, resolveEffectiveMode } from './modules/appContext.js';
 import { desktopAuthManager } from './modules/authManager.js';
+import { updateChecker } from './modules/updateChecker.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -109,9 +110,19 @@ function setHUDState(state, options = {}) {
 
   overlayWindow.webContents.send('state-change', payload);
 
-  if (state === 'recording' || state === 'processing') {
+  if (state === 'recording') {
     if (hideTimeout) clearTimeout(hideTimeout);
     overlayWindow.showInactive();
+  } else if (state === 'processing') {
+    if (hideTimeout) clearTimeout(hideTimeout);
+    overlayWindow.showInactive();
+    // Safety guard: If processing exceeds 12s, auto-dismiss to prevent the HUD from getting stuck permanently
+    hideTimeout = setTimeout(() => {
+      if (!isRecording && overlayWindow && !overlayWindow.isDestroyed()) {
+        console.warn('[HUD] Processing timed out after 12s. Auto-dismissing overlay.');
+        setHUDState('error', { message: 'Processing timed out' });
+      }
+    }, 12000);
   } else if (state === 'success' || state === 'error') {
     if (hideTimeout) clearTimeout(hideTimeout);
     overlayWindow.showInactive();
@@ -462,7 +473,7 @@ async function processAudio(audioBuffer) {
     console.log(`[STAGE 10: TEXT_INSERTION_START] Inserting text: "${finalOutput}"`);
 
     // Insert text directly at cursor in active app!
-    const insertResult = await insertTextAtCursor(finalOutput);
+    const insertResult = await insertTextAtCursor(finalOutput, { targetAppName: activeTargetApp });
 
     if (insertResult.success) {
       console.log('[STAGE 10: TEXT_INSERTION_SUCCESS] Text successfully dispatched via keystroke.');
@@ -508,9 +519,17 @@ app.whenReady().then(async () => {
     onOpenSettings: () => {
       // Open settings in browser
       import('electron').then(({ shell }) => shell.openExternal(`${serverBaseUrl}`));
+    },
+    onCheckForUpdates: () => {
+      updateChecker.checkForUpdates({ isManual: true });
     }
   });
   trayManager.create();
+
+  // Check for updates in background shortly after launch (silent if up to date)
+  setTimeout(() => {
+    updateChecker.checkForUpdates({ isManual: false }).catch(() => {});
+  }, 8000);
 
   // IPC Handlers
   ipcMain.on('stop-recording', () => {

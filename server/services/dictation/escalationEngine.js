@@ -25,6 +25,7 @@ const EXPLICIT_REWRITE_PATTERNS = [
 const EMAIL_REQUEST_PATTERNS = [
   /\b(?:write|draft|send|compose)\s+(?:an?\s+)?email\b/i,
   /\bemail\s+(?:to\s+)?[a-zA-Z]+\s+(?:saying|asking|telling|about|regarding)\b/i,
+  /\b(?:schedule|book|set\s+up)\s+(?:a\s+)?meeting\b/i,
   /\bemail\s+request\b/i
 ];
 
@@ -36,23 +37,64 @@ const PROMPT_REQUEST_PATTERNS = [
 ];
 
 const DEVELOPER_REQUEST_PATTERNS = [
-  /\b(?:write|create|implement|code|generate)\s+(?:a\s+)?(?:python|javascript|typescript|react|rust|golang|function|script|class|component|api|endpoint|sql|query|regex)\b/i,
-  /\b(?:how\s+to\s+code|code\s+for|write\s+code\s+to)\b/i,
+  /\b(?:write|create|implement|code|generate)\s+(?:a\s+)?(?:python|javascript|typescript|react|rust|golang|function|script|class|component|api|endpoint|sql|query|regex|button|ui|modal|navbar|page|handler|test)\b/i,
+  /\b(?:write|create|implement|generate)\s+(?:a\s+)?code\s+(?:to|for)\b/i,
+  /\b(?:how\s+to\s+code|code\s+for|write\s+code\s+to|code\s+a)\b/i,
   /\bdeveloper\s+request\b/i
+];
+
+const TERMINAL_REQUEST_PATTERNS = [
+  /\b(?:write|give\s+me|show|generate)\s+(?:a\s+)?(?:terminal|shell|bash|cli|git|docker|npm|kubectl)\s+command\b/i,
+  /\b(?:command|script)\s+to\s+(?:push|pull|clone|commit|install|run|deploy|build|kill|find|create|delete)\b/i,
+  /\bterminal\s+request\b/i
+];
+
+const TRANSLATION_REQUEST_PATTERNS = [
+  /\btranslate\s+(?:this|it|the\s+following)?\s*(?:in|to|into)\s+([a-zA-Z]+)\b/i,
+  /\b(?:how\s+to\s+say|say\s+in)\s+([a-zA-Z]+)\b/i,
+  /\bin\s+(?:spanish|french|german|hindi|japanese|chinese|italian|portuguese|russian|arabic)\b/i
+];
+
+const COMMENT_AND_REPLY_REQUEST_PATTERNS = [
+  /\b(?:add|write|draft|post|leave|drop|give|type|send)\s+(?:a\s+)?(?:comment|reply|response|review|rebuttal|warning|restriction)\b/i,
+  /\bcomment\s+(?:to\s+)?(?:appreciat|say|tell|ask|thank|praise|compliment|congratulat|warn)\b/i,
+  /\b(?:reply|respond)\s+(?:to\s+(?:him|her|them|this|the\s+comment|the\s+video|the\s+post|someone)|saying|that|with)\b/i,
+  /\b(?:give|send)\s+(?:him|her|them|someone)\s+(?:a\s+)?(?:thank\s+you|shoutout|compliment|reply|response|warning|restriction|notice)\b/i,
+  /\b(?:say\s+thank\s+you\s+to|thank\s+them\s+for|thank\s+him\s+for|thank\s+her\s+for)\b/i,
+  /\b(?:if\s+)?(?:someone|somebody|a\s+user|anyone)\s+(?:has\s+)?(?:just\s+)?(?:commented|posted|written|said|asked|left\s+a\s+comment|replied|appreciated)\b/i,
+  /\b(?:tell|warn|remind|inform|ask)\s+(?:him|her|them|someone)\s+(?:that|to|about)\b/i,
+  /\bcomment\s+request\b/i
 ];
 
 // Modes that fundamentally require generative language model capabilities
 const GENERATIVE_REWRITE_MODES = new Set([
   'email',
+  'formal',
+  'professional',
+  'code',
+  'developer',
+  'dev',
+  'terminal',
+  'commit',
+  'sql',
+  'meeting',
+  'minutes',
   'social',
+  'comment',
+  'reply',
   'executive',
   'prompt',
   'support',
+  'translator',
+  'translate',
   'translate_es',
   'translate_fr',
   'translate_de',
   'translate_hi',
   'translate_ja',
+  'bullet',
+  'bullets',
+  'standup',
   'academic'
 ]);
 
@@ -60,12 +102,7 @@ const GENERATIVE_REWRITE_MODES = new Set([
 const DETERMINISTIC_MODES = new Set([
   'natural',
   'casual',
-  'formal',
-  'professional',
-  'terminal',
-  'bullets',
-  'bullet',
-  'standup',
+  'browser',
   'raw'
 ]);
 
@@ -114,6 +151,25 @@ export class EscalationEngine {
       }
     }
 
+    for (const pattern of TERMINAL_REQUEST_PATTERNS) {
+      if (pattern.test(rawTranscript)) {
+        return { requiresAI: true, reason: 'explicit_terminal_request', detectedMode: 'terminal' };
+      }
+    }
+
+    for (const pattern of TRANSLATION_REQUEST_PATTERNS) {
+      if (pattern.test(rawTranscript)) {
+        return { requiresAI: true, reason: 'explicit_translation_request', detectedMode: 'translator' };
+      }
+    }
+
+    // Check for comment and reply requests (YouTube, LinkedIn, Twitter, Reddit, etc.)
+    for (const pattern of COMMENT_AND_REPLY_REQUEST_PATTERNS) {
+      if (pattern.test(rawTranscript)) {
+        return { requiresAI: true, reason: 'explicit_comment_reply_request', detectedMode: 'social' };
+      }
+    }
+
     // 3. Check for general explicit rewrite instructions
     for (const pattern of EXPLICIT_REWRITE_PATTERNS) {
       if (pattern.test(rawTranscript)) {
@@ -121,18 +177,20 @@ export class EscalationEngine {
       }
     }
 
+    // 3b. Check for spoken self-correction or mid-thought changes requiring intelligent polish
+    if (/\b(?:actually\s+no|actually\s+wait|no[,\s]+no|no[,\s]+wait|wait[,\s]+no|scratch\s+that|or\s+rather|make\s+that)\b/i.test(rawTranscript)) {
+      return { requiresAI: true, reason: 'self_correction_detected' };
+    }
+
     // 4. Check requested mode / tone
     const mode = (options.tone || options.mode || userSettings.defaultTone || 'casual').toLowerCase();
 
-    if (GENERATIVE_REWRITE_MODES.has(mode)) {
-      return { requiresAI: true, reason: `semantic_rewrite_mode_${mode}`, detectedMode: mode };
+    if (mode === 'raw') {
+      return { requiresAI: false, reason: 'raw_mode_selected', detectedMode: 'raw' };
     }
 
-    if (mode === 'developer' || mode === 'code') {
-      // If developer mode is explicitly selected and has programming keywords
-      if (/\b(function|const|let|var|class|interface|import|export|def|return|component|endpoint|api|query|props|async|await)\b/i.test(rawTranscript)) {
-        return { requiresAI: true, reason: 'developer_code_transformation', detectedMode: 'developer' };
-      }
+    if (GENERATIVE_REWRITE_MODES.has(mode)) {
+      return { requiresAI: true, reason: `semantic_rewrite_mode_${mode}`, detectedMode: mode };
     }
 
     if (DETERMINISTIC_MODES.has(mode)) {

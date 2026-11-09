@@ -12,7 +12,11 @@ export class NotetakerService {
    */
   async summarizeMeeting(transcript, options = {}) {
     const startTime = Date.now();
-    const provider = options.llmProvider || storage.getSettings().llmProvider || 'groq';
+    let userSettings = options.preloadedSettings || storage.getSettings(options.userId);
+    if (userSettings instanceof Promise) {
+      userSettings = await userSettings.catch(() => ({}));
+    }
+    const provider = options.llmProvider || userSettings?.llmProvider || 'groq';
 
     const systemPrompt = `You are Wispr Flow Notetaker AI, an expert executive assistant.
 You analyze meeting discussions and produce clear, actionable, high-signal meeting minutes.

@@ -654,7 +654,11 @@ async function runTests() {
   const { runPostgresMigrationTests } = await import('./test_postgres_migration.js');
   await runPostgresMigrationTests();
 
-  console.log('\n🎉 ALL TESTS PASSED! Mumble AI core services, SaaS Foundation, Model Hub, BYOK, Usage Tracking, Cost Control, QA Fixes, App Awareness & PostgreSQL are functional.\n');
+  // Test 28: Commercial Readiness & Core Reliability (Tone propagation, Raw fidelity, EBML audio recovery, Text insertion)
+  const { runCommercialReadinessTests } = await import('./test_commercial_readiness.js');
+  await runCommercialReadinessTests();
+
+  console.log('\n🎉 ALL TESTS PASSED! Mumble AI core services, SaaS Foundation, Model Hub, BYOK, Usage Tracking, Cost Control, QA Fixes, App Awareness, PostgreSQL & Commercial Readiness are functional.\n');
 }
 
 runTests().catch(err => {

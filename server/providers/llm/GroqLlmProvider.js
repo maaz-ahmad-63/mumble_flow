@@ -32,13 +32,15 @@ export class GroqLlmProvider extends BaseLlmProvider {
     if (settings instanceof Promise) settings = await settings.catch(() => ({}));
     const model = options.model || (settings && settings.groqModelLLM) || config.models.groqLLM;
 
+    const resolvedPrompt = systemPrompt instanceof Promise ? await systemPrompt : (systemPrompt != null ? String(systemPrompt) : '');
+
     logger.info(`[Groq LLM] Running AI formatting on ${userText.length} chars with model: ${model}`);
 
     const completion = await groq.chat.completions.create({
       model,
       messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userText }
+        { role: 'system', content: resolvedPrompt },
+        { role: 'user', content: String(userText || '') }
       ],
       temperature: 0.1,
       max_completion_tokens: 2048,

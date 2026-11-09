@@ -1,5 +1,5 @@
 /**
- * Mumble AI Desktop — macOS Permissions Module
+ * Murmur Flow Desktop — macOS Permissions Module
  *
  * Checks and prompts for macOS Accessibility and Microphone permissions.
  */
@@ -100,3 +100,5 @@ export async function verifyPermissions() {
 
   return { accessibility: hasAccessibility, microphone: hasMicrophone };
 }
+
+

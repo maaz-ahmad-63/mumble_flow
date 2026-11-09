@@ -29,6 +29,8 @@ export class ModeFormatter {
         return this.formatStandup(cleanText);
 
       case 'social':
+      case 'comment':
+      case 'reply':
         return this.formatSocial(cleanText);
 
       case 'executive':
@@ -43,9 +45,28 @@ export class ModeFormatter {
       case 'prompt':
         return this.formatPrompt(cleanText);
 
+      case 'raw':
+        return text;
+
+      case 'terminal':
+        return this.formatTerminal(cleanText);
+
+      case 'commit':
+        return cleanText;
+
+      case 'sql':
+        return cleanText;
+
+      case 'meeting':
+      case 'minutes':
+        return cleanText;
+
+      case 'translator':
+      case 'translate':
+        return cleanText;
+
       case 'code':
       case 'developer':
-      case 'terminal':
       case 'dev':
         return this.formatCode(cleanText);
 
@@ -85,7 +106,14 @@ export class ModeFormatter {
   }
 
   formatSocial(text) {
-    if (text.includes('#')) return text;
+    if (!text) return '';
+    // If it's a comment/reply request, strip the request phrasing for deterministic fallback
+    const commentMatch = text.match(/^(?:(?:please\s+)?(?:add|write|draft|post|leave|drop|give|type|send)\s+(?:a\s+)?(?:comment|reply|response)\s+(?:saying|to\s+(?:say|tell|appreciat|thank)|that)?\s*(.+))$/i);
+    if (commentMatch && commentMatch[1]) {
+      return commentMatch[1].trim();
+    }
+    // If it's already tagged or a short direct comment
+    if (text.includes('#') || text.length < 120) return text;
     return `🚀 Key Update:\n\n${text}\n\nWhat are your thoughts on this?\n\n#Productivity #VoiceAI #OpenSource`;
   }
 
@@ -142,12 +170,92 @@ export class ModeFormatter {
     return formatted.trim();
   }
 
+  formatTerminal(text) {
+    if (!text) return '';
+    let formatted = developerProcessingService.process(text, { mode: 'terminal' });
+    // Remove leading conversational fillers like "run", "execute", "please run" if followed by command
+    formatted = formatted.replace(/^(?:please\s+)?(?:run|execute|type)\s+(?:the\s+command\s+)?/i, '');
+    return formatted.trim();
+  }
+
   formatProfessional(text) {
-    return text;
+    if (!text) return '';
+    let formatted = text;
+    // Expand informal spoken contractions to formal equivalents
+    const contractions = [
+      [/\bcan't\b/gi, 'cannot'],
+      [/\bwon't\b/gi, 'will not'],
+      [/\bain't\b/gi, 'is not'],
+      [/\bdon't\b/gi, 'do not'],
+      [/\bdoesn't\b/gi, 'does not'],
+      [/\bdidn't\b/gi, 'did not'],
+      [/\bisn't\b/gi, 'is not'],
+      [/\baren't\b/gi, 'are not'],
+      [/\bwasn't\b/gi, 'was not'],
+      [/\bweren't\b/gi, 'were not'],
+      [/\bhaven't\b/gi, 'have not'],
+      [/\bhasn't\b/gi, 'has not'],
+      [/\bhadn't\b/gi, 'had not'],
+      [/\bwouldn't\b/gi, 'would not'],
+      [/\bshouldn't\b/gi, 'should not'],
+      [/\bcouldn't\b/gi, 'could not'],
+      [/\bgonna\b/gi, 'going to'],
+      [/\bwanna\b/gi, 'want to'],
+      [/\bgotta\b/gi, 'must'],
+      [/\bi'm\b/gi, 'I am'],
+      [/\bwe're\b/gi, 'we are'],
+      [/\bthey're\b/gi, 'they are'],
+      [/\byou're\b/gi, 'you are'],
+      [/\bit's\b/gi, 'it is'],
+      [/\bthere's\b/gi, 'there is'],
+      [/\bthat's\b/gi, 'that is'],
+      [/\bwhat's\b/gi, 'what is'],
+      [/\blet's\b/gi, 'let us']
+    ];
+    for (const [regex, replacement] of contractions) {
+      formatted = formatted.replace(regex, (match) => {
+        if (match[0] === match[0].toUpperCase()) {
+          return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+        }
+        return replacement;
+      });
+    }
+    // Ensure terminal punctuation if lacking
+    if (!/[.!?]$/.test(formatted.trim())) {
+      formatted = formatted.trim() + '.';
+    }
+    return formatted;
   }
 
   formatCasual(text) {
-    return text;
+    if (!text) return '';
+    let formatted = text;
+    // In casual mode, ensure friendly conversational contractions are used where natural
+    const formalToCasual = [
+      [/\bcannot\b/gi, "can't"],
+      [/\bwill not\b/gi, "won't"],
+      [/\bdo not\b/gi, "don't"],
+      [/\bdoes not\b/gi, "doesn't"],
+      [/\bdid not\b/gi, "didn't"],
+      [/\bis not\b/gi, "isn't"],
+      [/\bare not\b/gi, "aren't"],
+      [/\bwould not\b/gi, "wouldn't"],
+      [/\bshould not\b/gi, "shouldn't"],
+      [/\bcould not\b/gi, "couldn't"],
+      [/\bI am\b/g, "I'm"],
+      [/\bwe are\b/gi, "we're"],
+      [/\bthey are\b/gi, "they're"],
+      [/\bit is\b/gi, "it's"]
+    ];
+    for (const [regex, replacement] of formalToCasual) {
+      formatted = formatted.replace(regex, (match) => {
+        if (match[0] === match[0].toUpperCase()) {
+          return replacement.charAt(0).toUpperCase() + replacement.slice(1);
+        }
+        return replacement;
+      });
+    }
+    return formatted;
   }
 }
 

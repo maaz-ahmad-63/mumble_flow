@@ -83,6 +83,19 @@ export class ChunkedStreamingSession {
     }, delay);
   }
 
+  prepareAudioBuffer(chunks) {
+    let combined = Buffer.concat(chunks);
+    if (combined.length >= 4) {
+      // If WebM EBML header (0x1A, 0x45, 0xDF, 0xA3) is shifted due to leading metadata/garbage, slice to header
+      const ebmlIndex = combined.indexOf(Buffer.from([0x1a, 0x45, 0xdf, 0xa3]));
+      if (ebmlIndex > 0) {
+        logger.warn(`[StreamingSession] EBML header found at offset ${ebmlIndex}. Trimming prefix bytes.`);
+        combined = combined.subarray(ebmlIndex);
+      }
+    }
+    return combined;
+  }
+
   /**
    * Run interim transcription on accumulated audio.
    * Handled safely: if provider throws temporary error, session continues seamlessly.
@@ -98,7 +111,7 @@ export class ChunkedStreamingSession {
 
     const tempFile = this.createTempAudioFile('interim');
     try {
-      const combined = Buffer.concat(this.chunks);
+      const combined = this.prepareAudioBuffer(this.chunks);
       fs.writeFileSync(tempFile, combined);
 
       // Verify audio container is valid
@@ -169,7 +182,7 @@ export class ChunkedStreamingSession {
 
     const tempFile = this.createTempAudioFile('final');
     try {
-      const combined = Buffer.concat(this.chunks);
+      const combined = this.prepareAudioBuffer(this.chunks);
       fs.writeFileSync(tempFile, combined);
 
       const normalized = normalizeAudioFile(tempFile, this.options.mimeType || 'audio/webm');
@@ -217,7 +230,8 @@ export class ChunkedStreamingSession {
             application: this.options.application,
             llmProvider: this.options.llmProvider,
             llmModel: this.options.llmModel,
-            userId: this.options.userId
+            userId: this.options.userId,
+            apiKey: this.options.llmApiKey || this.options.apiKey
           });
           processedResult = await Promise.race([
             procPromise,
@@ -257,6 +271,7 @@ export class ChunkedStreamingSession {
         language: asrResult.language || this.options.language || 'auto',
         latency: {
           asrMs: asrResult.latencyMs,
+          llmMs: processedResult.aiMs || 0,
           totalMs: Date.now() - this.startTime
         },
         provider: asrResult.provider || this.provider.name,

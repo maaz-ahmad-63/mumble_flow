@@ -188,14 +188,8 @@ export class StreamingTranscriptionClient {
 
         case 'processing_completed':
           this.onProcessingCompleted({
-            sessionId: msg.sessionId,
-            rawTranscript: msg.rawTranscript,
+            ...msg,
             segments: msg.segments || Array.from(this.segments.values()),
-            durationMs: msg.durationMs,
-            language: msg.language,
-            latency: msg.latency,
-            provider: msg.provider,
-            model: msg.model,
             empty: msg.empty || false
           });
           this.activeSessionId = null;
@@ -238,6 +232,8 @@ export class StreamingTranscriptionClient {
       sttProvider: options.sttProvider || 'groq',
       mimeType: options.mimeType || 'audio/webm',
       language: options.language || 'auto',
+      tone: options.tone,
+      mode: options.mode,
       apiKeyGroq: options.apiKeyGroq,
       apiKeyGemini: options.apiKeyGemini,
       timestamp: Date.now()
