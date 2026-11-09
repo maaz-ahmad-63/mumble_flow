@@ -17,6 +17,7 @@
   "build": {
     "appId": "com.mumbleai.desktop",
     "productName": "Mumble AI",
+    "npmRebuild": false,
     "publish": {
       "provider": "github",
       "owner": "maaz-ahmad-63",
