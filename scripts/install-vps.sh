@@ -114,7 +114,7 @@ apt-get install -y ca-certificates curl gnupg git debian-keyring debian-archive-
 NEED_NODE=1
 if command -v node >/dev/null 2>&1; then
   CURRENT_NODE=$(node -p 'process.versions.node.split(".")[0]')
-  if [ "$CURRENT_NODE" -ge 20 ]; then
+  if [ "$CURRENT_NODE" -ge 22 ]; then
     NEED_NODE=0
     echo "Node.js $(node --version) is already installed."
   fi
