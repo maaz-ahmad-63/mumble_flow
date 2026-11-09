@@ -130,7 +130,8 @@ jobs:
             - 15 specialized styles: Developer, Code, Terminal, Commit, SQL, Meeting Notes, Social/Comments, Prompt, Translator, and more
             - Zero-latency voice-to-text with auto-punctuation, filler word removal, and surgical self-correction
             - In-app automatic updates via GitHub Releases
-          files: release-assets/*
+          files: |
+            release-assets/**/*
           draft: false
           prerelease: false
         env:

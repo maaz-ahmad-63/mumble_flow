@@ -9,10 +9,10 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "pack": "electron-builder --mac --dir",
-    "dist": "electron-builder --mac -c.publish=never",
-    "dist:mac": "electron-builder --mac -c.publish=never",
-    "dist:win": "electron-builder --win -c.publish=never",
-    "dist:all": "electron-builder --mac --win -c.publish=never"
+    "dist": "electron-builder --mac --publish never",
+    "dist:mac": "electron-builder --mac --publish never",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:all": "electron-builder --mac --win --publish never"
   },
   "build": {
     "appId": "com.mumbleai.desktop",
