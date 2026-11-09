@@ -9,23 +9,31 @@
 *Speak naturally. Get polished, zero-edit writing anywhere on your computer.*
 
 [![GitHub Repo](https://img.shields.io/badge/GitHub-maaz--ahmad--63%2Fmumble__flow-181717.svg?logo=github)](https://github.com/maaz-ahmad-63/mumble_flow)
+[![Live Web Studio](https://img.shields.io/badge/Live%20Studio-136--83--131--239.sslip.io-success.svg?logo=google-chrome)](https://136-83-131-239.sslip.io)
+[![Desktop Release](https://img.shields.io/badge/Release-v1.0.0-blueviolet.svg?logo=electron)](https://github.com/maaz-ahmad-63/mumble_flow/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Node.js](https://img.shields.io/badge/Node.js-20%2B%20LTS-green.svg?logo=node.js)](https://nodejs.org/)
-[![Electron](https://img.shields.io/badge/Desktop-Electron%2030%2B-47848F.svg?logo=electron)](https://www.electronjs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-22%20LTS-green.svg?logo=node.js)](https://nodejs.org/)
 [![STT: Whisper](https://img.shields.io/badge/STT-Whisper%20Large%20v3-orange.svg)](https://groq.com)
 [![LLM: Groq / Gemini / OpenAI](https://img.shields.io/badge/LLM-Multi--Model-blueviolet.svg)](https://groq.com)
 
+[🌐 Live Demo](https://136-83-131-239.sslip.io) •
+[💻 Desktop Downloads](https://github.com/maaz-ahmad-63/mumble_flow/releases) •
 [Architecture](#-architecture--modalities) •
 [Visual Tour](#-visual-tour--features) •
 [Quickstart](#-quickstart-guide) •
 [Desktop Companion](#-desktop-companion-electron--global-hotkeys) •
 [Model Hub & BYOK](#-model-hub--bring-your-own-keys-byok) •
 [Deployment](#-production-deployment) •
-[Security](#-security--encryption)
+[Contact & Agency](#-contact--custom-agency-work)
 
 ---
 
 </div>
+
+> [!TIP]
+> **🚀 Experience Mumble AI Live in Browser:** [https://136-83-131-239.sslip.io](https://136-83-131-239.sslip.io)  
+> *Instant Demo Mode is enabled by default—zero signup barrier, immediate voice dictation, and real-time AI formatting.*  
+> **💻 Download Desktop Companion v1.0.0:** Pre-built binaries for macOS & Windows available on [GitHub Releases](https://github.com/maaz-ahmad-63/mumble_flow/releases).
 
 **Mumble AI** is a voice-first productivity platform and the open-source alternative to Wispr Flow. Speak the way you naturally talk—with pauses, "ums", and mid-thought self-corrections—and Mumble AI transforms raw speech into structured, publication-ready text in milliseconds.
 
@@ -120,7 +128,9 @@ Comprehensive admin dashboard powered entirely by real database records.
 
 ![Admin Dashboard](docs/images/09-admin-dashboard.png)
 
-- **User Access Management**: Review accounts, promote roles, suspend users, and adjust quotas.
+- **Instant Demo Mode**: Visitors land directly into active dictation with an auto-provisioned demo session—no signup wall or friction.
+- **Self-Service Accounts**: Users can log out and register their own personal accounts with private vocabulary, custom snippets, and encrypted BYOK keys.
+- **User Accounts & Telemetry**: Review registered users, inspect dictation volumes, monitor audio minutes, and manage access tiers.
 - **Genuine Account Discrimination**: Smart detection isolates synthetic test rows from authentic registered users.
 - **System Health Telemetry**: Live uptime, memory consumption (RSS), and request failure monitoring.
 
@@ -190,23 +200,37 @@ Provide your keys for cloud models (free keys available at [console.groq.com](ht
 
 ## 🖥️ Desktop Companion (Electron & Global Hotkeys)
 
-The Electron desktop companion provides the true Wispr Flow experience across your entire operating system.
+The Electron desktop companion provides the true Wispr Flow experience across your entire operating system. It lives in your system tray, listens for global push-to-talk hotkeys, and types formatted dictation directly into any active application.
 
-```bash
-cd desktop/electron
-npm install
-npm start
-```
+### 📦 Pre-Built Downloads (v1.0.0 Release)
+
+Direct download links for official release binaries (packaged and signed via GitHub Actions):
+
+| Platform | Format | Direct Download |
+| :--- | :--- | :--- |
+| **macOS** (Apple Silicon / M-series & Intel) | DMG Installer | [📥 **Mumble-AI-1.0.0-arm64.dmg**](https://github.com/maaz-ahmad-63/mumble_flow/releases/download/v1.0.0/Mumble-AI-1.0.0-arm64.dmg) |
+| **macOS** (Universal) | Zip Archive | [📥 **Mumble-AI-1.0.0-arm64-mac.zip**](https://github.com/maaz-ahmad-63/mumble_flow/releases/download/v1.0.0/Mumble-AI-1.0.0-arm64-mac.zip) |
+| **Windows** (x64) | Setup Wizard (.exe) | [📥 **Mumble-AI-Setup-1.0.0.exe**](https://github.com/maaz-ahmad-63/mumble_flow/releases/download/v1.0.0/Mumble.AI.Setup.1.0.0.exe) |
+| **Windows** (x64) | Portable Executable (.exe) | [📥 **Mumble-AI-1.0.0.exe**](https://github.com/maaz-ahmad-63/mumble_flow/releases/download/v1.0.0/Mumble.AI.1.0.0.exe) |
+
+*All assets and release notes available at [GitHub Releases](https://github.com/maaz-ahmad-63/mumble_flow/releases).*
 
 ### How to Dictate:
 1. **Hold <kbd>Space</kbd>** (for >300ms) anywhere on your computer to record; release to type. (Normal quick space taps type a space character normally).
 2. **Press <kbd>F8</kbd>** as an alternate global push-to-talk toggle.
 3. **Press <kbd>Esc</kbd>** at any time to immediately cancel recording.
 
-### Connecting to a Deployed Backend:
-The Electron app can run against a remote production server:
+### Run from Source:
 ```bash
-MUMBLE_SERVER_URL="https://your-mumble-domain.com" MUMBLE_AUTH_TOKEN="<your_jwt_token>" npm start
+cd desktop/electron
+npm install
+npm start
+```
+
+### Connecting to the Live Server:
+The desktop companion can connect directly to your deployed backend:
+```bash
+MUMBLE_SERVER_URL="https://136-83-131-239.sslip.io" npm start
 ```
 
 ---
@@ -289,6 +313,23 @@ npm test
 ```
 
 Includes 26 suites verifying SaaS authentication, BYOK encryption, usage calculation, quotas, concurrent request load, and app-aware dictation accuracy.
+
+---
+
+## 🤝 Contact & Custom Agency Work
+
+Mumble AI is created and maintained by **Maaz Ahmad**. We build custom voice intelligence pipelines, private LLM infrastructure, and bespoke web/desktop applications for startups and enterprise teams.
+
+<div align="center">
+
+| Channel | Details / Link |
+| :--- | :--- |
+| 💼 **LinkedIn** | [linkedin.com/in/maaz-ahmad-3207002b5](https://www.linkedin.com/in/maaz-ahmad-3207002b5) |
+| 💬 **WhatsApp** | [+91 6388080298](https://wa.me/916388080298) |
+| ✉️ **Email** | [maazbinayaz5555@gmail.com](mailto:maazbinayaz5555@gmail.com) |
+| 🚀 **Agency Services** | Voice AI integrations, custom Electron apps, private STT/LLM pipelines, & SaaS MVPs |
+
+</div>
 
 ---
 
