@@ -115,6 +115,15 @@ app.get(['/business', '/website'], (req, res) => {
 // 0. AUTHENTICATION & IDENTITY ENDPOINTS
 // ==========================================
 
+app.get('/api/auth/demo', async (req, res) => {
+  try {
+    const session = await authService.getDemoSession();
+    res.json({ success: true, ...session });
+  } catch (err) {
+    res.status(500).json({ error: err.message, code: 'DEMO_SESSION_FAILED' });
+  }
+});
+
 app.post('/api/auth/register', authLimiter, async (req, res) => {
   try {
     const { email, password, name } = req.body;
@@ -1618,6 +1627,7 @@ export function attachStreamingServer(server) {
 async function startServer(port = DEFAULT_PORT, host = HOST) {
   try {
     await initializeDatabase();
+    await authService.ensureSeedAccounts();
   } catch (err) {
     console.error(`\n❌ [Database Fatal] Failed to initialize database: ${err.message}`);
     if (isPostgres()) {

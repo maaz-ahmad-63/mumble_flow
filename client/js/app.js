@@ -1845,9 +1845,27 @@ class WhisperFlowApp {
     const adminTab = document.getElementById('navTabAdmin');
     const avatarEl = document.getElementById('userAvatarText');
 
-    const token = localStorage.getItem('mumble_auth_token');
+    let token = localStorage.getItem('mumble_auth_token');
+    const explicitlyLoggedOut = sessionStorage.getItem('mumble_logged_out') === 'true';
+
+    // Auto-provision Demo User session so visitors are logged in by default!
+    if (!token && !explicitlyLoggedOut) {
+      try {
+        const demoRes = await fetch('/api/auth/demo');
+        if (demoRes.ok) {
+          const demoData = await demoRes.json();
+          if (demoData && demoData.token) {
+            token = demoData.token;
+            localStorage.setItem('mumble_auth_token', token);
+          }
+        }
+      } catch (err) {
+        console.warn('Auto demo session unavailable:', err);
+      }
+    }
+
     if (!token) {
-      // User is not signed in
+      // User is not signed in and demo session could not be fetched
       this.currentUser = null;
       if (signInBtn) signInBtn.style.display = 'inline-flex';
       if (userGroup) userGroup.style.display = 'none';
@@ -1857,24 +1875,41 @@ class WhisperFlowApp {
     }
 
     try {
-      const res = await fetch('/api/auth/me');
+      const res = await fetch('/api/auth/me', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         const data = await res.json();
         if (data && data.user) {
           this.currentUser = data.user;
-          const initial = (data.user.name || 'U')[0].toUpperCase();
+          const isDemo = data.user.email === 'demo@mumble.ai' || data.user.id === 'demo_user';
+          this.currentUser.isDemo = isDemo;
+          const initial = isDemo ? 'D' : (data.user.name || 'U')[0].toUpperCase();
           if (avatarEl) avatarEl.textContent = initial;
-          if (userName) userName.textContent = data.user.name || 'User';
+          if (userName) userName.textContent = isDemo ? 'Demo User' : (data.user.name || 'User');
           if (userRoleBadge) {
-            userRoleBadge.textContent = data.user.role || 'user';
-            userRoleBadge.style.display = data.user.role === 'admin' ? 'inline-block' : 'none';
+            if (isDemo) {
+              userRoleBadge.textContent = 'Demo';
+              userRoleBadge.style.display = 'inline-block';
+              userRoleBadge.style.background = 'rgba(255, 169, 70, 0.2)';
+              userRoleBadge.style.color = '#ffa946';
+            } else if (data.user.role === 'admin') {
+              userRoleBadge.textContent = 'Admin';
+              userRoleBadge.style.display = 'inline-block';
+              userRoleBadge.style.background = 'rgba(239, 68, 68, 0.2)';
+              userRoleBadge.style.color = '#ef4444';
+            } else {
+              userRoleBadge.style.display = 'none';
+            }
           }
 
           if (signInBtn) signInBtn.style.display = 'none';
           if (userGroup) userGroup.style.display = 'flex';
 
           if (this.userBadgeBtn) {
-            this.userBadgeBtn.title = `${data.user.name} (${data.user.email}) · ${data.user.role}`;
+            this.userBadgeBtn.title = isDemo 
+              ? 'Demo User (Click to create your own account or sign in as Admin)' 
+              : `${data.user.name} (${data.user.email}) · ${data.user.role}`;
           }
 
           // Toggle Admin navigation tab based on role
@@ -1924,6 +1959,7 @@ class WhisperFlowApp {
         try {
           await fetch('/api/auth/logout', { method: 'POST' });
         } catch (e) {}
+        sessionStorage.setItem('mumble_logged_out', 'true');
         localStorage.removeItem('mumble_auth_token');
         this.currentUser = null;
         this.showToast('Signed out');
@@ -1932,29 +1968,55 @@ class WhisperFlowApp {
         if (document.getElementById('viewAdmin')?.classList.contains('active')) {
           document.querySelector('[data-view="viewDictation"]')?.click();
         }
+        this.openAuthModal(true);
       });
     }
 
-    // Quick demo fills
-    const quickAdmin = document.getElementById('quickFillAdminBtn');
-    if (quickAdmin) {
-      quickAdmin.addEventListener('click', () => {
-        const emailInput = document.getElementById('loginEmail');
-        const passInput = document.getElementById('loginPassword');
-        if (emailInput) emailInput.value = 'admin@mumble.ai';
-        if (passInput) passInput.value = 'AdminPassword123!';
-        this.showToast('Admin credentials filled. Click Sign In');
+    // Demo user and switch actions
+    const useDemoBtn = document.getElementById('useDemoUserBtn');
+    if (useDemoBtn) {
+      useDemoBtn.addEventListener('click', async () => {
+        try {
+          const res = await fetch('/api/auth/demo');
+          const data = await res.json();
+          if (data && data.token) {
+            sessionStorage.removeItem('mumble_logged_out');
+            localStorage.setItem('mumble_auth_token', data.token);
+            this.showToast('Using Instant Demo account');
+            this.closeAuthModal();
+            await this.checkAuthStatus();
+            this.loadInitialSettings();
+            this.loadHistory();
+          }
+        } catch (err) {
+          this.showToast('Failed to start demo session', 'error');
+        }
       });
     }
 
-    const quickUser = document.getElementById('quickFillUserBtn');
-    if (quickUser) {
-      quickUser.addEventListener('click', () => {
-        const emailInput = document.getElementById('loginEmail');
-        const passInput = document.getElementById('loginPassword');
-        if (emailInput) emailInput.value = 'user@mumble.ai';
-        if (passInput) passInput.value = 'UserPassword123!';
-        this.showToast('User credentials filled. Click Sign In');
+    const createFromDemoBtn = document.getElementById('createAccountFromDemoBtn');
+    if (createFromDemoBtn) {
+      createFromDemoBtn.addEventListener('click', () => {
+        const profileSec = document.getElementById('authProfileSection');
+        const formSec = document.getElementById('authFormSection');
+        if (profileSec && formSec) {
+          profileSec.style.display = 'none';
+          formSec.style.display = 'block';
+          document.getElementById('authTabRegister')?.click();
+        }
+      });
+    }
+
+    const signInFromDemoBtn = document.getElementById('signInFromDemoBtn');
+    if (signInFromDemoBtn) {
+      signInFromDemoBtn.addEventListener('click', () => {
+        const profileSec = document.getElementById('authProfileSection');
+        const formSec = document.getElementById('authFormSection');
+        if (profileSec && formSec) {
+          profileSec.style.display = 'none';
+          formSec.style.display = 'block';
+          document.getElementById('authTabLogin')?.click();
+        }
       });
     }
 
@@ -2019,6 +2081,7 @@ class WhisperFlowApp {
             throw new Error(data.error || 'Login failed');
           }
 
+          sessionStorage.removeItem('mumble_logged_out');
           localStorage.setItem('mumble_auth_token', data.token);
           this.currentUser = data.user;
           this.showToast(`Signed in as ${data.user.name}`);
@@ -2055,6 +2118,7 @@ class WhisperFlowApp {
             throw new Error(data.error || 'Registration failed');
           }
 
+          sessionStorage.removeItem('mumble_logged_out');
           localStorage.setItem('mumble_auth_token', data.token);
           this.currentUser = data.user;
           this.showToast(`Account created! Welcome, ${data.user.name}`);
@@ -2110,15 +2174,16 @@ class WhisperFlowApp {
         try {
           await fetch('/api/auth/logout', { method: 'POST' });
         } catch (e) {}
+        sessionStorage.setItem('mumble_logged_out', 'true');
         localStorage.removeItem('mumble_auth_token');
         this.currentUser = null;
         this.showToast('Signed out');
-        this.closeAuthModal();
         await this.checkAuthStatus();
         this.loadInitialSettings();
         if (document.getElementById('viewAdmin')?.classList.contains('active')) {
           document.querySelector('[data-view="viewDictation"]')?.click();
         }
+        this.openAuthModal(true);
       });
     }
 
@@ -2147,10 +2212,16 @@ class WhisperFlowApp {
     if (!this.authModal) return;
     const profileSec = document.getElementById('authProfileSection');
     const formSec = document.getElementById('authFormSection');
+    const demoNotice = document.getElementById('demoUserNotice');
+    const changePassSec = document.getElementById('authChangePassSection');
 
     if (this.currentUser && !forceForm) {
       if (profileSec) profileSec.style.display = 'block';
       if (formSec) formSec.style.display = 'none';
+
+      const isDemo = this.currentUser.isDemo || this.currentUser.email === 'demo@mumble.ai';
+      if (demoNotice) demoNotice.style.display = isDemo ? 'block' : 'none';
+      if (changePassSec) changePassSec.style.display = isDemo ? 'none' : 'block';
 
       const nameEl = document.getElementById('authProfileName');
       const emailEl = document.getElementById('authProfileEmail');
@@ -2158,11 +2229,11 @@ class WhisperFlowApp {
       const statusEl = document.getElementById('authProfileStatus');
       const avatarEl = document.getElementById('authProfileAvatar');
 
-      if (nameEl) nameEl.textContent = this.currentUser.name || 'User';
-      if (emailEl) emailEl.textContent = this.currentUser.email || '';
-      if (roleEl) roleEl.textContent = this.currentUser.role || 'user';
+      if (nameEl) nameEl.textContent = isDemo ? 'Demo User' : (this.currentUser.name || 'User');
+      if (emailEl) emailEl.textContent = isDemo ? 'demo@mumble.ai' : (this.currentUser.email || '');
+      if (roleEl) roleEl.textContent = isDemo ? 'Demo Mode' : (this.currentUser.role || 'user');
       if (statusEl) statusEl.textContent = this.currentUser.status || 'active';
-      if (avatarEl) avatarEl.textContent = (this.currentUser.name || 'U')[0].toUpperCase();
+      if (avatarEl) avatarEl.textContent = isDemo ? 'D' : (this.currentUser.name || 'U')[0].toUpperCase();
     } else {
       if (profileSec) profileSec.style.display = 'none';
       if (formSec) formSec.style.display = 'block';
