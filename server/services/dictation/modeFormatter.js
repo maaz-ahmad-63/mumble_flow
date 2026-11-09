@@ -112,9 +112,9 @@ export class ModeFormatter {
     if (commentMatch && commentMatch[1]) {
       return commentMatch[1].trim();
     }
-    // If it's already tagged or a short direct comment
-    if (text.includes('#') || text.length < 120) return text;
-    return `🚀 Key Update:\n\n${text}\n\nWhat are your thoughts on this?\n\n#Productivity #VoiceAI #OpenSource`;
+    // If it's already tagged, return as is
+    if (text.includes('#')) return text;
+    return `${text}\n\n#Productivity #VoiceAI #OpenSource`;
   }
 
   formatExecutive(text) {

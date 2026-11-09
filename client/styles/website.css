@@ -1068,6 +1068,114 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ========================================================
+   CONTACT & CUSTOM SOLUTIONS SECTION
+   ======================================================== */
+.contact-section {
+  padding: var(--space-16) 0;
+  background-color: var(--base-color--lumen-dark);
+}
+
+.contact-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  align-items: stretch;
+}
+
+.contact-card {
+  background: var(--base-color--white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card-lg);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  box-shadow: var(--shadow-card);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.contact-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-elevated);
+}
+
+.contact-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+}
+
+.contact-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.contact-badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.contact-card-title {
+  font-family: var(--font-heading);
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.contact-card-desc {
+  font-size: 0.9375rem;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-4);
+  flex-grow: 1;
+}
+
+.contact-detail-val {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--color-bg);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  margin-bottom: var(--space-4);
+  word-break: break-all;
+}
+
+.contact-action-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.contact-agency-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+  color: #cef5ca;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px dashed rgba(206, 245, 202, 0.4);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-4);
+}
+
+/* ========================================================
    BOTTOM CTA BANNER
    ======================================================== */
 .cta-banner-section {
@@ -1230,6 +1338,10 @@ h1, h2, h3, h4, h5, h6 {
     grid-template-columns: 1fr;
   }
 
+  .contact-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .footer-grid {
     grid-template-columns: 1fr 1fr;
   }
@@ -1241,6 +1353,10 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-cards-grid {
     grid-template-columns: 1fr;
   }
 

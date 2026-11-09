@@ -152,4 +152,10 @@ function initMobileMenu() {
       navLinks.style.boxShadow = '0 12px 24px rgba(0,0,0,0.08)';
     }
   });
+
+  navLinks.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', () => {
+      navLinks.style.display = '';
+    });
+  });
 }

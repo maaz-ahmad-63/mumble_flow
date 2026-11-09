@@ -121,6 +121,10 @@ export class TrayManager {
         label: 'Check for Updates...',
         click: () => this.onCheckForUpdates()
       },
+      {
+        label: 'Contact & Support (WhatsApp)...',
+        click: () => shell.openExternal('https://wa.me/916388080298')
+      },
       { type: 'separator' },
       {
         label: 'Quit Mumble AI',
