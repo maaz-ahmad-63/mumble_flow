@@ -8,7 +8,12 @@ import { sqliteAdapter } from './sqliteAdapter.js';
 import { postgresAdapter } from './postgresAdapter.js';
 
 export function isPostgres() {
-  return Boolean(process.env.DATABASE_URL && process.env.DATABASE_URL.trim());
+  const url = (process.env.DATABASE_URL || '').trim();
+  if (!url) return false;
+  if (url.includes('YOUR_HOST') || url.includes('YOUR_PASSWORD') || url.includes('[PASSWORD]') || url.includes('[PROJECT_REF]')) {
+    return false;
+  }
+  return true;
 }
 
 export function isSqlite() {
