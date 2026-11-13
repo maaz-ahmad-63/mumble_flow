@@ -338,7 +338,7 @@ export class MacOSTrayProvider extends ITrayProvider {
       { type: 'separator' },
       {
         label: 'Open Web Interface',
-        click: () => shell.openExternal(this.options.serverUrl || 'http://localhost:3050')
+        click: () => shell.openExternal(this.options.serverUrl || 'https://136-83-131-239.sslip.io')
       },
       {
         label: 'Settings...',

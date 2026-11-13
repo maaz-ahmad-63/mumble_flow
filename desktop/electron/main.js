@@ -14,7 +14,7 @@ import { uIOhook, UiohookKey } from 'uiohook-napi';
 import { insertTextAtCursor } from './modules/textInsertion.js';
 import { getFocusedApplication } from './modules/focusedApp.js';
 import { verifyPermissions } from './modules/permissions.js';
-import { ServerManager } from './modules/serverManager.js';
+import { ServerManager, DEFAULT_PRODUCTION_URL } from './modules/serverManager.js';
 import { TrayManager } from './modules/tray.js';
 import { isMumbleApp, classifyAppContext, resolveEffectiveMode } from './modules/appContext.js';
 import { desktopAuthManager } from './modules/authManager.js';
@@ -39,7 +39,7 @@ let isCancelled = false;
 let recordingTriggerSource = 'none'; // 'space' | 'f8' | 'ui'
 let recordingStartTime = 0;
 let currentHotkey = 'F8';
-let serverBaseUrl = 'http://localhost:3050';
+let serverBaseUrl = (process.env.MUMBLE_SERVER_URL || process.env.MUMBLE_BACKEND_URL || '').trim().replace(/\/+$/, '') || (app.isPackaged ? DEFAULT_PRODUCTION_URL : 'http://localhost:3050');
 let activeTargetApp = 'System';
 let hideTimeout = null;
 let selectedMode = 'auto'; // 'auto' | 'developer' | 'prompt' | 'email' | 'bullet' | 'standup' | 'casual' | 'formal'
@@ -425,8 +425,8 @@ async function processAudio(audioBuffer) {
         body: formData
       });
     } catch (fetchErr) {
-      if (serverManager && (fetchErr?.cause?.code === 'ECONNREFUSED' || fetchErr?.message?.includes('fetch failed'))) {
-        console.warn('[Dictation] Server connection refused. Attempting to ensure server is running...');
+      if (!serverManager?.isRemote && (fetchErr?.cause?.code === 'ECONNREFUSED' || fetchErr?.message?.includes('fetch failed'))) {
+        console.warn('[Dictation] Local server connection refused. Attempting to ensure local server is running...');
         serverBaseUrl = await serverManager.ensureRunning();
         const retryUrl = `${serverBaseUrl}/api/dictate`;
         console.log(`[Dictation] Retrying upload to ${retryUrl}...`);
@@ -436,7 +436,13 @@ async function processAudio(audioBuffer) {
           body: formData
         });
       } else {
-        throw fetchErr;
+        console.error(`[Dictation] ❌ Failed to reach backend at ${apiUrl}:`, fetchErr.message);
+        const userFriendlyMsg = serverManager?.isRemote
+          ? `Cannot reach backend (${serverBaseUrl})`
+          : 'Local server not running (port 3050)';
+        const customErr = new Error(userFriendlyMsg);
+        customErr.cause = fetchErr;
+        throw customErr;
       }
     }
 

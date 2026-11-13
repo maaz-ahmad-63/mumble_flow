@@ -12,8 +12,20 @@ import fs from 'fs';
 import http from 'http';
 import { fileURLToPath } from 'url';
 
+// Safe runtime resolution for Electron APIs (allows running under both Electron & Node test suites)
+let electronApp = null;
+try {
+  const electron = await import('electron');
+  electronApp = electron.app || null;
+} catch {}
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+/**
+ * Default production backend URL for packaged macOS and Windows desktop applications.
+ */
+export const DEFAULT_PRODUCTION_URL = 'https://136-83-131-239.sslip.io';
 
 /**
  * Locate the appropriate Node.js binary.
@@ -57,25 +69,70 @@ export class ServerManager {
   constructor(port = 3050) {
     this.port = port;
     this.serverProcess = null;
-    const remote = (process.env.MUMBLE_SERVER_URL || process.env.MUMBLE_BACKEND_URL || '').trim().replace(/\/+$/, '');
-    this.isRemote = Boolean(remote && !remote.includes('localhost') && !remote.includes('127.0.0.1'));
-    this.baseUrl = remote || `http://localhost:${port}`;
+
+    const envUrl = (process.env.MUMBLE_SERVER_URL || process.env.MUMBLE_BACKEND_URL || '').trim().replace(/\/+$/, '');
+    const isExplicitLocal = Boolean(envUrl && (envUrl.includes('localhost') || envUrl.includes('127.0.0.1')));
+    const isPackaged = Boolean(
+      (electronApp && electronApp.isPackaged) ||
+      (process.resourcesPath && !process.env.ELECTRON_IS_DEV)
+    );
+
+    if (envUrl) {
+      // 1. Explicit user/dev environment override (allows custom remote or explicit localhost)
+      this.baseUrl = envUrl;
+      this.isRemote = !isExplicitLocal;
+      console.log(`[ServerManager] Using environment configured backend URL: ${this.baseUrl} (isRemote: ${this.isRemote})`);
+    } else if (isPackaged) {
+      // 2. Packaged production desktop application defaults to production cloud backend
+      this.baseUrl = DEFAULT_PRODUCTION_URL;
+      this.isRemote = true;
+      console.log(`[ServerManager] Packaged desktop app detected. Defaulting to production backend: ${this.baseUrl}`);
+    } else {
+      // 3. Unpackaged local developer mode without explicit URL
+      this.baseUrl = `http://localhost:${port}`;
+      this.isRemote = false;
+      console.log(`[ServerManager] Development mode detected. Defaulting to local backend: ${this.baseUrl}`);
+    }
+  }
+
+  /**
+   * Derive the WebSocket URL corresponding to the resolved base URL.
+   * Automatically translates http:// -> ws:// and https:// -> wss://.
+   * @param {string} endpoint WebSocket endpoint path (default: '/ws/dictate')
+   * @returns {string} Fully-qualified WebSocket URL
+   */
+  getWsUrl(endpoint = '/ws/dictate') {
+    const cleanBase = this.baseUrl.replace(/\/+$/, '');
+    const wsProto = cleanBase.startsWith('https:') ? 'wss:' : 'ws:';
+    const host = cleanBase.replace(/^https?:\/\//i, '');
+    const cleanPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    return `${wsProto}//${host}${cleanPath}`;
   }
 
   /**
    * Check if a health check responds on the given URL or port.
-   * Supports both http and https deployed backends via fetch.
+   * Supports both http and https deployed backends via fetch, checking /health and /api/health.
    * @param {string|number} target Url or port
    * @returns {Promise<boolean>}
    */
   async checkHealth(target = this.baseUrl) {
-    const url = typeof target === 'number' ? `http://localhost:${target}/health` : target.endsWith('/health') ? target : `${target}/health`;
-    try {
-      const res = await fetch(url, { signal: AbortSignal.timeout(2000) });
-      return res.ok;
-    } catch {
-      return false;
+    const clean = typeof target === 'number'
+      ? `http://localhost:${target}`
+      : String(target).replace(/\/+$/, '');
+
+    const candidates = clean.endsWith('/health')
+      ? [clean]
+      : [`${clean}/health`, `${clean}/api/health`];
+
+    for (const url of candidates) {
+      try {
+        const res = await fetch(url, { signal: AbortSignal.timeout(3000) });
+        if (res.ok) return true;
+      } catch {
+        // Continue to next candidate URL
+      }
     }
+    return false;
   }
 
   /**
@@ -105,12 +162,13 @@ export class ServerManager {
    */
   async ensureRunning() {
     if (this.isRemote) {
-      console.log(`[ServerManager] Connecting to remote deployed backend at ${this.baseUrl}...`);
+      console.log(`[ServerManager] Connecting to remote backend at ${this.baseUrl}...`);
       const isHealthy = await this.checkHealth(this.baseUrl);
       if (isHealthy) {
-        console.log(`[ServerManager] Remote Mumble backend is healthy and ready at ${this.baseUrl}`);
+        console.log(`[ServerManager] ✓ Remote backend is healthy and reachable at ${this.baseUrl}`);
       } else {
-        console.warn(`[ServerManager] Remote Mumble backend at ${this.baseUrl} did not respond to /health. Proceeding with configured URL.`);
+        console.error(`[ServerManager] ❌ Connection failed: Remote backend at ${this.baseUrl} is unreachable or not responding to /health or /api/health.`);
+        console.error(`[ServerManager] Please verify your network connection or ensure MUMBLE_SERVER_URL is correct.`);
       }
       return this.baseUrl;
     }
@@ -179,7 +237,7 @@ export class ServerManager {
       attempts++;
     }
 
-    console.warn(`[ServerManager] Server started but health check timed out. Defaulting to ${this.baseUrl}`);
+    console.error(`[ServerManager] ❌ Local backend on port ${this.port} could not be started or health check timed out.`);
     return this.baseUrl;
   }
 

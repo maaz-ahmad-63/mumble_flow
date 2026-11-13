@@ -5,6 +5,7 @@
 import { Tray, Menu, nativeImage, shell, app } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { DEFAULT_PRODUCTION_URL } from './serverManager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -20,7 +21,7 @@ export class TrayManager {
     this.currentMode = options.currentMode || 'auto';
     this.hotkey = options.hotkey || 'F8';
     this.isRecording = false;
-    this.serverUrl = options.serverUrl || 'http://localhost:3050';
+    this.serverUrl = options.serverUrl || DEFAULT_PRODUCTION_URL;
   }
 
   create() {
