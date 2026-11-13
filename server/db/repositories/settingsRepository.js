@@ -10,7 +10,7 @@ const DEFAULT_SETTINGS = {
   groqModelSTT: 'whisper-large-v3-turbo',
   groqModelLLM: 'openai/gpt-oss-20b',
   geminiModel: 'gemini-3.6-flash',
-  defaultTone: 'casual',
+  defaultTone: process.env.DEFAULT_TONE || 'smart',
   autoAppMode: true,
   autoCopy: true,
   pushToTalkKey: 'Space',

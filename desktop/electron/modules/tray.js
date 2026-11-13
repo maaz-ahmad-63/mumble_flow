@@ -64,6 +64,7 @@ export class TrayManager {
 
     const modeLabels = {
       auto: 'Auto (App-Aware)',
+      smart: 'Smart Dictation (Default)',
       formal: 'Formal',
       code: 'Code',
       terminal: 'Terminal',
@@ -91,6 +92,7 @@ export class TrayManager {
         label: `Mode: ${modeLabels[this.currentMode] || this.currentMode}`,
         submenu: [
           { label: 'Auto (App-Aware)', type: 'radio', checked: this.currentMode === 'auto', click: () => this.handleModeChange('auto') },
+          { label: 'Smart Dictation (Default)', type: 'radio', checked: this.currentMode === 'smart', click: () => this.handleModeChange('smart') },
           { type: 'separator' },
           { label: 'Formal', type: 'radio', checked: this.currentMode === 'formal', click: () => this.handleModeChange('formal') },
           { label: 'Code', type: 'radio', checked: this.currentMode === 'code', click: () => this.handleModeChange('code') },

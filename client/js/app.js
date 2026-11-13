@@ -1051,6 +1051,8 @@ class WhisperFlowApp {
 
   formatTone(tone) {
     const names = {
+      smart: 'Smart Dictation',
+      default: 'Smart Dictation',
       casual: 'Casual',
       formal: 'Formal',
       code: 'Code',

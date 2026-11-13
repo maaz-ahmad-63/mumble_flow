@@ -144,7 +144,7 @@ export class PillWidget {
   }
 
   getTone() {
-    return this.toneSelect ? this.toneSelect.value : 'casual';
+    return this.toneSelect ? this.toneSelect.value : 'smart';
   }
 
   setTone(tone) {

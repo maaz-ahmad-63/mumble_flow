@@ -658,6 +658,10 @@ async function runTests() {
   const { runCommercialReadinessTests } = await import('./test_commercial_readiness.js');
   await runCommercialReadinessTests();
 
+  // Test 29: Default Smart Dictation (Grammar, Punctuation, App Awareness & Mode Preservations)
+  const { runDefaultSmartDictationTests } = await import('./test_default_smart_dictation.js');
+  await runDefaultSmartDictationTests();
+
   console.log('\n🎉 ALL TESTS PASSED! Mumble AI core services, SaaS Foundation, Model Hub, BYOK, Usage Tracking, Cost Control, QA Fixes, App Awareness, PostgreSQL & Commercial Readiness are functional.\n');
 }
 

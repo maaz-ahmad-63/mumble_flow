@@ -29,7 +29,7 @@ export const config = {
   defaultSttModel: process.env.DEFAULT_STT_MODEL || 'whisper-large-v3-turbo',
   defaultLlmProvider: process.env.DEFAULT_LLM_PROVIDER || 'groq',
   defaultLlmModel: process.env.DEFAULT_LLM_MODEL || 'openai/gpt-oss-20b',
-  defaultTone: process.env.DEFAULT_TONE || 'casual',
+  defaultTone: process.env.DEFAULT_TONE || 'smart',
   autoCopyClipboard: process.env.AUTO_COPY_CLIPBOARD !== 'false',
 
   // Local Self-Hosted Whisper / LLM Endpoints

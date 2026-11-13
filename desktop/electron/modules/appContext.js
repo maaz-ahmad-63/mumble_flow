@@ -327,7 +327,7 @@ export function classifyAppContext(rawInfo = {}) {
     bundleId,
     windowTitle,
     category: CATEGORIES.UNKNOWN,
-    recommendedMode: 'casual'
+    recommendedMode: 'smart'
   };
 }
 
@@ -335,9 +335,12 @@ export function classifyAppContext(rawInfo = {}) {
  * Normalizes manual mode keyword to standard mode name
  */
 export function normalizeManualMode(modeStr) {
-  if (!modeStr) return 'casual';
+  if (!modeStr) return 'smart';
   const norm = String(modeStr).trim().toLowerCase();
   switch (norm) {
+    case 'smart':
+    case 'default':
+      return 'smart';
     case 'dev':
     case 'developer':
       return 'developer';
@@ -399,7 +402,7 @@ export function resolveEffectiveMode(selectedMode = 'auto', appContext = {}) {
   const normSelected = String(selectedMode || 'auto').trim().toLowerCase();
 
   // If manual mode is selected (anything other than 'auto'), manual mode WINS everywhere
-  if (normSelected && normSelected !== 'auto') {
+  if (normSelected && normSelected !== 'auto' && normSelected !== 'default') {
     const finalMode = normalizeManualMode(normSelected);
     return {
       finalMode,
@@ -422,9 +425,9 @@ export function resolveEffectiveMode(selectedMode = 'auto', appContext = {}) {
     };
   }
 
-  // Unknown app safely falls back to casual
+  // Unknown app safely falls back to smart (Default Smart Dictation)
   return {
-    finalMode: 'casual',
+    finalMode: 'smart',
     source: 'fallback',
     category: CATEGORIES.UNKNOWN,
     appName: appContext.appName || 'Active App',

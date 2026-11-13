@@ -77,6 +77,8 @@ export class ModeFormatter {
       case 'casual':
         return this.formatCasual(cleanText);
 
+      case 'smart':
+      case 'default':
       case 'natural':
       default:
         return cleanText;

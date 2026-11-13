@@ -77,7 +77,7 @@ export function runAppAwarenessTests() {
   console.log('   ✓ ChatGPT + Auto → prompt mode (source: app-aware)');
 
   // Test 5: Unknown app + Auto → fallback
-  console.log('5️⃣ Testing Unknown app + Auto → fallback...');
+  console.log('5️⃣ Testing Unknown app + Auto → fallback (smart dictation)...');
   const unknownApp = classifyAppContext({
     appName: 'my_custom_proprietary_tool',
     processName: 'custom_tool',
@@ -85,12 +85,12 @@ export function runAppAwarenessTests() {
     windowTitle: 'Data Inspector'
   });
   assert.strictEqual(unknownApp.category, CATEGORIES.UNKNOWN, 'Unknown app category should be unknown');
-  assert.strictEqual(unknownApp.recommendedMode, 'casual', 'Unknown app fallback mode should be casual');
+  assert.strictEqual(unknownApp.recommendedMode, 'smart', 'Unknown app fallback mode should be smart');
 
   const unknownAuto = resolveEffectiveMode('auto', unknownApp);
-  assert.strictEqual(unknownAuto.finalMode, 'casual', 'Unknown app + Auto must resolve to fallback (casual)');
+  assert.strictEqual(unknownAuto.finalMode, 'smart', 'Unknown app + Auto must resolve to fallback (smart)');
   assert.strictEqual(unknownAuto.source, 'fallback', 'Source must be fallback');
-  console.log('   ✓ Unknown app + Auto → fallback (casual) (source: fallback)');
+  console.log('   ✓ Unknown app + Auto → fallback (smart) (source: fallback)');
 
   // Test 6: Chrome + Developer manual → developer mode
   console.log('6️⃣ Testing Chrome + Developer manual → developer mode (Manual override)...');

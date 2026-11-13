@@ -96,7 +96,7 @@ export class TextProcessingService {
 
     // 9. Phase 6: Developer Processing (active when Developer / Code / Terminal mode is selected)
     const settings = options.preloadedSettings || storage.getSettings(options.userId);
-    const defaultTone = settings instanceof Promise ? 'casual' : (settings?.defaultTone || 'casual');
+    const defaultTone = settings instanceof Promise ? 'smart' : (settings?.defaultTone || config.defaultTone || 'smart');
     const mode = options.tone || options.mode || defaultTone;
     if (developerProcessingService.isDeveloperMode(mode)) {
       cleaned = developerProcessingService.process(cleaned, options);
@@ -113,7 +113,7 @@ export class TextProcessingService {
     const cleaned = this.cleanText(text, options);
     const rawSettings = options.preloadedSettings || storage.getSettings(options.userId);
     const settings = rawSettings instanceof Promise ? {} : (rawSettings || {});
-    const mode = options.tone || options.mode || settings.defaultTone || 'casual';
+    const mode = options.tone || options.mode || settings.defaultTone || config.defaultTone || 'smart';
     return modeFormatter.format(cleaned, mode, options);
   }
 
@@ -131,7 +131,7 @@ export class TextProcessingService {
       }
     }
     userSettings = userSettings || {};
-    const tone = options.tone || options.mode || userSettings.defaultTone || config.defaultTone || 'casual';
+    const tone = options.tone || options.mode || userSettings.defaultTone || config.defaultTone || 'smart';
     const appName = options.appName || 'General';
 
     let dictionary = [];
@@ -146,6 +146,18 @@ export class TextProcessingService {
 
     let toneInstruction = '';
     switch (tone) {
+      case 'smart':
+      case 'default':
+        toneInstruction = `Tone: Default Smart Dictation.
+- Transform spoken voice speech into clean, grammatically correct, properly punctuated, natural sentences.
+- Automatically fix grammar mistakes, verb agreements, capitalization, and sentence structure.
+- Remove unnecessary speech fillers, verbal tics, and conversational stuttering where appropriate (e.g. "um", "uh", "you know", "like", "actually", "basically", "so yeah").
+- PRESERVE the speaker's original meaning, intent, vocabulary, names, technical terms, code identifiers, numbers, and context.
+- Keep the language and tone completely natural — how a clear speaker would write.
+- DO NOT convert speech into a formal email, letter, bulleted list, prompt, or corporate jargon unless explicitly asked by the speaker.
+- DO NOT unnecessarily rewrite sentences or add information that the speaker did not convey.
+- Output ONLY the polished dictation. No conversational preambles, explanations, quotes, or greetings.`;
+        break;
       case 'natural':
         toneInstruction = `Tone: Natural & Fluent. Transcribe into clean, natural human prose without unnecessary conversational fluff.`;
         break;
@@ -377,7 +389,7 @@ Output ONLY the transformed, polished text, code, or email. Do NOT add conversat
     // 3. Stage 1 & 2: Local Deterministic Cleanup, Self-Correction & Mode Formatting
     const detStart = Date.now();
     const preCleaned = this.cleanText(text, enrichedOptions);
-    const mode = enrichedOptions.tone || enrichedOptions.mode || enrichedOptions.preloadedSettings.defaultTone || config.defaultTone || 'casual';
+    const mode = enrichedOptions.tone || enrichedOptions.mode || enrichedOptions.preloadedSettings.defaultTone || config.defaultTone || 'smart';
     let deterministicFormatted = modeFormatter.format(preCleaned, mode, enrichedOptions);
 
     // 4. AI Escalation Engine Decision
@@ -393,7 +405,7 @@ Output ONLY the transformed, polished text, code, or email. Do NOT add conversat
       logger.info(`[Cost Optimization] AI enhancement skipped: "${escalation.reason}". Returning deterministic output (0 tokens, $0.00).`);
       return {
         rawTranscript: text,
-        processedText: deterministicFormatted,
+        processedText: deterministicFormatted || text,
         latencyMs: Date.now() - startTime,
         deterministicMs,
         aiMs: 0,
@@ -409,7 +421,7 @@ Output ONLY the transformed, polished text, code, or email. Do NOT add conversat
       logger.warn(`[Quota Notice] User ${options.userId} exceeded LLM quota. Quality fallback applied.`);
       return {
         rawTranscript: text,
-        processedText: deterministicFormatted,
+        processedText: deterministicFormatted || text,
         latencyMs: Date.now() - startTime,
         deterministicMs,
         aiMs: 0,
@@ -451,12 +463,27 @@ Output ONLY the transformed, polished text, code, or email. Do NOT add conversat
       const postFormatted = (result.text || '').trim();
       const aiMs = Date.now() - aiStart;
 
+      // Quality Fallback if LLM output is unexpectedly empty
+      if (!postFormatted) {
+        logger.warn(`[Empty AI Output] LLM returned empty text. Safely applying deterministic fallback.`);
+        return {
+          rawTranscript: text,
+          processedText: deterministicFormatted || text,
+          latencyMs: Date.now() - startTime,
+          deterministicMs,
+          aiMs,
+          enhancedByAI: false,
+          escalationReason: 'empty_ai_fallback',
+          provider: 'deterministic-engine'
+        };
+      }
+
       // Refusal Guard: If an LLM returns a canned refusal, NEVER insert that refusal into user app!
       if (REFUSAL_PATTERNS.some(p => p.test(postFormatted))) {
         logger.warn(`[Refusal Guard] LLM returned a canned refusal: "${postFormatted}". Safely applying quality fallback.`);
         return {
           rawTranscript: text,
-          processedText: deterministicFormatted,
+          processedText: deterministicFormatted || text,
           latencyMs: Date.now() - startTime,
           deterministicMs,
           aiMs,
@@ -485,7 +512,7 @@ Output ONLY the transformed, polished text, code, or email. Do NOT add conversat
       logger.warn(`[Quality Fallback] LLM Provider (${providerName}) failed: ${apiError.message}. Safely returning deterministic cleaned transcript.`);
       return {
         rawTranscript: text,
-        processedText: deterministicFormatted,
+        processedText: deterministicFormatted || text,
         latencyMs: Date.now() - startTime,
         deterministicMs,
         aiMs,

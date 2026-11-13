@@ -68,6 +68,8 @@ const COMMENT_AND_REPLY_REQUEST_PATTERNS = [
 
 // Modes that fundamentally require generative language model capabilities
 const GENERATIVE_REWRITE_MODES = new Set([
+  'smart',
+  'default',
   'email',
   'formal',
   'professional',
@@ -183,10 +185,20 @@ export class EscalationEngine {
     }
 
     // 4. Check requested mode / tone
-    const mode = (options.tone || options.mode || userSettings.defaultTone || 'casual').toLowerCase();
+    let mode = options.tone || options.mode;
+    if (!mode || mode === 'auto' || mode === 'default') {
+      // When no explicit mode or style is selected, use Default Smart Dictation
+      mode = 'smart';
+    } else {
+      mode = String(mode).toLowerCase();
+    }
 
     if (mode === 'raw') {
       return { requiresAI: false, reason: 'raw_mode_selected', detectedMode: 'raw' };
+    }
+
+    if (mode === 'smart') {
+      return { requiresAI: true, reason: 'default_smart_dictation', detectedMode: 'smart' };
     }
 
     if (GENERATIVE_REWRITE_MODES.has(mode)) {

@@ -384,7 +384,7 @@ app.get('/api/admin/config', requireAuth, requireAdmin, (req, res) => {
         sttModel: config.defaultSttModel || 'whisper-large-v3-turbo',
         llmProvider: config.defaultLlmProvider || 'groq',
         llmModel: config.defaultLlmModel || 'openai/gpt-oss-20b',
-        defaultTone: config.defaultTone || 'casual'
+        defaultTone: config.defaultTone || 'smart'
       },
       keyStatus: {
         hasGroqKey: Boolean(process.env.GROQ_API_KEY || config.groqApiKey),

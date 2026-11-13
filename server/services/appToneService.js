@@ -86,23 +86,26 @@ export function matchAppRule({ processName, windowTitle } = {}, rules = DEFAULT_
  * Resolves the tone and mode for a request. Only `tone: "auto"` or unset is resolved; any
  * explicit tone the user picked is kept with highest priority (MANUAL MODE > APP AUTO-DETECTION).
  */
-export function resolveTone({ tone, mode: requestedMode, processName, windowTitle, appName, bundleId, application } = {}, { rules, fallbackTone = 'casual' } = {}) {
+export function resolveTone({ tone, mode: requestedMode, processName, windowTitle, appName, bundleId, application, toneSource } = {}, { rules, fallbackTone = 'smart' } = {}) {
   const mode = requestedMode || tone;
-  if (mode && mode !== 'auto') {
+  const isExplicitManual = mode && mode !== 'auto' && mode !== 'default' && toneSource !== 'fallback' && toneSource !== 'default';
+  if (isExplicitManual && mode !== 'smart') {
     return { tone: mode, mode: mode, appLabel: appName || 'General', source: 'manual' };
   }
 
   // 1. Structured application context provided by client
   if (application && application.recommendedMode) {
     const isKnown = application.category && application.category !== 'unknown';
-    return {
-      tone: application.recommendedMode,
-      mode: application.recommendedMode,
-      appLabel: application.appName || application.name || appName || 'General',
-      category: application.category || 'unknown',
-      context: application,
-      source: isKnown ? 'app-aware' : 'fallback'
-    };
+    if (isKnown) {
+      return {
+        tone: application.recommendedMode,
+        mode: application.recommendedMode,
+        appLabel: application.appName || application.name || appName || 'General',
+        category: application.category,
+        context: application,
+        source: 'app-aware'
+      };
+    }
   }
 
   // 2. Rule-based matching against window title / process name
@@ -118,12 +121,12 @@ export function resolveTone({ tone, mode: requestedMode, processName, windowTitl
     };
   }
 
-  const fallback = fallbackTone === 'auto' ? 'casual' : fallbackTone;
+  const fallback = fallbackTone === 'auto' ? 'smart' : (fallbackTone || 'smart');
   return {
     tone: fallback,
     mode: fallback,
     appLabel: appName || 'General',
-    source: 'default'
+    source: (mode === 'smart' && isExplicitManual) ? 'manual' : 'default'
   };
 }
 

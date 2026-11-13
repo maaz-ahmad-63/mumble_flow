@@ -66,7 +66,7 @@ export class StreamingDictationServer {
         config: {
           sttProvider: storage.getSettings(initialUserId).sttProvider || config.defaultSttProvider || 'groq',
           llmProvider: storage.getSettings(initialUserId).llmProvider || config.defaultLlmProvider || 'groq',
-          tone: storage.getSettings(initialUserId).defaultTone || config.defaultTone || 'casual',
+          tone: storage.getSettings(initialUserId).defaultTone || config.defaultTone || 'smart',
           language: 'auto'
         },
         streamingSession: null,
@@ -144,7 +144,7 @@ export class StreamingDictationServer {
               const effectiveProvider = msg.sttProvider || clientContext.config.sttProvider || currentSettings?.sttProvider || 'groq';
               const language = msg.language || clientContext.config.language || 'auto';
               const mimeType = msg.mimeType || 'audio/webm';
-              const tone = msg.tone || clientContext.config.tone || currentSettings?.defaultTone || 'casual';
+              const tone = msg.tone || clientContext.config.tone || currentSettings?.defaultTone || config.defaultTone || 'smart';
               const mode = msg.mode || tone;
               const appName = msg.appName || msg.app || null;
               const processName = msg.processName || null;
