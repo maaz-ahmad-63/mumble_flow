@@ -1,6 +1,6 @@
 {
   "name": "mumble-ai-desktop",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Mumble AI — Native desktop voice dictation app. Speak naturally, text appears at your cursor.",
   "author": "Maaz Ahmad",
   "main": "main.js",
