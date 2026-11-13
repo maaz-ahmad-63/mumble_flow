@@ -42,7 +42,7 @@ jobs:
         run: npm run dist:mac
 
       - name: Upload macOS Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: mac-artifacts
           path: |
@@ -75,7 +75,7 @@ jobs:
         run: npm run dist:win
 
       - name: Upload Windows Artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: win-artifacts
           path: |
