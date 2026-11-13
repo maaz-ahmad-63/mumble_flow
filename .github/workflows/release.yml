@@ -114,7 +114,7 @@ jobs:
           fi
 
       - name: Create or Update GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.get_tag.outputs.tag }}
           name: Mumble AI Desktop ${{ steps.get_tag.outputs.tag }}
