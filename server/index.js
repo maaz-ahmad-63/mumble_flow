@@ -655,6 +655,7 @@ app.post('/api/dictate', dictateLimiter, optionalAuth, upload.single('audio'), a
     const resolved = resolveTone({
       tone: req.body.tone,
       mode: req.body.mode || req.body.tone,
+      toneSource: req.body.toneSource,
       processName,
       windowTitle,
       appName: req.body.appName,
@@ -953,6 +954,7 @@ app.post('/api/process-text', optionalAuth, async (req, res) => {
     const resolved = resolveTone({
       tone: req.body.tone,
       mode: req.body.mode || req.body.tone,
+      toneSource: req.body.toneSource,
       processName,
       windowTitle,
       appName: req.body.appName,

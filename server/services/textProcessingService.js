@@ -309,9 +309,12 @@ Output ONLY the transformed, polished text, code, or email. Do NOT add conversat
     }
     const providerName = options.llmProvider || userSettings?.llmProvider || config.defaultLlmProvider || 'groq';
     const modelName = options.llmModel || options.model || userSettings?.llmModel;
+    const tone = options.tone || options.mode || userSettings?.defaultTone || config.defaultTone || 'smart';
 
     const provider = providerRegistry.getLlmProvider(providerName);
-    const userPrompt = `[Dictated Speech]: ${text}\n\nTask: Output the final ready-to-use text representing what the speaker wants to communicate.`;
+    const userPrompt = (tone === 'smart' || tone === 'default')
+      ? `[Dictated Speech]: ${text}\n\nTask: Polish the speech into clean, grammatically correct, natural prose following the Default Smart Dictation rules. Preserve the speaker's exact words, phrasing, and meaning. Do NOT convert into an email template, letter, prompt, or code unless explicitly requested.`
+      : `[Dictated Speech]: ${text}\n\nTask: Output the final ready-to-use text representing what the speaker wants to communicate.`;
     return await provider.formatText(systemPrompt, userPrompt, { ...options, model: modelName, originalUserText: text });
   }
 

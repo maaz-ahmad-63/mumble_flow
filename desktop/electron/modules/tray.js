@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 export class TrayManager {
   constructor(options = {}) {
     this.tray = null;
+    this.onOpenMainWindow = options.onOpenMainWindow || (() => {});
     this.onToggleDictation = options.onToggleDictation || (() => {});
     this.onOpenSettings = options.onOpenSettings || (() => {});
     this.onCheckForUpdates = options.onCheckForUpdates || (() => {});
@@ -31,6 +32,10 @@ export class TrayManager {
     this.tray = new Tray(icon);
     this.tray.setTitle('🎙️');
     this.tray.setToolTip('Mumble AI — Voice Dictation');
+
+    // Clicking tray icon opens Mumble AI Studio
+    this.tray.on('click', () => this.onOpenMainWindow());
+    this.tray.on('double-click', () => this.onOpenMainWindow());
 
     this.updateMenu();
   }
@@ -83,6 +88,11 @@ export class TrayManager {
     };
 
     const contextMenu = Menu.buildFromTemplate([
+      {
+        label: 'Open Mumble AI Studio',
+        click: () => this.onOpenMainWindow()
+      },
+      { type: 'separator' },
       {
         label: this.isRecording ? 'Stop Dictation' : `Start Dictation (${this.hotkey})`,
         click: () => this.onToggleDictation()

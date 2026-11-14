@@ -89,7 +89,11 @@ export function matchAppRule({ processName, windowTitle } = {}, rules = DEFAULT_
 export function resolveTone({ tone, mode: requestedMode, processName, windowTitle, appName, bundleId, application, toneSource } = {}, { rules, fallbackTone = 'smart' } = {}) {
   const mode = requestedMode || tone;
   const isExplicitManual = mode && mode !== 'auto' && mode !== 'default' && toneSource !== 'fallback' && toneSource !== 'default';
-  if (isExplicitManual && mode !== 'smart') {
+  
+  // If desktop client fell back from an unknown app or sent legacy casual fallback, treat as fallback to smart dictation
+  const isDesktopFallback = (appName === 'Active App' || appName === 'System') && (mode === 'casual' || !mode) && (!toneSource || toneSource === 'fallback');
+
+  if (isExplicitManual && mode !== 'smart' && !isDesktopFallback) {
     return { tone: mode, mode: mode, appLabel: appName || 'General', source: 'manual' };
   }
 

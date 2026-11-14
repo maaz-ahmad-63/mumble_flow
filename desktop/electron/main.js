@@ -30,6 +30,8 @@ if (!gotTheLock) {
 }
 
 let overlayWindow = null;
+let mainWindow = null;
+let isQuittingApp = false;
 let settingsWindow = null;
 let serverManager = null;
 let trayManager = null;
@@ -92,6 +94,62 @@ function createOverlayWindow() {
   overlayWindow.on('closed', () => {
     overlayWindow = null;
   });
+}
+
+/**
+ * Open or focus the main Mumble AI Studio window
+ */
+function openMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+    return mainWindow;
+  }
+
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+  const winWidth = Math.min(1150, Math.round(width * 0.88));
+  const winHeight = Math.min(800, Math.round(height * 0.85));
+
+  mainWindow = new BrowserWindow({
+    width: winWidth,
+    height: winHeight,
+    minWidth: 840,
+    minHeight: 580,
+    title: 'Mumble AI',
+    backgroundColor: '#0d0d0d',
+    show: false,
+    icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
+    webPreferences: {
+      nodeIntegration: false,
+      contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js')
+    }
+  });
+
+  mainWindow.once('ready-to-show', () => {
+    mainWindow.show();
+    mainWindow.focus();
+  });
+
+  mainWindow.loadURL(serverBaseUrl).catch((err) => {
+    console.warn(`[MainWindow] Could not load ${serverBaseUrl}:`, err.message);
+  });
+
+  // Intercept window close to keep background hotkeys and tray active
+  mainWindow.on('close', (e) => {
+    if (!isQuittingApp) {
+      e.preventDefault();
+      mainWindow.hide();
+    }
+  });
+
+  mainWindow.on('closed', () => {
+    mainWindow = null;
+  });
+
+  return mainWindow;
 }
 
 /**
@@ -176,9 +234,9 @@ function registerGlobalHotkey(hotkey = 'F8') {
   }
 }
 
-let lastAppContext = { name: 'Active App', appName: 'Active App', bundleId: '', windowTitle: '', category: 'unknown', recommendedMode: 'casual' };
+let lastAppContext = { name: 'Active App', appName: 'Active App', bundleId: '', windowTitle: '', category: 'unknown', recommendedMode: 'smart' };
 let lastNonMumbleAppContext = null;
-let currentEffectiveResolution = { finalMode: 'casual', source: 'fallback', category: 'unknown', appName: 'Active App' };
+let currentEffectiveResolution = { finalMode: 'smart', source: 'fallback', category: 'unknown', appName: 'Active App' };
 
 /**
  * Start Dictation
@@ -399,7 +457,7 @@ async function processAudio(audioBuffer) {
     setHUDState('processing', { message: 'Transcribing & Enhancing...' });
 
     const resolution = currentEffectiveResolution || resolveEffectiveMode(selectedMode, lastAppContext);
-    const finalMode = resolution.finalMode || 'casual';
+    const finalMode = resolution.finalMode || 'smart';
     const modeSource = resolution.source || 'fallback';
 
     const blob = new Blob([uint8], { type: 'audio/webm' });
@@ -503,6 +561,9 @@ app.whenReady().then(async () => {
   // Create Overlay HUD Window
   createOverlayWindow();
 
+  // Open Main Studio Window so the user sees the interface
+  openMainWindow();
+
   // Verify macOS permissions
   await verifyPermissions();
 
@@ -517,15 +578,13 @@ app.whenReady().then(async () => {
     hotkey: currentHotkey,
     serverUrl: serverBaseUrl,
     currentMode: selectedMode,
+    onOpenMainWindow: openMainWindow,
     onSelectMode: (mode) => {
       selectedMode = mode;
       console.log(`[Desktop] Active mode changed to: ${mode}`);
     },
     onToggleDictation: toggleDictation,
-    onOpenSettings: () => {
-      // Open settings in browser
-      import('electron').then(({ shell }) => shell.openExternal(`${serverBaseUrl}`));
-    },
+    onOpenSettings: openMainWindow,
     onCheckForUpdates: () => {
       updateChecker.checkForUpdates({ isManual: true });
     }
@@ -562,6 +621,14 @@ app.whenReady().then(async () => {
   ipcMain.handle('auth:get-token', () => desktopAuthManager.getToken());
   ipcMain.handle('auth:set-token', (_event, token, user) => desktopAuthManager.setToken(token, user));
   ipcMain.handle('auth:clear-token', () => desktopAuthManager.clearToken());
+});
+
+app.on('activate', () => {
+  openMainWindow();
+});
+
+app.on('before-quit', () => {
+  isQuittingApp = true;
 });
 
 app.on('will-quit', () => {
