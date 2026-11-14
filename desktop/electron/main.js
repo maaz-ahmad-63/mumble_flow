@@ -100,56 +100,79 @@ function createOverlayWindow() {
  * Open or focus the main Mumble AI Studio window
  */
 function openMainWindow() {
-  if (mainWindow && !mainWindow.isDestroyed()) {
-    if (mainWindow.isMinimized()) mainWindow.restore();
+  console.log(`[MainWindow] openMainWindow() invoked. serverBaseUrl=${serverBaseUrl}`);
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.show();
+      mainWindow.focus();
+      return mainWindow;
+    }
+
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { width, height } = primaryDisplay.workAreaSize;
+    const winWidth = Math.min(1150, Math.round(width * 0.88));
+    const winHeight = Math.min(800, Math.round(height * 0.85));
+
+    console.log(`[MainWindow] Creating BrowserWindow (${winWidth}x${winHeight})`);
+
+    mainWindow = new BrowserWindow({
+      width: winWidth,
+      height: winHeight,
+      minWidth: 840,
+      minHeight: 580,
+      title: 'Mumble AI',
+      backgroundColor: '#0d0d0d',
+      show: true,
+      icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
+      webPreferences: {
+        nodeIntegration: false,
+        contextIsolation: true,
+        preload: path.join(__dirname, 'preload.js')
+      }
+    });
+
+    if (process.platform === 'darwin' && app.dock) {
+      try {
+        app.dock.show();
+      } catch (dockErr) {
+        console.warn('[MainWindow] app.dock.show error:', dockErr.message);
+      }
+    }
+
     mainWindow.show();
     mainWindow.focus();
+
+    console.log(`[MainWindow] Loading URL: ${serverBaseUrl}`);
+    mainWindow.loadURL(serverBaseUrl).catch((err) => {
+      console.warn(`[MainWindow] Could not load ${serverBaseUrl}:`, err.message);
+    });
+
+    mainWindow.webContents.on('did-finish-load', () => {
+      console.log(`[MainWindow] Successfully loaded ${serverBaseUrl}`);
+    });
+
+    mainWindow.webContents.on('did-fail-load', (_event, errorCode, errorDescription, validatedURL) => {
+      console.error(`[MainWindow] Failed loading ${validatedURL}: ${errorDescription} (${errorCode})`);
+    });
+
+    // Intercept window close to keep background hotkeys and tray active
+    mainWindow.on('close', (e) => {
+      if (!isQuittingApp) {
+        e.preventDefault();
+        mainWindow.hide();
+        console.log('[MainWindow] Window hidden to tray (running in background)');
+      }
+    });
+
+    mainWindow.on('closed', () => {
+      mainWindow = null;
+    });
+
     return mainWindow;
+  } catch (err) {
+    console.error('[MainWindow] Error in openMainWindow:', err);
   }
-
-  const primaryDisplay = screen.getPrimaryDisplay();
-  const { width, height } = primaryDisplay.workAreaSize;
-  const winWidth = Math.min(1150, Math.round(width * 0.88));
-  const winHeight = Math.min(800, Math.round(height * 0.85));
-
-  mainWindow = new BrowserWindow({
-    width: winWidth,
-    height: winHeight,
-    minWidth: 840,
-    minHeight: 580,
-    title: 'Mumble AI',
-    backgroundColor: '#0d0d0d',
-    show: false,
-    icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
-    webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
-    }
-  });
-
-  mainWindow.once('ready-to-show', () => {
-    mainWindow.show();
-    mainWindow.focus();
-  });
-
-  mainWindow.loadURL(serverBaseUrl).catch((err) => {
-    console.warn(`[MainWindow] Could not load ${serverBaseUrl}:`, err.message);
-  });
-
-  // Intercept window close to keep background hotkeys and tray active
-  mainWindow.on('close', (e) => {
-    if (!isQuittingApp) {
-      e.preventDefault();
-      mainWindow.hide();
-    }
-  });
-
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-
-  return mainWindow;
 }
 
 /**
@@ -624,6 +647,11 @@ app.whenReady().then(async () => {
 });
 
 app.on('activate', () => {
+  openMainWindow();
+});
+
+app.on('second-instance', () => {
+  console.log('[App] Second instance attempt detected. Opening main window...');
   openMainWindow();
 });
 
