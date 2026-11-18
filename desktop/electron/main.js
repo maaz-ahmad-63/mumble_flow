@@ -124,6 +124,7 @@ function openMainWindow() {
       title: 'Mumble AI',
       backgroundColor: '#0d0d0d',
       show: true,
+      autoHideMenuBar: true,
       icon: path.join(__dirname, 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png'),
       webPreferences: {
         nodeIntegration: false,
@@ -560,7 +561,11 @@ async function processAudio(audioBuffer) {
     console.log(`[STAGE 10: TEXT_INSERTION_START] Inserting text: "${finalOutput}"`);
 
     // Insert text directly at cursor in active app!
-    const insertResult = await insertTextAtCursor(finalOutput, { targetAppName: activeTargetApp });
+    const insertResult = await insertTextAtCursor(finalOutput, {
+      targetAppName: activeTargetApp,
+      uIOhook,
+      UiohookKey
+    });
 
     if (insertResult.success) {
       console.log('[STAGE 10: TEXT_INSERTION_SUCCESS] Text successfully dispatched via keystroke.');
@@ -579,13 +584,23 @@ async function processAudio(audioBuffer) {
 app.whenReady().then(async () => {
   // Start or connect to Mumble AI Server
   serverManager = new ServerManager(3050);
-  serverBaseUrl = await serverManager.ensureRunning();
+  serverBaseUrl = serverManager.baseUrl;
 
-  // Create Overlay HUD Window
+  // Create Overlay HUD Window & Open Main Studio Window immediately with zero startup delay
   createOverlayWindow();
-
-  // Open Main Studio Window so the user sees the interface
   openMainWindow();
+
+  // Ensure remote backend is reachable or local server running in background
+  serverManager.ensureRunning().then((resolvedUrl) => {
+    if (resolvedUrl && resolvedUrl !== serverBaseUrl) {
+      serverBaseUrl = resolvedUrl;
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL(serverBaseUrl).catch(() => {});
+      }
+    }
+  }).catch((err) => {
+    console.warn('[ServerManager] Background ensureRunning check error:', err.message);
+  });
 
   // Verify macOS permissions
   await verifyPermissions();

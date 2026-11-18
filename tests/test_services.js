@@ -662,6 +662,10 @@ async function runTests() {
   const { runDefaultSmartDictationTests } = await import('./test_default_smart_dictation.js');
   await runDefaultSmartDictationTests();
 
+  // Test 30: Windows Text Insertion & Clipboard Integration
+  const { runWindowsTextInsertionTests } = await import('./test_windows_text_insertion.js');
+  await runWindowsTextInsertionTests();
+
   console.log('\n🎉 ALL TESTS PASSED! Mumble AI core services, SaaS Foundation, Model Hub, BYOK, Usage Tracking, Cost Control, QA Fixes, App Awareness, PostgreSQL & Commercial Readiness are functional.\n');
 }
 

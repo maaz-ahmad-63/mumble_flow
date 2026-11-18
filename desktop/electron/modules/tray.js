@@ -4,6 +4,7 @@
 
 import { Tray, Menu, nativeImage, shell, app } from 'electron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { DEFAULT_PRODUCTION_URL } from './serverManager.js';
 
@@ -26,11 +27,20 @@ export class TrayManager {
   }
 
   create() {
-    // Create simple tray icon or use template image
-    const icon = nativeImage.createEmpty();
-    // Default 16x16 tray icon representation
+    let icon;
+    if (process.platform === 'win32') {
+      const winIconPath = path.join(__dirname, '..', 'assets', 'icon.ico');
+      icon = fs.existsSync(winIconPath)
+        ? nativeImage.createFromPath(winIconPath)
+        : nativeImage.createEmpty();
+    } else {
+      icon = nativeImage.createEmpty();
+    }
+
     this.tray = new Tray(icon);
-    this.tray.setTitle('🎙️');
+    if (process.platform === 'darwin') {
+      this.tray.setTitle('🎙️');
+    }
     this.tray.setToolTip('Mumble AI — Voice Dictation');
 
     // Clicking tray icon opens Mumble AI Studio
@@ -43,7 +53,10 @@ export class TrayManager {
   setRecordingState(isRecording) {
     this.isRecording = isRecording;
     if (this.tray) {
-      this.tray.setTitle(isRecording ? '🔴' : '🎙️');
+      if (process.platform === 'darwin') {
+        this.tray.setTitle(isRecording ? '🔴' : '🎙️');
+      }
+      this.tray.setToolTip(isRecording ? 'Mumble AI — Recording...' : 'Mumble AI — Voice Dictation');
       this.updateMenu();
     }
   }
