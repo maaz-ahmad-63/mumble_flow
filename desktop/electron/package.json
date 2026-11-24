@@ -1,6 +1,6 @@
 {
   "name": "mumble-ai-desktop",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Mumble AI — Native desktop voice dictation app. Speak naturally, text appears at your cursor.",
   "author": "Maaz Ahmad",
   "main": "main.js",
@@ -11,13 +11,16 @@
     "pack": "electron-builder --mac --dir",
     "dist": "electron-builder --mac --publish never",
     "dist:mac": "electron-builder --mac --publish never",
-    "dist:win": "electron-builder --win --x64 --publish never",
-    "dist:all": "electron-builder --mac --win --publish never"
+    "dist:win": "node scripts/prepare-win-packaging.js && electron-builder --win --x64 --publish never",
+    "dist:all": "node scripts/prepare-win-packaging.js && electron-builder --mac --win --publish never"
   },
   "build": {
     "appId": "com.mumbleai.desktop",
     "productName": "Mumble AI",
     "npmRebuild": false,
+    "asarUnpack": [
+      "**/node_modules/uiohook-napi/**/*"
+    ],
     "publish": {
       "provider": "github",
       "owner": "maaz-ahmad-63",
@@ -41,7 +44,13 @@
         "nsis",
         "portable"
       ],
-      "icon": "assets/icon.ico"
+      "icon": "assets/icon.ico",
+      "files": [
+        "!**/node_modules/uiohook-napi/build/**",
+        "!**/node_modules/uiohook-napi/prebuilds/darwin-*/**",
+        "!**/node_modules/uiohook-napi/prebuilds/linux-*/**",
+        "!**/node_modules/uiohook-napi/prebuilds/win32-arm64/**"
+      ]
     },
     "files": [
       "main.js",

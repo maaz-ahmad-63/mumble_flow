@@ -42,6 +42,9 @@ const globalShortcut = electron.globalShortcut || {
 let uIOhookNative = null;
 let UiohookKeyNative = null;
 try {
+  if (process.resourcesPath || process.env.NODE_ENV === 'production') {
+    process.env.PREBUILDS_ONLY = '1';
+  }
   const uiohookModule = await import('uiohook-napi');
   uIOhookNative = uiohookModule.uIOhook;
   UiohookKeyNative = uiohookModule.UiohookKey;

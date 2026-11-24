@@ -9,7 +9,7 @@ import path from 'path';
 import fs from 'fs';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { uIOhook, UiohookKey } from 'uiohook-napi';
+import { nativeHookManager, UiohookKey } from './modules/nativeHookManager.js';
 
 import { insertTextAtCursor } from './modules/textInsertion.js';
 import { getFocusedApplication } from './modules/focusedApp.js';
@@ -377,17 +377,31 @@ async function toggleDictation() {
  * Works globally across macOS and Windows without stealing keyboard focus or breaking normal typing.
  */
 function initGlobalInputHooks() {
-  console.log('[STAGE 1: HOOK_INIT] Registering uIOhook listeners...');
-  uIOhook.on('keydown', (e) => {
+  if (!nativeHookManager.isAvailable) {
+    console.warn(`[STAGE 1: HOOK_UNAVAILABLE] Native keyboard hook is unavailable (${nativeHookManager.error}).`);
+    console.warn('[STAGE 1: HOOK_FALLBACK] Falling back to standard Electron global shortcuts (F8 / Alt+Space). Space-hold requires native hook.');
+    try {
+      globalShortcut.register('F8', () => {
+        console.log('[Hotkey] Triggered F8 via Electron globalShortcut fallback');
+        toggleDictation();
+      });
+    } catch (e) {}
+    return;
+  }
+
+  console.log('[STAGE 1: HOOK_INIT] Registering native input hook listeners...');
+  const keys = nativeHookManager.keys;
+
+  nativeHookManager.on('keydown', (e) => {
     // 0. GLOBAL F8: Native low-level interception for global F8 hotkey (bypasses OS media key overrides)
-    if (e.keycode === UiohookKey.F8) {
-      console.log('[STAGE 2: KEYDOWN_F8] F8 pressed globally via uIOhook -> Toggling dictation');
+    if (e.keycode === keys.F8) {
+      console.log('[STAGE 2: KEYDOWN_F8] F8 pressed globally via native hook -> Toggling dictation');
       toggleDictation();
       return;
     }
 
     // 1. ESC CANCEL: While recording, pressing Esc immediately cancels the recording
-    if (e.keycode === UiohookKey.Escape) {
+    if (e.keycode === keys.Escape) {
       if (isRecording) {
         console.log('[STAGE 2: KEYDOWN_ESC] Escape pressed while recording -> Cancelling dictation');
         cancelDictation();
@@ -396,7 +410,7 @@ function initGlobalInputHooks() {
     }
 
     // 2. HOLD SPACE: Holding Space starts recording
-    if (e.keycode === UiohookKey.Space) {
+    if (e.keycode === keys.Space) {
       if (isSpaceKeyDown) return; // Ignore auto-repeat keydown events while key is held down
       isSpaceKeyDown = true;
       console.log('[STAGE 2: KEYDOWN_SPACE] Space pressed. Waiting for hold threshold (300ms)...');
@@ -416,8 +430,8 @@ function initGlobalInputHooks() {
     }
   });
 
-  uIOhook.on('keyup', (e) => {
-    if (e.keycode === UiohookKey.Space) {
+  nativeHookManager.on('keyup', (e) => {
+    if (e.keycode === keys.Space) {
       isSpaceKeyDown = false;
 
       // If released before threshold, it was a normal space tap
@@ -436,11 +450,14 @@ function initGlobalInputHooks() {
     }
   });
 
-  try {
-    uIOhook.start();
+  const started = nativeHookManager.start();
+  if (started) {
     console.log('[STAGE 1: HOOK_OK] Native global keyboard hook active (Space hold-to-talk, F8 & Esc cancel enabled).');
-  } catch (err) {
-    console.warn('[STAGE 1: HOOK_FAIL] Could not start uIOhook native hook:', err.message);
+  } else {
+    console.warn('[STAGE 1: HOOK_FAIL] Could not start native keyboard hook. Falling back to globalShortcut.');
+    try {
+      globalShortcut.register('F8', () => toggleDictation());
+    } catch (e) {}
   }
 }
 
@@ -563,8 +580,8 @@ async function processAudio(audioBuffer) {
     // Insert text directly at cursor in active app!
     const insertResult = await insertTextAtCursor(finalOutput, {
       targetAppName: activeTargetApp,
-      uIOhook,
-      UiohookKey
+      uIOhook: nativeHookManager.hook,
+      UiohookKey: nativeHookManager.keys
     });
 
     if (insertResult.success) {
@@ -676,7 +693,7 @@ app.on('before-quit', () => {
 
 app.on('will-quit', () => {
   try {
-    uIOhook.stop();
+    nativeHookManager.stop();
   } catch (e) {}
   globalShortcut.unregisterAll();
   if (serverManager) serverManager.stop();

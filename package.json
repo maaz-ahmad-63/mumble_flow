@@ -1,6 +1,6 @@
 {
   "name": "mumble-flow",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Mumble AI — Self-hosted voice dictation. Speak naturally, get cleaned text, on your computer or your own server.",
   "repository": {
     "type": "git",
